@@ -1,6 +1,5 @@
 {
   "title": "E-commerce Price Tracker",
-  "description": "This is a component that can track the prices of products in e-commerces.",
   "config": {
     "flow_title": "E-Commerce Price Tracker",
     "step": {

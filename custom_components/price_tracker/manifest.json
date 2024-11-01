@@ -1,5 +1,5 @@
 {
-  "domain": "e_commerce_price_tracker",
+  "domain": "price_tracker",
   "name": "E-Commerce Price Tracker",
   "codeowners": [
     "@hwajin-me"
