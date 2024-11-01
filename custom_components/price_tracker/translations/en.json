@@ -1,0 +1,58 @@
+{
+  "title": "E-commerce Price Tracker",
+  "description": "This is a component that can track the prices of products in e-commerces.",
+  "config": {
+    "flow_title": "E-Commerce Price Tracker",
+    "step": {
+      "user": {
+        "title": "Add E-commerce Provider",
+        "description": "If you need help with the configuration have a look here: https://github.com/hwajin-me/hs-price-tracker. Some providers require specific configuration flows, such as authentication.",
+        "data": {
+          "type": "E-Commerce Types."
+        }
+      }
+    },
+    "error": {
+      "unknown": "Unknown error occurred."
+    },
+    "abort": {
+      "already_configured": "E-commerce provider is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Choose action item",
+        "data": {
+          "option_select": "Select action item (create & modify, delete)"
+        }
+      },
+      "select": {
+        "title": "Modify entity",
+        "description": "Change the interval and category, or delete entities.",
+        "data": {
+          "item_category": "Category name",
+          "option_entities": "Select entities",
+          "option_delete": "Delete selected entities"
+        }
+      },
+      "entity": {
+        "title": "Upsert Item(a.k.a Product)",
+        "description": "Paste the URL of the product you want to track (collect). Some providers do not support URLs. In that case, you will need to track the API call in your mobile application.",
+        "data": {
+          "item_url": "Product URL (e.g. https://www.idus.com/v2/product/7f8cf2f8-74f6-4a95-b56a-9e16526791d1)",
+          "item_refresh_interval": "Refresh Interval (in minutes)",
+          "item_management_category": "Management Category Name"
+        }
+      }
+    }
+  },
+  "selector": {
+    "option_select": {
+      "options": {
+        "option_modify": "Modify entity",
+        "option_add": "Add entity"
+      }
+    }
+  }
+}

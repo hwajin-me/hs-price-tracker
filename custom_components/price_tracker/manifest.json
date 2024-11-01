@@ -1,0 +1,19 @@
+{
+  "domain": "e_commerce_price_tracker",
+  "name": "E-Commerce Price Tracker",
+  "codeowners": [
+    "@hwajin-me"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/hwajin-me/hs-price-tracker",
+  "issue_tracker": "https://github.com/hwajin-me/hs-price-tracker/issues",
+  "version": "0.1.0",
+  "requirements": [
+    "colorlog==6.8.2",
+    "ruff==0.7.1",
+    "beautifulsoup4==4.12.3",
+    "aiohttp==3.10.8",
+    "fake-useragent==1.5.1"
+  ],
+  "dependencies": []
+}
