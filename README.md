@@ -27,8 +27,23 @@ You can add entity to your system by configure button in the integrations page. 
 - `Refresh interval`: Interval in seconds to refresh the price of the product.
 - `Proxy URL`: URL of the proxy server to use for scraping the website. (Optional)
 
+### Types
+
+Some properties represent calculated results. There are conditions for delivery, specific characteristics of the item, etc.
+
+#### Inventory
+
+Inventory information is divided into three types: `In Stock`, `Out of Stock`, and `Almost out of stock`.
+
+- `In Stock`: The product is in stock.
+- `Out of Stock`: The product is out of stock.
+- `Almost out of stock`: The product is almost out of stock.
+
+Almost out of stock is determined by the number of products in stock. The number of products in stock is set to 10 by default, but you can change it in the configuration or automatically set it by the provider.
+
 ## TODO
 
+- [ ] Support Dynamic Inventory
 - [ ] Support Rakuten
 - [ ] Support Mercari
 - [ ] Support Amazon Japan
