@@ -8,6 +8,7 @@
   "documentation": "https://github.com/hwajin-me/hs-price-tracker",
   "issue_tracker": "https://github.com/hwajin-me/hs-price-tracker/issues",
   "version": "0.1.0",
+  "iot_class": "cloud_polling",
   "requirements": [
     "colorlog==6.8.2",
     "ruff==0.7.1",
