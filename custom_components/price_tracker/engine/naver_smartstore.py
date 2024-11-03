@@ -13,7 +13,7 @@ from custom_components.price_tracker.engine.engine import PriceEngine
 _LOGGER = logging.getLogger(__name__)
 
 _URL = 'https://m.smartstore.naver.com/{}/products/{}'
-REQUEST_HEADER = {
+_REQUEST_HEADER = {
     'host': 'm.smartstore.naver.com',
     'accept': 'text/html',
     'accept-encoding': 'gzip, zlib, deflate, zstd, br',
@@ -31,7 +31,7 @@ class SmartstoreEngine(PriceEngine):
     async def load(self) -> ItemData:
         try:
             response = await asyncio.to_thread(requests.get, _URL.format(self.store, self.product_id),
-                                               headers={**REQUEST_DEFAULT_HEADERS, **REQUEST_HEADER})
+                                               headers={**REQUEST_DEFAULT_HEADERS, **_REQUEST_HEADER})
             if response is not None:
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, "html.parser")
