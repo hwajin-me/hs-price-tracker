@@ -34,7 +34,12 @@ CONF_OPTIONS = [
     CONF_OPTION_MODIFY,
     CONF_OPTION_ADD
 ]
+
 CONF_TYPE = "type"
+CONF_GS_NAVER_LOGIN_FLOW_1_URL="https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs"
+CONF_GS_NAVER_LOGIN_FLOW_2_URL="https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=VFjv3tsLofatP90P1a5H&client_secret=o2HQ70_GCN&code={}"
+CONF_GS_NAVER_LOGIN_FLOW_3_URL="https://b2c-bff.woodongs.com/api/bff/v2/auth/channelLogin"
+CONF_GS_NAVER_LOGIN_CODE="item_gs_naver_login_code"
 CONF_ITEM_URL = "item_url"
 CONF_ITEM_REFRESH_INTERVAL = "item_refresh_interval"
 CONF_ITEM_MANAGEMENT_CATEGORY = "item_management_category"

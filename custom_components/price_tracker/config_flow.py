@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict, Optional
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
@@ -12,7 +13,7 @@ from homeassistant.helpers import selector
 
 from .const import CONF_ITEM_REFRESH_INTERVAL, CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
     CONF_OPTION_MODIFY, CONF_OPTION_SELECT, CONF_OPTIONS, CONF_TARGET, DOMAIN, _KIND, CONF_TYPE, CONF_DATA_SCHEMA, \
-    CONF_OPTION_DATA_SCHEMA, CONF_ITEM_URL, CONF_ITEM_MANAGEMENT_CATEGORY
+    CONF_OPTION_DATA_SCHEMA, CONF_ITEM_URL, CONF_ITEM_MANAGEMENT_CATEGORY, CONF_GS_NAVER_LOGIN_FLOW_1_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +25,9 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
+            if user_input[CONF_TYPE] == 'gsthefresh':
+                return await self.async_step_gs_login()
+
             await self.async_set_unique_id('price-tracker-{}'.format(user_input[CONF_TYPE]))
             self._abort_if_unique_id_configured()
 
@@ -36,6 +40,24 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(self, import_info):
         return await self.async_step_user(import_info)
+
+    async def async_step_gs_login(self, user_input=None):
+        _LOGGER.debug("async_step_gs_login")
+        if not user_input:
+            return self.async_external_step(
+                step_id="gs_login",
+                url=CONF_GS_NAVER_LOGIN_FLOW_1_URL
+            )
+        if user_input is not None:
+            """Check if the provided credentials are valid."""
+
+        return self.async_show_form(
+            step_id="gs_login", data_schema=vol.Schema({
+                vol.Required(CONF_ITEM_URL, default=None): cv.string,
+                vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY, default=None): cv.string,
+                vol.Required(CONF_ITEM_REFRESH_INTERVAL, default=10): cv.positive_int
+            }), errors={}
+        )
 
     @staticmethod
     @callback
