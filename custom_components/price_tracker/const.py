@@ -21,6 +21,7 @@ _KIND = {
     'rakuten': '楽天',
     'yodobashi': 'ヨドバシカメラ',
     'mercari': 'メルカリ',
+    'gsthefresh': 'GS 더프레시'
 }
 ENTITY_ID_FORMAT = DOMAIN + ".price_{}_{}"
 
