@@ -22,6 +22,12 @@ class ItemUnitType(Enum):
             return ItemUnitType.PIECE
 
 
+class ItemChangeStatus(Enum):
+    INC_PRICE = 'increment_price',
+    DEC_PRICE = 'decrement_price',
+    NO_CHANGE = 'no_change'
+
+
 class DeliveryPayType(Enum):
     FREE = 'free'
     PAID = 'paid'
@@ -133,3 +139,7 @@ class ItemData:
         self.currency = currency
         self.inventory = inventory
         self.options = options
+
+    @property
+    def total_price(self):
+        return self.price

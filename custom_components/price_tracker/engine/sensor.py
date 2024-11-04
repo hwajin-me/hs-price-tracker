@@ -3,9 +3,12 @@ from threading import Timer
 
 from homeassistant.helpers.entity import Entity
 
+import logging
+from datetime import timedelta, datetime
+
 from custom_components.price_tracker.const import ENTITY_ID_FORMAT
 from custom_components.price_tracker.engine.coupang import CoupangEngine
-from custom_components.price_tracker.engine.data import ItemData
+from custom_components.price_tracker.engine.data import ItemChangeStatus, ItemData
 from custom_components.price_tracker.engine.engine import PriceEngine
 from custom_components.price_tracker.engine.idus import IdusEngine
 from custom_components.price_tracker.engine.kurly import KurlyEngine
@@ -15,17 +18,22 @@ from custom_components.price_tracker.engine.oliveyoung import OliveyoungEngine
 from custom_components.price_tracker.engine.ssg import SsgEngine
 from custom_components.price_tracker.exception import UnsupportedError
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class PriceTrackerSensor(Entity):
     _engine: PriceEngine
     _attr_has_entity_name = True
     _data: ItemData = None
+    _data_previous: ItemData = None
+    _modified_at: datetime = None
+    _change_status: ItemChangeStatus = ItemChangeStatus.NO_CHANGE
 
     def __init__(self, hass, type: str, item_url: str, refresh: int, management_category: str = None, ):
         super().__init__()
 
         self.hass = hass
-
+ 
         if type == 'coupang':
             self._engine = CoupangEngine(item_url)
         elif type == 'ssg':
@@ -58,7 +66,12 @@ class PriceTrackerSensor(Entity):
         Timer(self._refresh_period, self.refreshTimer).start()
 
     async def load(self):
+        if self._data is not None:
+            self._data_previous = self._data
         self._data = await self._engine.load()
+
+        if self._data.total_price != self._data_previous.total_price:
+            self._change_status = ItemChangeStatus.INC_PRICE if self._data.total_price > self._data_previous.total_price else ItemChangeStatus.DEC_PRICE
 
     @property
     def unique_id(self):
@@ -88,7 +101,6 @@ class PriceTrackerSensor(Entity):
 
     @property
     def state(self):
-        """Return the state of the sensor."""
         if self._data is None:
             return None
 
@@ -96,7 +108,6 @@ class PriceTrackerSensor(Entity):
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
         if self._data is None:
             return False
 
@@ -116,7 +127,8 @@ class PriceTrackerSensor(Entity):
             'inventory': self._data.inventory.value,
             'currency': self._data.currency,
             'url': self._data.url,
-            'image': self._data.image
+            'image': self._data.image,
+            'change_status': self._change_status
         }
 
         if self._data.unit is not None:
@@ -132,5 +144,6 @@ class PriceTrackerSensor(Entity):
 
         return data
 
-    def update(self):
+    async def async_update(self):
         """Update the state."""
+        _LOGGER.debug(self.__dict__)
