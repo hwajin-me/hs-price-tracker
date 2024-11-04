@@ -2,6 +2,9 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict, Optional
 
+import aiohttp
+import json
+import hashlib  
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
@@ -11,7 +14,7 @@ from homeassistant.helpers import (
 )
 from homeassistant.helpers import selector
 
-from .const import CONF_ITEM_REFRESH_INTERVAL, CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
+from .const import CONF_GS_NAVER_LOGIN_CODE, CONF_GS_NAVER_LOGIN_FLOW_2_URL, CONF_ITEM_REFRESH_INTERVAL, CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
     CONF_OPTION_MODIFY, CONF_OPTION_SELECT, CONF_OPTIONS, CONF_TARGET, DOMAIN, _KIND, CONF_TYPE, CONF_DATA_SCHEMA, \
     CONF_OPTION_DATA_SCHEMA, CONF_ITEM_URL, CONF_ITEM_MANAGEMENT_CATEGORY, CONF_GS_NAVER_LOGIN_FLOW_1_URL
 
@@ -43,21 +46,27 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_gs_login(self, user_input=None):
         _LOGGER.debug("async_step_gs_login")
-        if not user_input:
-            return self.async_external_step(
-                step_id="gs_login",
-                url=CONF_GS_NAVER_LOGIN_FLOW_1_URL
-            )
+        
         if user_input is not None:
             """Check if the provided credentials are valid."""
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+                async with session.get(url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(user_input[CONF_GS_NAVER_LOGIN_CODE])) as response:
+                    result = await response.read()
+
+                    if response.status == 200:
+                        j = json.loads(result)
+                        access_token = j['accessToken']
+                        
+
 
         return self.async_show_form(
             step_id="gs_login", data_schema=vol.Schema({
-                vol.Required(CONF_ITEM_URL, default=None): cv.string,
-                vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY, default=None): cv.string,
-                vol.Required(CONF_ITEM_REFRESH_INTERVAL, default=10): cv.positive_int
+                vol.Required(CONF_GS_NAVER_LOGIN_CODE, default=None): cv.string,
             }), errors={}
         )
+    
+    async def async_step_reconfigure(self, user_input: dict = None):
+        """"""
 
     @staticmethod
     @callback
