@@ -22,7 +22,7 @@ class ItemUnitType(Enum):
             return ItemUnitType.PIECE
 
 
-class ItemChangeStatus(Enum):
+class ItemPriceChangeStatus(Enum):
     INC_PRICE = 'increment_price',
     DEC_PRICE = 'decrement_price',
     NO_CHANGE = 'no_change'

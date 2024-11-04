@@ -37,6 +37,7 @@ CONF_TYPE = "type"
 CONF_ITEM_URL = "item_url"
 CONF_ITEM_REFRESH_INTERVAL = "item_refresh_interval"
 CONF_ITEM_MANAGEMENT_CATEGORY = "item_management_category"
+CONF_ITEM_PRICE_CHANGE_REMAIN_PERIOD = "item_price_change_remain_period"
 CONF_TARGET = "target"
 CONF_DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_TYPE, default=None): vol.In(_KIND)
