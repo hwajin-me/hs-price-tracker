@@ -19,8 +19,12 @@ _URL = 'https://m.coupang.com/vm/products/{}?itemId={}&vendorItemId={}'
 _ITEM_LINK = 'https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}'
 _REQUEST_HEADERS = {
     'Sec-Ch-Ua': '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+    'Sec-Ch-Ua-Platform': '"Android"',
+    'Sec-Fetch-Dest': 'document',
+    'Priority': 'u=0, i',
     'Cache-Control': 'max-age=0',
-    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
+    'Cookie': 'PCID=0'
 }
 
 class CoupangEngine(PriceEngine):
@@ -76,7 +80,7 @@ class CoupangEngine(PriceEngine):
                         else:
                             unit_price = ItemUnitData(price=price)
 
-                        inventory = findItem(pageAtf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY')
+                        inventory = findItem(pageAtf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY')['data'] if findItem(pageAtf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY') is not None else None 
                         soldOut = j['props']['pageProps']['properties']['itemDetail']['soldOut']
 
                         if 'limitMessage' not in inventory and soldOut == False:
