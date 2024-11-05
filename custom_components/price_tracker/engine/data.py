@@ -22,6 +22,12 @@ class ItemUnitType(Enum):
             return ItemUnitType.PIECE
 
 
+class ItemPriceChangeStatus(Enum):
+    INC_PRICE = 'increment_price',
+    DEC_PRICE = 'decrement_price',
+    NO_CHANGE = 'no_change'
+
+
 class DeliveryPayType(Enum):
     FREE = 'free'
     PAID = 'paid'
@@ -67,31 +73,41 @@ class ItemUnitData:
         self.unit = unit
         self.price = price
 
-    def unitType(self):
-        if self.unit_type == ItemUnitType.KG:
-            return ItemUnitType.G
-        elif self.unit_type == ItemUnitType.L:
-            return ItemUnitType.ML
-        else:
-            return self.unit_type
+        if unit_type == ItemUnitType.KG:
+            self.unit_type = ItemUnitType.G
+            self.price = price / 1000
+        elif unit_type == ItemUnitType.L:
+            self.unit_type = ItemUnitType.ML
+            self.price = price / 1000
+        resize = ItemUnitData.toOneQuantity(unit=self.unit, price=self.price)
+        self.price = resize['price']
+        self.unit = resize['unit']
 
-    def unit(self):
-        return self.unit
+    @staticmethod
+    def toOneQuantity(unit: float, price: float):
+        if unit <= 1:
+            return {
+                'unit': unit,
+                'price': price
+            }
+        elif unit < 10:
+            return ItemUnitData.toOneQuantity(unit - 1, (price / unit) * (unit - 1))
 
-    def unitPrice(self):
-        if self.unit_type == ItemUnitType.KG:
-            return ItemUnitType.G
-        elif self.unit_type == ItemUnitType.L:
-            return ItemUnitType.ML
-        else:
-            return self.price
+        return ItemUnitData.toOneQuantity(unit / 10, price / 10)
 
 
 class ItemOptionData:
-    def __init__(self, id: any, name: str, price: float):
+    def __init__(self, id: any, name: str, price: float, inventory: int = None):
         self.id = id
         self.name = name
         self.price = price
+        if inventory is not None:
+            if inventory > 10:
+                self.inventory = InventoryStatus.IN_STOCK
+            elif inventory > 0:
+                self.inventory = InventoryStatus.ALMOST_SOLD_OUT
+            else:
+                self.inventory = InventoryStatus.OUT_OF_STOCK
 
 
 class ItemData:
@@ -133,3 +149,7 @@ class ItemData:
         self.currency = currency
         self.inventory = inventory
         self.options = options
+
+    @property
+    def total_price(self):
+        return self.price
