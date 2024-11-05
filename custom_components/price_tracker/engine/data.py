@@ -68,29 +68,32 @@ class DeliveryData:
 
 
 class ItemUnitData:
-    def __init__(self, price: float = 0.0, unit_type: ItemUnitType = ItemUnitType.PIECE, unit: float = 1):
+    def __init__(self, price: float, unit_type: ItemUnitType = ItemUnitType.PIECE, unit: float = 1):
         self.unit_type = unit_type
         self.unit = unit
         self.price = price
 
-    def unitType(self):
-        if self.unit_type == ItemUnitType.KG:
-            return ItemUnitType.G
-        elif self.unit_type == ItemUnitType.L:
-            return ItemUnitType.ML
-        else:
-            return self.unit_type
+        if unit_type == ItemUnitType.KG:
+            self.unit_type = ItemUnitType.G
+            self.price = price / 1000
+        elif unit_type == ItemUnitType.L:
+            self.unit_type = ItemUnitType.ML
+            self.price = price / 1000
+        resize = ItemUnitData.toOneQuantity(unit=self.unit, price=self.price)
+        self.price = resize['price']
+        self.unit = resize['unit']
 
-    def unit(self):
-        return self.unit
+    @staticmethod
+    def toOneQuantity(unit: float, price: float):
+        if unit <= 1:
+            return {
+                'unit': unit,
+                'price': price
+            }
+        elif unit < 10:
+            return ItemUnitData.toOneQuantity(unit - 1, (price / unit) * (unit - 1))
 
-    def unitPrice(self):
-        if self.unit_type == ItemUnitType.KG:
-            return ItemUnitType.G
-        elif self.unit_type == ItemUnitType.L:
-            return ItemUnitType.ML
-        else:
-            return self.price
+        return ItemUnitData.toOneQuantity(unit / 10, price / 10)
 
 
 class ItemOptionData:

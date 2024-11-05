@@ -38,15 +38,29 @@ CONF_TYPE = "type"
 CONF_ITEM_URL = "item_url"
 CONF_ITEM_REFRESH_INTERVAL = "item_refresh_interval"
 CONF_ITEM_MANAGEMENT_CATEGORY = "item_management_category"
-CONF_ITEM_PRICE_CHANGE_REMAIN_PERIOD = "item_price_change_remain_period"
+CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR = "item_price_change_interval_hour"
+CONF_ITEM_UNIT_TYPE="item_unit_type"
+CONF_ITEM_UNIT_PRICE="item_unit_price"
+CONF_ITEM_UNIT="item_unit"
+CONF_ITEM_UNIT_TYPE_KIND={
+ 'G': 'g',
+ 'KG': 'kg',
+ 'L': 'l',
+ 'ml': 'mL',
+ 'piece': 'piece',
+}
 CONF_TARGET = "target"
 CONF_DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_TYPE, default=None): vol.In(_KIND)
 })
 CONF_OPTION_DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_ITEM_URL, default=None): cv.string,
-    vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY, default=None): cv.string,
-    vol.Required(CONF_ITEM_REFRESH_INTERVAL, default=10): cv.positive_int
+    vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY, default=''): cv.string,
+    vol.Optional(CONF_ITEM_UNIT_TYPE, default='piece'): vol.In(CONF_ITEM_UNIT_TYPE_KIND),
+    vol.Optional(CONF_ITEM_UNIT_PRICE, default=0): cv.positive_int,
+    vol.Optional(CONF_ITEM_UNIT, default=1): cv.positive_int,
+    vol.Required(CONF_ITEM_REFRESH_INTERVAL, default=10): cv.positive_int,
+    vol.Required(CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, default=24): cv.positive_int,
 })
 
 REQUEST_DEFAULT_HEADERS = {
