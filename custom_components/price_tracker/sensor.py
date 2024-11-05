@@ -23,10 +23,11 @@ async def async_setup_entry(
     for target in config[CONF_TARGET]:
         try:
             sensor = PriceTrackerSensor(
-                hass,
-                config[CONF_TYPE],
-                target[CONF_ITEM_URL],
-                target[CONF_ITEM_REFRESH_INTERVAL]
+                hass=hass,
+                type=config[CONF_TYPE],
+                item_url=target[CONF_ITEM_URL],
+                refresh=target[CONF_ITEM_REFRESH_INTERVAL],
+                
             )
             sensors.append(sensor)
         except Exception as e:
