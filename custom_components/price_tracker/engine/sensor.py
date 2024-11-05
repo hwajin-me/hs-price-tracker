@@ -29,6 +29,8 @@ class PriceTrackerSensor(Entity):
     _price_change_status: ItemPriceChangeStatus = ItemPriceChangeStatus.NO_CHANGE
     _price_changed_at: datetime = None
     _price_change_period: int = 24
+    _price_change_amount: float = 0.0
+    _updated_at: datetime = None
 
     def __init__(self, hass, type: str, item_url: str, refresh: int, management_category: str = None, price_change_period: int = 24):
         super().__init__()
@@ -69,13 +71,23 @@ class PriceTrackerSensor(Entity):
         Timer(self._refresh_period, self.refreshTimer).start()
 
     async def load(self):
+        # Check last updated at 
+        if self._updated_at is not None:
+            if (self._updated_at + timedelta(minutes=self._refresh_period)) > datetime.now():
+                return None
+
         if self._data is not None:
             self._data_previous = self._data
         self._data = await self._engine.load()
 
-        if self._data.total_price != self._data_previous.total_price and (self._price_changed_at is None or (self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
+        if self._data_previous is not None and self._data.total_price != self._data_previous.total_price and (self._price_changed_at is None or (self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
             self._price_change_status = ItemPriceChangeStatus.INC_PRICE if self._data.total_price > self._data_previous.total_price else ItemPriceChangeStatus.DEC_PRICE
             self._price_changed_at = datetime.now()
+            self._price_change_amount = self._data.total_price - self._data_previous.total_price
+        elif self._data_previous is None:
+            self._price_change_status = ItemPriceChangeStatus.NO_CHANGE
+            self._price_changed_at = datetime.now()
+            self._price_change_amount = 0.0
 
     @property
     def unique_id(self):
@@ -152,4 +164,5 @@ class PriceTrackerSensor(Entity):
 
     async def async_update(self):
         """Update the state."""
-        _LOGGER.debug(self.__dict__)
+        _LOGGER.debug("Async update {}".format(self._item_url))
+        await self.load()
