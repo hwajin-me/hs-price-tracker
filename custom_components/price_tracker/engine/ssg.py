@@ -7,6 +7,7 @@ import aiohttp
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.engine.data import ItemData, InventoryStatus, ItemUnitData, ItemUnitType
 from custom_components.price_tracker.engine.engine import PriceEngine
+from custom_components.price_tracker.utils import parseNumber
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,14 +41,14 @@ class SsgEngine(PriceEngine):
                         d = j['data']['item']
 
                         if 'sellUnitPrc' in d['price']:
-                            unitData = re.search("^(?P<unit>[\d\,]+)(?P<type>[\w]+) 당 : (?P<price>[\d\,]+)원$")
+                            unit_data = re.search("^(?P<unit>[\d\,]+)(?P<type>[\w]+) 당 : (?P<price>[\d\,]+)원$", d['price']['sellUnitPrc'])
 
-                            if unitData is not None:
-                                unitParse = unitData.groupdict()
+                            if unit_data is not None:
+                                unitParse = unit_data.groupdict()
                                 unit = ItemUnitData(
-                                    price=float(unitParse['price']),
+                                    price=parseNumber(unitParse['price']),
                                     unit_type=ItemUnitType.of(unitParse['type']),
-                                    unit=float(unitParse['unit'])
+                                    unit=parseNumber(unitParse['unit'])
                                 )
                             else:
                                 unit = ItemUnitData(float(d['price']['sellprc']))
@@ -57,7 +58,7 @@ class SsgEngine(PriceEngine):
                         return ItemData(
                             id=self.product_id,
                             name=d['itemNm'],
-                            price=float(d['price']['sellprc']),
+                            price=parseNumber(d['price']['sellprc']),
                             description='',
                             url=_ITEM_LINK.format(
                                 self.product_id,

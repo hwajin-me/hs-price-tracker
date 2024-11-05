@@ -82,17 +82,17 @@ class ItemUnitData:
         resize = ItemUnitData.toOneQuantity(unit=self.unit, price=self.price)
         self.price = resize['price']
         self.unit = resize['unit']
-    
+
     @staticmethod
     def toOneQuantity(unit: float, price: float):
-        if int(unit) <= 1:
+        if unit <= 1:
             return {
                 'unit': unit,
                 'price': price
             }
-        elif int(unit) < 10:
-            ItemUnitData.toOneQuantity(unit - 1, (price / unit) * (unit - 1))
-        
+        elif unit < 10:
+            return ItemUnitData.toOneQuantity(unit - 1, (price / unit) * (unit - 1))
+
         return ItemUnitData.toOneQuantity(unit / 10, price / 10)
 
 
