@@ -97,10 +97,17 @@ class ItemUnitData:
 
 
 class ItemOptionData:
-    def __init__(self, id: any, name: str, price: float):
+    def __init__(self, id: any, name: str, price: float, inventory: int = None):
         self.id = id
         self.name = name
         self.price = price
+        if inventory is not None:
+            if inventory > 10:
+                self.inventory = InventoryStatus.IN_STOCK
+            elif inventory > 0:
+                self.inventory = InventoryStatus.ALMOST_SOLD_OUT
+            else:
+                self.inventory = InventoryStatus.OUT_OF_STOCK
 
 
 class ItemData:

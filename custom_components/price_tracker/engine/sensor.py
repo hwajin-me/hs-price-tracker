@@ -173,6 +173,16 @@ class PriceTrackerSensor(Entity):
                 'type': self._data.delivery.type.value
             }
 
+        if self._data.options is not None:
+            data['item_options'] = []
+            for option in self._data.options:
+                data['item_options'].append({
+                    'id': option.id,
+                    'name': option.name,
+                    'price': option.price,
+                    'inventory': option.inventory
+                })
+
         return data
 
     async def async_update(self):
