@@ -8,7 +8,7 @@ from datetime import timedelta, datetime
 
 from custom_components.price_tracker.const import ENTITY_ID_FORMAT
 from custom_components.price_tracker.engine.coupang import CoupangEngine
-from custom_components.price_tracker.engine.data import ItemPriceChangeStatus, ItemData
+from custom_components.price_tracker.engine.data import ItemPriceChangeStatus, ItemData, ItemUnitData
 from custom_components.price_tracker.engine.engine import PriceEngine
 from custom_components.price_tracker.engine.idus import IdusEngine
 from custom_components.price_tracker.engine.kurly import KurlyEngine
@@ -31,8 +31,9 @@ class PriceTrackerSensor(Entity):
     _price_change_period: int = 24
     _price_change_amount: float = 0.0
     _updated_at: datetime = None
+    _unit: ItemUnitData = None
 
-    def __init__(self, hass, type: str, item_url: str, refresh: int, management_category: str = None, price_change_period: int = 24):
+    def __init__(self, hass, type: str, item_url: str, refresh: int, management_category: str = None, price_change_period: int = 24, unit: ItemUnitData = None):
         super().__init__()
 
         self.hass = hass
@@ -60,6 +61,7 @@ class PriceTrackerSensor(Entity):
         self._loop = asyncio.get_event_loop()
         self._refresh_period = refresh * 60
         self._price_change_period = price_change_period
+        self._unit = unit
 
         self.entity_id = ENTITY_ID_FORMAT.format(self._type, self._id)
 
@@ -78,7 +80,11 @@ class PriceTrackerSensor(Entity):
 
         if self._data is not None:
             self._data_previous = self._data
+
         self._data = await self._engine.load()
+
+        if self._data is None:
+            return
 
         if self._data_previous is not None and self._data.total_price != self._data_previous.total_price and (self._price_changed_at is None or (self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
             self._price_change_status = ItemPriceChangeStatus.INC_PRICE if self._data.total_price > self._data_previous.total_price else ItemPriceChangeStatus.DEC_PRICE
@@ -149,7 +155,11 @@ class PriceTrackerSensor(Entity):
             'price_changed_at': self._price_changed_at
         }
 
-        if self._data.unit is not None:
+        if self._unit is not None:
+            data['unit_type'] = self._unit.unit_type.value
+            data['unit_price'] = self._unit.price
+            data['unit_value'] = self._unit.unit
+        elif self._data.unit is not None:
             data['unit_type'] = self._data.unit.unit_type.value
             data['unit_price'] = self._data.unit.price
             data['unit_value'] = self._data.unit.unit
