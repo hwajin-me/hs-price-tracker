@@ -1,16 +1,11 @@
+import json
 import logging
 from copy import deepcopy
 from typing import Any, Dict, Optional
 
 import aiohttp
-import json
-import hashlib
-from custom_components.price_tracker.utils import findItem, findValueOrDefault
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
-import homeassistant.helpers.config_validation as cv
-
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import (
@@ -18,10 +13,12 @@ from homeassistant.helpers import (
 )
 from homeassistant.helpers import selector
 
-from .const import CONF_GS_NAVER_LOGIN_CODE, CONF_GS_NAVER_LOGIN_FLOW_2_URL, CONF_ITEM_REFRESH_INTERVAL, CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
-from .const import CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, CONF_ITEM_REFRESH_INTERVAL, CONF_ITEM_UNIT, CONF_ITEM_UNIT_PRICE, CONF_ITEM_UNIT_TYPE, CONF_ITEM_UNIT_TYPE_KIND, CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
+from custom_components.price_tracker.utils import findItem, findValueOrDefault
+from .const import CONF_GS_NAVER_LOGIN_CODE, CONF_GS_NAVER_LOGIN_FLOW_2_URL, CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, \
+    CONF_ITEM_REFRESH_INTERVAL, CONF_ITEM_UNIT, CONF_ITEM_UNIT_PRICE, CONF_ITEM_UNIT_TYPE, CONF_ITEM_UNIT_TYPE_KIND, \
+    CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
     CONF_OPTION_MODIFY, CONF_OPTION_SELECT, CONF_OPTIONS, CONF_TARGET, DOMAIN, _KIND, CONF_TYPE, CONF_DATA_SCHEMA, \
-    CONF_OPTION_DATA_SCHEMA, CONF_ITEM_URL, CONF_ITEM_MANAGEMENT_CATEGORY, CONF_GS_NAVER_LOGIN_FLOW_1_URL
+    CONF_OPTION_DATA_SCHEMA, CONF_ITEM_URL, CONF_ITEM_MANAGEMENT_CATEGORY
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,14 +52,13 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             """Check if the provided credentials are valid."""
             async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                async with session.get(url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(user_input[CONF_GS_NAVER_LOGIN_CODE])) as response:
+                async with session.get(
+                        url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(user_input[CONF_GS_NAVER_LOGIN_CODE])) as response:
                     result = await response.read()
 
                     if response.status == 200:
                         j = json.loads(result)
                         access_token = j['accessToken']
-
-
 
         return self.async_show_form(
             step_id="gs_login", data_schema=vol.Schema({
@@ -117,7 +113,9 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
 
                 if user_input.get(CONF_OPTION_DELETE):
                     hass.async_remove(entity_id=entity_id)
-                    return self.async_create_entry(title=DOMAIN, data={CONF_TARGET: list(filter(lambda x : entity.original_name != x[CONF_ITEM_URL], self.config_entry.options[CONF_TARGET]))})
+                    return self.async_create_entry(title=DOMAIN, data={CONF_TARGET: list(
+                        filter(lambda x: entity.original_name != x[CONF_ITEM_URL],
+                               self.config_entry.options[CONF_TARGET]))})
                 else:
 
                     return await self.async_step_entity(user_input={
@@ -145,18 +143,24 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_entity(self, user_input: dict = None):
 
         if user_input is not None and CONF_OPTION_MODIFY in user_input:
-            item = findItem(self.config_entry.options[CONF_TARGET], CONF_ITEM_URL, user_input[CONF_OPTION_MODIFY].original_name)
+            item = findItem(self.config_entry.options[CONF_TARGET], CONF_ITEM_URL,
+                            user_input[CONF_OPTION_MODIFY].original_name)
 
             if item is None:
                 raise ("Not found")
 
             return self.async_show_form(step_id="entity", data_schema=vol.Schema({
                 vol.Required(CONF_ITEM_URL, default=item[CONF_ITEM_URL]): cv.string,
-                vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY, default=findValueOrDefault(item, CONF_ITEM_MANAGEMENT_CATEGORY, '')): cv.string,
-                vol.Optional(CONF_ITEM_UNIT_TYPE, default=findValueOrDefault(item, CONF_ITEM_UNIT_TYPE, 'piece')): vol.In(CONF_ITEM_UNIT_TYPE_KIND),
-                vol.Optional(CONF_ITEM_UNIT_PRICE, default=findValueOrDefault(item, CONF_ITEM_UNIT_PRICE, 0)): cv.positive_int,
+                vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY,
+                             default=findValueOrDefault(item, CONF_ITEM_MANAGEMENT_CATEGORY, '')): cv.string,
+                vol.Optional(CONF_ITEM_UNIT_TYPE,
+                             default=findValueOrDefault(item, CONF_ITEM_UNIT_TYPE, 'piece')): vol.In(
+                    CONF_ITEM_UNIT_TYPE_KIND),
+                vol.Optional(CONF_ITEM_UNIT_PRICE,
+                             default=findValueOrDefault(item, CONF_ITEM_UNIT_PRICE, 0)): cv.positive_int,
                 vol.Optional(CONF_ITEM_UNIT, default=findValueOrDefault(item, CONF_ITEM_UNIT, 1)): cv.positive_int,
-                vol.Required(CONF_ITEM_REFRESH_INTERVAL, default=findValueOrDefault(item    , CONF_ITEM_REFRESH_INTERVAL, 10)): cv.positive_int,
+                vol.Required(CONF_ITEM_REFRESH_INTERVAL,
+                             default=findValueOrDefault(item, CONF_ITEM_REFRESH_INTERVAL, 10)): cv.positive_int,
                 vol.Required(CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, default=24): cv.positive_int,
             }), errors={})
 
@@ -167,12 +171,18 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
                     data.remove(item)
             data.append({
                 CONF_ITEM_URL: user_input[CONF_ITEM_URL],
-                CONF_ITEM_MANAGEMENT_CATEGORY: user_input[CONF_ITEM_MANAGEMENT_CATEGORY] if CONF_ITEM_MANAGEMENT_CATEGORY in user_input else None,
+                CONF_ITEM_MANAGEMENT_CATEGORY: user_input[
+                    CONF_ITEM_MANAGEMENT_CATEGORY] if CONF_ITEM_MANAGEMENT_CATEGORY in user_input else None,
                 CONF_ITEM_UNIT_TYPE: user_input[CONF_ITEM_UNIT_TYPE] if CONF_ITEM_UNIT_TYPE in user_input else 'piece',
-                CONF_ITEM_UNIT_PRICE: user_input[CONF_ITEM_UNIT_PRICE] if CONF_ITEM_UNIT_PRICE in user_input and user_input[CONF_ITEM_UNIT_PRICE] != 0 else 0,
-                CONF_ITEM_UNIT: user_input[CONF_ITEM_UNIT] if CONF_ITEM_UNIT in user_input and user_input[CONF_ITEM_UNIT] != 0 else 0,
+                CONF_ITEM_UNIT_PRICE: user_input[CONF_ITEM_UNIT_PRICE] if CONF_ITEM_UNIT_PRICE in user_input and
+                                                                          user_input[CONF_ITEM_UNIT_PRICE] != 0 else 0,
+                CONF_ITEM_UNIT: user_input[CONF_ITEM_UNIT] if CONF_ITEM_UNIT in user_input and user_input[
+                    CONF_ITEM_UNIT] != 0 else 0,
                 CONF_ITEM_REFRESH_INTERVAL: user_input[CONF_ITEM_REFRESH_INTERVAL],
-                CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR: user_input[CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR] if CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR in user_input and user_input[CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR] >= 1 else 24,
+                CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR: user_input[
+                    CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR] if CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR in user_input and
+                                                             user_input[
+                                                                 CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR] >= 1 else 24,
             })
             return self.async_create_entry(title=DOMAIN, data={CONF_TARGET: data})
 
