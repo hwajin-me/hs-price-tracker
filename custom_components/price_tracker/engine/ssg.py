@@ -5,7 +5,7 @@ import re
 import aiohttp
 
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.engine.data import ItemData, InventoryStatus
+from custom_components.price_tracker.engine.data import ItemData, InventoryStatus, ItemUnitData, ItemUnitType
 from custom_components.price_tracker.engine.engine import PriceEngine
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,6 +39,21 @@ class SsgEngine(PriceEngine):
 
                         d = j['data']['item']
 
+                        if 'sellUnitPrc' in d['price']:
+                            unitData = re.search("^(?P<unit>[\d\,]+)(?P<type>[\w]+) 당 : (?P<price>[\d\,]+)원$")
+
+                            if unitData is not None:
+                                unitParse = unitData.groupdict()
+                                unit = ItemUnitData(
+                                    price=float(unitParse['price']),
+                                    unit_type=ItemUnitType.of(unitParse['type']),
+                                    unit=float(unitParse['unit'])
+                                )
+                            else:
+                                unit = ItemUnitData(float(d['price']['sellprc']))
+                        else:
+                            unit = ItemUnitData(float(d['price']['sellprc']))
+
                         return ItemData(
                             id=self.product_id,
                             name=d['itemNm'],
@@ -51,7 +66,8 @@ class SsgEngine(PriceEngine):
                             image=d['uitemImgList'][0]['imgUrl'] if len(d['uitemImgList']) > 0 else None,
                             category=d['ctgNm'],
                             inventory=InventoryStatus.OUT_OF_STOCK if d['itemBuyInfo'][
-                                                                          'soldOut'] == 'Y' else InventoryStatus.IN_STOCK
+                                                                          'soldOut'] == 'Y' else InventoryStatus.IN_STOCK,
+                            unit=unit
                         )
                     else:
                         _LOGGER.error("SSG Response Error", response)

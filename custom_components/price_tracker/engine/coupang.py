@@ -45,7 +45,6 @@ class CoupangEngine(PriceEngine):
                     if soup is not None:
                         data = soup.find("script", {"id": "__NEXT_DATA__"}).get_text()
                         j = json.loads(data)
-                        _LOGGER.debug("Coupang Response: %s", j)
 
                         pageAtf = findItem(j['props']['pageProps']['pageList'], 'page', 'PAGE_ATF')
 
@@ -111,7 +110,7 @@ class CoupangEngine(PriceEngine):
             _LOGGER.exception("Coupang Parse Error")
 
     def id(self) -> str:
-        return "{}_{}".format(self.product_id, self.vendor_item_id)
+        return "{}_{}_{}".format(self.product_id, self.item_id, self.vendor_item_id)
 
     @staticmethod
     def getId(item_url: str):
