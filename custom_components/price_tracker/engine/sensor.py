@@ -61,6 +61,7 @@ class PriceTrackerSensor(Entity):
 
         self.entity_id = ENTITY_ID_FORMAT.format(self._type, self._id)
 
+        self.load()
         Timer(1, self.refreshTimer).start()
 
     def refreshTimer(self):
