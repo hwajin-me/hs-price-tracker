@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from datetime import datetime
 
 import aiohttp
 import requests
@@ -45,7 +46,7 @@ class CoupangEngine(PriceEngine):
                     if soup is not None:
                         data = soup.find("script", {"id": "__NEXT_DATA__"}).get_text()
                         j = json.loads(data)
-                        _LOGGER.debug("Coupang Response: %s", j)
+                        _LOGGER.debug("Coupang Fetched at {}".format(datetime.now()))
 
                         pageAtf = findItem(j['props']['pageProps']['pageList'], 'page', 'PAGE_ATF')
 
@@ -80,16 +81,18 @@ class CoupangEngine(PriceEngine):
                         else:
                             unit_price = ItemUnitData(price=price)
 
-                        inventory = findItem(pageAtf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY')['data'] if findItem(pageAtf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY') is not None else None 
+                        inventory = findItem(pageAtf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY')['data'] if findItem(pageAtf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY') is not None else None
                         soldOut = j['props']['pageProps']['properties']['itemDetail']['soldOut']
 
-                        if 'limitMessage' not in inventory and soldOut == False:
+                        if (inventory is None or 'limitMessage' not in inventory) and soldOut == False:
                             stock = InventoryStatus.IN_STOCK
-                        elif 'limitMessage' in inventory:
+                        elif soldOut == False and inventory is None:
+                            stock = InventoryStatus.IN_STOCK
+                        elif soldOut == False and 'limitMessage' in inventory:
                             stock = InventoryStatus.ALMOST_SOLD_OUT
                         else:
                             stock = InventoryStatus.OUT_OF_STOCK
-                       
+
                         return ItemData(
                             id="{}_{}_{}".format(self.product_id, self.item_id, self.vendor_item_id),
                             price=price,
