@@ -9,6 +9,13 @@
         "data": {
           "type": "E-Commerce Types."
         }
+      },
+      "gs_login": {
+        "title": "Add GS THE FRESH Provider",
+        "description": "Open https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs and copy the 'Code' query string from the redirected page.",
+        "data": {
+          "item_gs_naver_login_code": "Login code"
+        }
       }
     },
     "error": {
