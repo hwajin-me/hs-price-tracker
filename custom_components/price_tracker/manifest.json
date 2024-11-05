@@ -5,10 +5,10 @@
     "@hwajin-me"
   ],
   "config_flow": true,
+  "dependencies": [],
   "documentation": "https://github.com/hwajin-me/hs-price-tracker",
-  "issue_tracker": "https://github.com/hwajin-me/hs-price-tracker/issues",
-  "version": "0.2.0",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/hwajin-me/hs-price-tracker/issues",
   "requirements": [
     "colorlog==6.8.2",
     "ruff==0.7.1",
@@ -16,5 +16,5 @@
     "aiohttp==3.10.8",
     "fake-useragent==1.5.1"
   ],
-  "dependencies": []
+  "version": "0.2.0"
 }
