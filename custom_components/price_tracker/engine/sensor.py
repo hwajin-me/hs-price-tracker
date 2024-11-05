@@ -14,6 +14,7 @@ from custom_components.price_tracker.engine.idus import IdusEngine
 from custom_components.price_tracker.engine.kurly import KurlyEngine
 from custom_components.price_tracker.engine.naver_smartstore import SmartstoreEngine
 from custom_components.price_tracker.engine.ncnc import NcncEngine
+from custom_components.price_tracker.engine.oasis.oasis import OasisEngine
 from custom_components.price_tracker.engine.oliveyoung import OliveyoungEngine
 from custom_components.price_tracker.engine.ssg import SsgEngine
 from custom_components.price_tracker.exception import UnsupportedError
@@ -36,7 +37,7 @@ class PriceTrackerSensor(Entity):
         super().__init__()
 
         self.hass = hass
- 
+
         if type == 'coupang':
             self._engine = CoupangEngine(item_url)
         elif type == 'ssg':
@@ -49,6 +50,8 @@ class PriceTrackerSensor(Entity):
             self._engine = NcncEngine(item_url)
         elif type == 'oliveyoung':
             self._engine = OliveyoungEngine(item_url)
+        elif type =='oasis':
+            self._engine = OasisEngine(item_url)
         elif type == 'idus':
             self._engine = IdusEngine(item_url)
         else:
@@ -71,7 +74,7 @@ class PriceTrackerSensor(Entity):
         Timer(self._refresh_period, self.refreshTimer).start()
 
     async def load(self):
-        # Check last updated at 
+        # Check last updated at
         if self._updated_at is not None:
             if (self._updated_at + timedelta(minutes=self._refresh_period)) > datetime.now():
                 return None
