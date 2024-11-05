@@ -17,6 +17,7 @@ _KIND = {
     'kurly': '마켓컬리',
     'oliveyoung': '올리브영',
     'ncnc': '니콘내콘',
+    'oasis': '오아시스',
     'amazon_jp': 'Amazom (日本)',
     'rakuten': '楽天',
     'yodobashi': 'ヨドバシカメラ',
