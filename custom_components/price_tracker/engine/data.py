@@ -62,7 +62,7 @@ class DeliveryData:
 
 
 class ItemUnitData:
-    def __init__(self, price: float, unit_type: ItemUnitType = ItemUnitType.PIECE, unit: float = 1):
+    def __init__(self, price: float = 0.0, unit_type: ItemUnitType = ItemUnitType.PIECE, unit: float = 1):
         self.unit_type = unit_type
         self.unit = unit
         self.price = price
