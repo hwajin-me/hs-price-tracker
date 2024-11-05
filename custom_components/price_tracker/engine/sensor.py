@@ -36,7 +36,7 @@ class PriceTrackerSensor(Entity):
         super().__init__()
 
         self.hass = hass
- 
+
         if type == 'coupang':
             self._engine = CoupangEngine(item_url)
         elif type == 'ssg':
@@ -71,7 +71,7 @@ class PriceTrackerSensor(Entity):
         Timer(self._refresh_period, self.refreshTimer).start()
 
     async def load(self):
-        # Check last updated at 
+        # Check last updated at
         if self._updated_at is not None:
             if (self._updated_at + timedelta(minutes=self._refresh_period)) > datetime.now():
                 return None
@@ -159,6 +159,16 @@ class PriceTrackerSensor(Entity):
                 'price': self._data.delivery.price,
                 'type': self._data.delivery.type.value
             }
+
+        if self._data.options is not None:
+            data['item_options'] = []
+            for option in self._data.options:
+                data['item_options'].append({
+                    'id': option.id,
+                    'name': option.name,
+                    'price': option.price,
+                    'inventory': option.inventory
+                })
 
         return data
 
