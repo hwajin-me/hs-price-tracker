@@ -6,6 +6,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
+    device_registry as dr,
     entity_registry as er,
 )
 
@@ -32,6 +33,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for e in entities:
         entity_registry.async_remove(e.entity_id)
 
+    device_registry = dr.async_get(hass)
+    devices = dr.async_entries_for_config_entry(
+        device_registry, entry.entry_id)
+    
+    _LOGGER.debug(devices)
+
+    for d in devices:
+       device_registry.async_update_device(
+           d.id, remove_config_entry_id=entry.entry_id)
+       
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True

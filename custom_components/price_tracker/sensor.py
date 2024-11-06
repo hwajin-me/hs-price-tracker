@@ -1,7 +1,9 @@
 import logging
 
+from custom_components.price_tracker.device import Device
 from custom_components.price_tracker.engine.data import ItemUnitData, ItemUnitType
-from custom_components.price_tracker.utils import findItem, findValueOrDefault
+from custom_components.price_tracker.engine.device import createDevice
+from custom_components.price_tracker.utils import findValueOrDefault
 from homeassistant import config_entries, core
 
 from custom_components.price_tracker.engine.sensor import PriceTrackerSensor
@@ -21,11 +23,20 @@ async def async_setup_entry(
     if config_entry.options:
         config.update(config_entry.options)
 
+    if CONF_DEVICE in config:
+        device = createDevice(
+            type=config[CONF_TYPE],
+            attributes= config[CONF_DEVICE]
+        )
+    else:
+        device = None
+
     sensors = []
     for target in config[CONF_TARGET]:
         try:
             sensor = PriceTrackerSensor(
                 hass=hass,
+                device=device,
                 type=config[CONF_TYPE],
                 item_url=target[CONF_ITEM_URL],
                 refresh=target[CONF_ITEM_REFRESH_INTERVAL],
@@ -44,6 +55,9 @@ async def async_setup_entry(
         except Exception as e:
             hass.data[DOMAIN][config_entry.entry_id][CONF_TARGET].remove(target)
             raise e
+        
+    if device is not None:
+        sensors.append(device)
 
     async_add_entities(sensors, update_before_add=True)
 

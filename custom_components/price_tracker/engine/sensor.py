@@ -2,6 +2,7 @@ import asyncio
 from threading import Timer
 
 from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import SensorEntity
 
 import logging
 from datetime import timedelta, datetime
@@ -22,7 +23,7 @@ from custom_components.price_tracker.exception import UnsupportedError
 _LOGGER = logging.getLogger(__name__)
 
 
-class PriceTrackerSensor(Entity):
+class PriceTrackerSensor(SensorEntity):
     _engine: PriceEngine
     _attr_has_entity_name = True
     _data: ItemData = None
@@ -34,9 +35,9 @@ class PriceTrackerSensor(Entity):
     _updated_at: datetime = None
     _unit: ItemUnitData = None
 
-    def __init__(self, hass, type: str, item_url: str, refresh: int, management_category: str = None, price_change_period: int = 24, unit: ItemUnitData = None):
+    def __init__(self, hass, type: str, item_url: str, refresh: int, device = None, management_category: str = None, price_change_period: int = 24, unit: ItemUnitData = None):
         super().__init__()
-
+        self._device = device
         self.hass = hass
 
         if type == 'coupang':
@@ -61,34 +62,26 @@ class PriceTrackerSensor(Entity):
         self._type = type
         self._item_url = item_url
         self._id = self._engine.id()
-        self._loop = asyncio.get_event_loop()
-        self._refresh_period = refresh * 60
+        self._refresh_period = refresh
         self._price_change_period = price_change_period
         self._unit = unit
-
         self.entity_id = ENTITY_ID_FORMAT.format(self._type, self._id)
-
-        self.load()
-        Timer(1, self.refreshTimer).start()
-
-    def refreshTimer(self):
-        self._loop.create_task(self.load())
-        Timer(self._refresh_period, self.refreshTimer).start()
 
     async def load(self):
         # Check last updated at
         if self._updated_at is not None:
             if (self._updated_at + timedelta(minutes=self._refresh_period)) > datetime.now():
+                _LOGGER.debug("Skip update cause refresh period. {} - {} ({} / {}).".format(self._type, self._id, self._updated_at, self._refresh_period))
                 return None
 
         if self._data is not None:
             self._data_previous = self._data
-
         self._data = await self._engine.load()
 
         if self._data is None:
             return
 
+        self._updated_at = datetime.now()
         if self._data_previous is not None and self._data.total_price != self._data_previous.total_price and (self._price_changed_at is None or (self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
             self._price_change_status = ItemPriceChangeStatus.INC_PRICE if self._data.total_price > self._data_previous.total_price else ItemPriceChangeStatus.DEC_PRICE
             self._price_changed_at = datetime.now()
@@ -186,6 +179,4 @@ class PriceTrackerSensor(Entity):
         return data
 
     async def async_update(self):
-        """Update the state."""
-        _LOGGER.debug("Async update {}".format(self._item_url))
         await self.load()

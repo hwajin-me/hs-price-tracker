@@ -1,9 +1,9 @@
-import json
 import logging
 from copy import deepcopy
 from typing import Any, Dict, Optional
 
-import aiohttp
+from datetime import datetime
+from custom_components.price_tracker.engine.gsthefresh.gsthefresh import GsTheFreshLogin
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
@@ -13,8 +13,8 @@ from homeassistant.helpers import (
 )
 from homeassistant.helpers import selector
 
-from custom_components.price_tracker.utils import findItem, findValueOrDefault
-from .const import CONF_GS_NAVER_LOGIN_CODE, CONF_GS_NAVER_LOGIN_FLOW_2_URL, CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, \
+from custom_components.price_tracker.utils import findItem, findValueOrDefault, md5
+from .const import CONF_DEVICE, CONF_GS_NAVER_LOGIN_CODE, CONF_GS_NAVER_LOGIN_FLOW_2_URL, CONF_GS_STORE_CODE, CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, \
     CONF_ITEM_REFRESH_INTERVAL, CONF_ITEM_UNIT, CONF_ITEM_UNIT_PRICE, CONF_ITEM_UNIT_TYPE, CONF_ITEM_UNIT_TYPE_KIND, \
     CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
     CONF_OPTION_MODIFY, CONF_OPTION_SELECT, CONF_OPTIONS, CONF_TARGET, DOMAIN, _KIND, CONF_TYPE, CONF_DATA_SCHEMA, \
@@ -37,7 +37,7 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             return self.async_create_entry(title='{}'.format(_KIND[user_input[CONF_TYPE]]),
-                                           options={CONF_TARGET: [], CONF_TYPE: user_input[CONF_TYPE]})
+                                           data={CONF_TARGET: [], CONF_TYPE: user_input[CONF_TYPE]})
 
         return self.async_show_form(
             step_id="user", data_schema=CONF_DATA_SCHEMA, errors=errors or {}
@@ -47,22 +47,22 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return await self.async_step_user(import_info)
 
     async def async_step_gs_login(self, user_input=None):
-        _LOGGER.debug("async_step_gs_login")
 
+        type = 'gsthefresh'
         if user_input is not None:
-            """Check if the provided credentials are valid."""
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                async with session.get(
-                        url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(user_input[CONF_GS_NAVER_LOGIN_CODE])) as response:
-                    result = await response.read()
+            await self.async_set_unique_id('price-tracker-{}'.format(type))
+            self._abort_if_unique_id_configured()
 
-                    if response.status == 200:
-                        j = json.loads(result)
-                        access_token = j['accessToken']
+            device_id = md5("gsthefresh-{}".format(datetime.now()))
+            response = await GsTheFreshLogin().naver_login(code=user_input[CONF_GS_NAVER_LOGIN_CODE], device_id=device_id)
+
+            return self.async_create_entry(title='{}'.format(_KIND[type]),
+                                           data={CONF_TARGET: [], CONF_TYPE: type, CONF_DEVICE: {**response, 'device_id': device_id}})
 
         return self.async_show_form(
             step_id="gs_login", data_schema=vol.Schema({
                 vol.Required(CONF_GS_NAVER_LOGIN_CODE, default=None): cv.string,
+                vol.Required(CONF_GS_STORE_CODE, default=None): cv.string,
             }), errors={}
         )
 
