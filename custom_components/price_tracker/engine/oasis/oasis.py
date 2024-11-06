@@ -28,6 +28,7 @@ class OasisEngine(PriceEngine):
                                                                                                      "") if soup.find(
             "dd",
             class_='deliverySave') is not None else None
+        delivery = None
         if delivery_price is not None:
             delivery = DeliveryData(
                 price=float(delivery_price.replace(",", "").split("원")[0]),
@@ -36,6 +37,7 @@ class OasisEngine(PriceEngine):
             )
         else: DeliveryData(price = 0, type = DeliveryPayType.UNKNOWN)
 
+        unit = None
         for detail_data in soup.find_all("div", class_='oDetail_info_group2'):
             for dd in detail_data.find_all("dd"):
                 target_for_unit = dd.get_text().replace("\n", "").replace("\t", "")
