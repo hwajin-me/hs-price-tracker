@@ -100,7 +100,7 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict = None) -> dict:
         errors = {}
-
+        _LOGGER.debug(user_input)
         if CONF_DEVICE in self.config_entry.data and len(self.config_entry.data[CONF_DEVICE]) > 0:
             if user_input is None:
                 device_entitites = []
@@ -121,8 +121,16 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
                 elif user_input.get(CONF_OPTION_SELECT) == CONF_OPTION_ADD:
                     return await self.async_step_entity(user_input={CONF_OPTION_DEVICES: user_input.get(CONF_OPTION_DEVICES)})
 
+
         options_schema = vol.Schema(
             {
+                vol.Optional(CONF_OPTION_SELECT): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=CONF_OPTIONS, mode=selector.SelectSelectorMode.LIST,
+                                                  translation_key=CONF_OPTION_SELECT)),
+            }
+        ) if CONF_OPTION_DEVICES not in user_input and user_input[CONF_OPTION_DEVICES] is None else vol.Schema(
+            {
+                vol.Required(CONF_OPTION_DEVICES, default=user_input[CONF_OPTION_DEVICES]): vol.In(user_input[CONF_OPTION_DEVICES]),
                 vol.Optional(CONF_OPTION_SELECT): selector.SelectSelector(
                     selector.SelectSelectorConfig(options=CONF_OPTIONS, mode=selector.SelectSelectorMode.LIST,
                                                   translation_key=CONF_OPTION_SELECT)),
