@@ -180,7 +180,7 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
         )
 
     async def async_step_entity(self, user_input: dict = None):
-
+        _LOGGER.debug(user_input)
         if user_input is not None and CONF_OPTION_MODIFY in user_input:
             item = findItem(self.config_entry.options.get(CONF_TARGET, []), CONF_ITEM_URL,
                             user_input[CONF_OPTION_MODIFY].original_name)
