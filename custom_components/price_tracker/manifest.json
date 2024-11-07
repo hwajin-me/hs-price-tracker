@@ -11,7 +11,7 @@
   "issue_tracker": "https://github.com/hwajin-me/hs-price-tracker/issues",
   "requirements": [
     "colorlog==6.8.2",
-    "ruff==0.7.1",
+    "ruff==0.7.2",
     "beautifulsoup4==4.12.3",
     "aiohttp==3.10.8",
     "fake-useragent==1.5.1",

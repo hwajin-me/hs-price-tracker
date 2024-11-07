@@ -9,5 +9,6 @@ class UnsupportedError(Exception):
 class InvalidError(Exception):
     pass
 
+
 class ApiError(Exception):
     pass

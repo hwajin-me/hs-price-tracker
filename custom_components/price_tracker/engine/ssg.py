@@ -41,7 +41,8 @@ class SsgEngine(PriceEngine):
                         d = j['data']['item']
 
                         if 'sellUnitPrc' in d['price']:
-                            unit_data = re.search("^(?P<unit>[\d\,]+)(?P<type>[\w]+) 당 : (?P<price>[\d\,]+)원$", d['price']['sellUnitPrc'])
+                            unit_data = re.search("^(?P<unit>[\d\,]+)(?P<type>[\w]+) 당 : (?P<price>[\d\,]+)원$",
+                                                  d['price']['sellUnitPrc'])
 
                             if unit_data is not None:
                                 unitParse = unit_data.groupdict()

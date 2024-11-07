@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 
 import aiohttp
 
@@ -29,15 +30,17 @@ class NcncEngine(PriceEngine):
 
                     if response.status == 200:
                         j = json.loads(result)
-
-                        _LOGGER.debug("NCNC Response", j)
+                        _LOGGER.debug("NCNC Fetched at {} - {}", datetime.now(), self.product_id)
 
                         d = j['item']
+
+                        # TODO : Find real item
 
                         return ItemData(
                             id=d['id'],
                             name=d['name'],
-                            price=float(d['conItems'][0]['minSellingPrice']) if len(d['conItems']) else d[
+                            price=float(d['conItems'][0]['minSellingPrice']) if len(d['conItems']) and d['conItems'][
+                                0] else d[
                                 'originalPrice'],
                             description=d['conItems'][0]['info'] if len(d['conItems']) else '',
                             image=d['imageUrl'],

@@ -20,7 +20,7 @@ class OasisEngine(PriceEngine):
         self.product_id = id
 
     async def load(self) -> ItemData:
-        response = await request(_URL.format(self.product_id))
+        response = await request('get', _URL.format(self.product_id))
         soup = BeautifulSoup(response, "html.parser")
         name = soup.find("div", class_='oDetail_info_group_title').find("h1").get_text()
         price = soup.find("div", class_='discountPrice').get_text().replace("원", "")
@@ -35,7 +35,8 @@ class OasisEngine(PriceEngine):
                 type=DeliveryPayType.PAID if "이상" in delivery_price else DeliveryPayType.FREE if float(
                     delivery_price.replace(",", "")) == 0 else DeliveryPayType.PAID
             )
-        else: DeliveryData(price = 0, type = DeliveryPayType.UNKNOWN)
+        else:
+            DeliveryData(price=0, type=DeliveryPayType.UNKNOWN)
 
         unit = None
         for detail_data in soup.find_all("div", class_='oDetail_info_group2'):

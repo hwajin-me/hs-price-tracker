@@ -2,15 +2,17 @@ import hashlib
 import json
 import logging
 import re
+from datetime import datetime
 from typing import Any
+from urllib.parse import unquote
 
 import aiohttp
-import requests
 
 from custom_components.price_tracker.const import CONF_GS_NAVER_LOGIN_FLOW_2_URL, \
     CONF_GS_NAVER_LOGIN_FLOW_3_URL, REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.device import Device
-from custom_components.price_tracker.engine.data import DeliveryData, DeliveryPayType, ItemData
+from custom_components.price_tracker.engine.data import DeliveryData, DeliveryPayType, ItemData, InventoryStatus, \
+    BooleanType
 from custom_components.price_tracker.engine.engine import PriceEngine
 from custom_components.price_tracker.exception import ApiError, InvalidError
 from custom_components.price_tracker.utils import findItem, request
@@ -20,17 +22,12 @@ _REQUEST_HEADERS = {
     "User-Agent": _UA,
     "Accept": "application/json",
     "Content-Type": "application/json; charset=utf-8",
-    "appinfo_app_version": "5.2.54",
-    "appinfo_app_build_number": "1195",
-    "appinfo_os_version": "18.0",
-    "appinfo_model_name": "iPhone15,2",
-    "appinfo_os_type": "ios",
     "appinfo_device_id": "a00000a0fa004cf127333873c60e5b12",
     "device_id": "a00000a0fa004cf127333873c60e5b12"
 }
 _LOGIN_URL = "https://b2c-bff.woodongs.com/api/bff/v2/auth/accountLogin"
 _REAUTH_URL = "https://b2c-apigw.woodongs.com/auth/v1/token/reissue"
-_PRODUCT_URL = "https://b2c-apigw.woodongs.com/supermarket/v1/wdelivery/item/{}"
+_PRODUCT_URL = "https://b2c-apigw.woodongs.com/supermarket/v1/wdelivery/item/{}?pickupItemYn=Y&storeCode={}"
 _ITEM_LINK = "https://woodongs.com/link?view=gsTheFreshDeliveryDetail&orderType=pickup&itemCode={}"
 
 _LOGGER = logging.getLogger(__name__)
@@ -92,7 +89,7 @@ class GsTheFreshLogin:
                 }
 
     async def reauth(self, device_id: str, access_token: str) -> dict[str, Any]:
-        response = await request(_REAUTH_URL,
+        response = await request('post', _REAUTH_URL,
                                  headers={**REQUEST_DEFAULT_HEADERS, **_REQUEST_HEADERS, 'appinfo_device_id': device_id,
                                           'device_id': device_id, 'authorization': 'Bearer {}'.format(access_token)})
 
@@ -109,29 +106,95 @@ class GsTheFreshLogin:
             raise ApiError('GS THE FRESH Login(re-authentication) Error')
 
 
+class GsTheFreshDevice(Device):
+    """"""
+
+    def __init__(self, id: str, device_id: str, access_token: str, refresh_token: str, name: str, number: str,
+                 store: str):
+        super().__init__('gsthefresh', id)
+        self._gs_device_id = device_id
+        self._access_token = access_token
+        self._refresh_token = refresh_token
+        self._name = name
+        self._number = number
+        self._store = store
+        self._state = True
+        self._updated_at = datetime.now()
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def number(self):
+        return self._number
+
+    @property
+    def access_token(self):
+        return self._access_token
+
+    @property
+    def store(self):
+        return self._store
+
+    @property
+    def icon(self):
+        return 'mdi:account'
+
+    @property
+    def headers(self):
+        return {
+            'authorization': 'Bearer {}'.format(self._access_token),
+            'device_id': self._gs_device_id,
+            'appinfo_device_id': self._gs_device_id
+        }
+
+    async def async_update(self):
+        if self._updated_at is None or (datetime.now() - self._updated_at).seconds > (60 * 60):
+            try:
+                self._updated_at = datetime.now()
+
+                data = await GsTheFreshLogin().reauth(self._gs_device_id, self._access_token)
+                self._access_token = data['access_token']
+                self._refresh_token = data['refresh_token']
+                self._name = data['name']
+                self._number = data['number']
+                self._state = True
+                _LOGGER.debug('GS THE FRESH - Device Update Success {}'.format(self._name))
+            except Exception as e:
+                _LOGGER.error('GS THE FRESH - Device Update Error: {}'.format(e))
+                self._state = False
+
+
 class GsTheFreshEngine(PriceEngine):
 
-    def __init__(self, item_url: str, device: Device):
+    def __init__(self, item_url: str, device: GsTheFreshDevice):
         self.item_url = item_url
         self.id = GsTheFreshEngine.getId(item_url)
-        self.device = device
+        self.device: GsTheFreshDevice = device
 
     async def load(self) -> ItemData:
-        result = await request(_PRODUCT_URL.format(self.item_url), headers={**_REQUEST_HEADERS})
+        result = await request('get', _PRODUCT_URL.format(self.id, self.device.store),
+                               headers={**_REQUEST_HEADERS, **self.device.headers})
         response = json.loads(result)
 
         if 'data' not in response or 'weDeliveryItemDetailResultList' not in response['data'] or len(
                 response['data']['weDeliveryItemDetailResultList']) < 1:
             raise ApiError('GS THE FRESH Response error')
 
-        data = response['data']['weDeliveryItemDetailResultList']
+        data = response['data']['weDeliveryItemDetailResultList'][0]
+        _LOGGER.debug(data)
         id = data['itemCode']
         name = data['indicateItemName']
         description = data['itemNotification']
-        quantity = data['stockQuantity']
+        quantity = data['stockQuantity'] if 'stockQuantity' in data else 0
         image = data['weDeliveryItemImageUrl']
-        price = data['normalSalePrice']
-        sold_out = data['soldOutYn']
+        price = data['normalSalePrice'] - data['totalDiscountRateAmount']
+        sold_out = BooleanType.of(data['soldOutYn']).value
         url = _ITEM_LINK.format(id)
 
         delivery_data = response['data']['processingDeliveryAmountResultList']
@@ -144,46 +207,29 @@ class GsTheFreshEngine(PriceEngine):
         else:
             delivery = DeliveryData(price=0, type=DeliveryPayType.FREE)
 
+        inventory = InventoryStatus.IN_STOCK if quantity > 10 else InventoryStatus.OUT_OF_STOCK if sold_out or quantity <= 0 else InventoryStatus.ALMOST_SOLD_OUT
+
         return ItemData(
             id=id,
             name=name,
+            original_price=data['normalSalePrice'],
             price=price,
-            delivery=delivery
+            delivery=delivery,
+            image=image,
+            url=url,
+            description=description,
+            inventory=inventory
         )
 
     def id(self) -> str:
-        return self.id
+        return "{}_{}".format(self.device.store, self.id)
 
     @staticmethod
     def getId(item_url: str):
-        """Get id from short-link"""
-        """https://woodongs.com/link?view=gsTheFreshDeliveryDetail&orderType=pickup&itemCode=8712000018948"""
-        response = requests.get(url=item_url, allow_redirects=False)
-        loc = response.headers['location']
-
-        if loc is None:
-            raise InvalidError('GS THE FRESH Item ID Parse(Request) Error')
-
-        u = re.search(r'itemCode=(?P<product_id>\d+)', loc)
+        u = re.search(r'itemCode=(?P<product_id>\d+)', unquote(item_url))
         g = u.groupdict()
 
         if g is None:
             raise InvalidError('GS THE FRESH Item ID Parse(Regex) Error')
 
         return g['product_id']
-
-
-class GsTheFreshDevice(Device):
-    """"""
-
-    def __init__(self, device_id: str, access_token: str, refresh_token: str, name: str, number: str, store: str):
-        super().__init__('gsthefresh', "{}_{}_{}_{}".format(device_id, name, number, store))
-        self._device_id = device_id
-        self._access_token = access_token
-        self._refresh_token = refresh_token
-        self._name = name
-        self._number = number
-        self._store = store
-
-    async def async_update(self):
-        _LOGGER.debug("GS THE FRESH Device updated")

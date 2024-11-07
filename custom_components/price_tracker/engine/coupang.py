@@ -1,14 +1,15 @@
+import asyncio
 import json
 import logging
 import re
 from datetime import datetime
 
 import requests
-import asyncio
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.engine.data import DeliveryPayType, ItemData, ItemUnitType, ItemUnitData, InventoryStatus, \
+from custom_components.price_tracker.engine.data import DeliveryPayType, ItemData, ItemUnitType, ItemUnitData, \
+    InventoryStatus, \
     DeliveryData
 from custom_components.price_tracker.engine.engine import PriceEngine
 from custom_components.price_tracker.utils import findItem
@@ -27,6 +28,7 @@ _REQUEST_HEADERS = {
     'Cookie': 'PCID=0'
 }
 
+
 class CoupangEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
@@ -38,7 +40,9 @@ class CoupangEngine(PriceEngine):
 
     async def load(self) -> ItemData:
         try:
-            response = await asyncio.to_thread(requests.get, _URL.format(self.product_id, self.item_id, self.vendor_item_id), headers={**REQUEST_DEFAULT_HEADERS, **_REQUEST_HEADERS})
+            response = await asyncio.to_thread(requests.get,
+                                               _URL.format(self.product_id, self.item_id, self.vendor_item_id),
+                                               headers={**REQUEST_DEFAULT_HEADERS, **_REQUEST_HEADERS})
             if response is not None:
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, "html.parser")
@@ -52,19 +56,26 @@ class CoupangEngine(PriceEngine):
                         page_atf = page_atf['widgetList']
 
                         name = findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_PRODUCT_INFO')['data']['title']
-                        price = findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO')['data']['finalPrice']['price']
+                        price = \
+                        findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO')['data']['finalPrice'][
+                            'price']
                         price_info = findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO')['data']
                         delivery_price = price_info['deliveryMessages'] if 'deliveryMessage' in price_info else None
                         delivery_type = DeliveryPayType.PAID
                         if delivery_price is not None:
-                            delivery_price = float(delivery_price.replace("배송비", "").replace("원", "").replace(",", "").replace(" ", ""))
+                            delivery_price = float(
+                                delivery_price.replace("배송비", "").replace("원", "").replace(",", "").replace(" ", ""))
                         else:
                             delivery_price = 0.0
                             delivery_type = DeliveryPayType.FREE
 
                         description = ''
-                        image = findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ITEM_THUMBNAILS')['data']['medias'][0]['detail']
-                        category = ">".join(str(t['name']) for t in findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_SDP_BREADCURMB_DETAIL')['data']['breadcrumb'] if t['linkcode'] != '0')
+                        image = \
+                        findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ITEM_THUMBNAILS')['data']['medias'][0][
+                            'detail']
+                        category = ">".join(str(t['name']) for t in
+                                            findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_SDP_BREADCURMB_DETAIL')[
+                                                'data']['breadcrumb'] if t['linkcode'] != '0')
 
                         if 'unitPriceDescription' in price_info['finalPrice']:
                             u = re.match(r"^\((?P<per>[\d,]+)(?P<unit_type>g|개|ml|kg|l)당 (?P<price>[\d,]+)원\)$",
@@ -78,7 +89,9 @@ class CoupangEngine(PriceEngine):
                         else:
                             unit_price = ItemUnitData(price=price)
 
-                        inventory = findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY')['data'] if findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY') is not None else None
+                        inventory = findItem(page_atf, 'viewType', 'MWEB_PRODUCT_DETAIL_ATF_QUANTITY')[
+                            'data'] if findItem(page_atf, 'viewType',
+                                                'MWEB_PRODUCT_DETAIL_ATF_QUANTITY') is not None else None
                         sold_out = j['props']['pageProps']['properties']['itemDetail']['soldOut']
 
                         if (inventory is None or 'limitMessage' not in inventory) and sold_out == False:
@@ -115,7 +128,9 @@ class CoupangEngine(PriceEngine):
 
     @staticmethod
     def getId(item_url: str):
-        u = re.search(r"products\/(?P<product_id>[\d]+)\?itemId=(?P<item_id>[\d]+).*?(?:|vendorItemId=(?P<vendor_item_id>[\d]+).*)$", item_url)
+        u = re.search(
+            r"products\/(?P<product_id>[\d]+)\?itemId=(?P<item_id>[\d]+).*?(?:|vendorItemId=(?P<vendor_item_id>[\d]+).*)$",
+            item_url)
 
         if u is None:
             raise Exception("Bad item_url " + item_url)

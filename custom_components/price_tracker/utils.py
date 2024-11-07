@@ -14,19 +14,29 @@ def findItem(list: [dict], key: str, value: any):
     return None
 
 
-async def request(url: str, headers: dict = {}):
+async def request(method: str, url: str, headers=None):
+    if headers is None:
+        headers = {}
+
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-        async with session.get(url=url, headers={**REQUEST_DEFAULT_HEADERS, **headers}) as response:
+        async with session.request(method=method, url=url, headers={**REQUEST_DEFAULT_HEADERS, **headers}) as response:
             if response.status > 299:
-                raise ApiError("Error while fetching data from the API (status code: {})".format(response.status))
+                raise ApiError(
+                    "Error while fetching data from the API (status code: {}, {}, {}, {})".format(response.status, url,
+                                                                                                  headers,
+                                                                                                  await response.text()))
 
             return await response.read()
 
 
-async def requestPlain(url: str, headers: dict = {}):
+async def requestPlain(url: str, headers=None):
+    if headers is None:
+        headers = {}
+
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         async with session.get(url=url, headers={**REQUEST_DEFAULT_HEADERS, **headers}) as response:
-            return response 
+            return response
+
 
 def findValueOrDefault(list: [dict], key: str, defaultValue: any = None):
     return list[key] if key in list and list[key] is not None else defaultValue

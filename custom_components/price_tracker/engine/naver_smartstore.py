@@ -52,10 +52,10 @@ class SmartstoreEngine(PriceEngine):
                             for option in json_data['product']['A']['optionCombinations']:
                                 options.append(
                                     ItemOptionData(
-                                        id = option['id'],
-                                        name = option['optionName1'],
-                                        price = option['price'],
-                                        inventory= option['stockQuantity']
+                                        id=option['id'],
+                                        name=option['optionName1'],
+                                        price=option['price'],
+                                        inventory=option['stockQuantity']
                                     )
                                 )
 

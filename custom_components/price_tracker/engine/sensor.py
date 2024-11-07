@@ -1,18 +1,14 @@
-import asyncio
-from threading import Timer
-
-from custom_components.price_tracker.device import Device
-from custom_components.price_tracker.engine.gsthefresh.gsthefresh import GsTheFreshEngine
-from homeassistant.helpers.entity import Entity
-from homeassistant.components.sensor import SensorEntity
-
 import logging
 from datetime import timedelta, datetime
 
+from homeassistant.components.sensor import SensorEntity
+
 from custom_components.price_tracker.const import ENTITY_ID_FORMAT
+from custom_components.price_tracker.device import Device
 from custom_components.price_tracker.engine.coupang import CoupangEngine
 from custom_components.price_tracker.engine.data import ItemPriceChangeStatus, ItemData, ItemUnitData
 from custom_components.price_tracker.engine.engine import PriceEngine
+from custom_components.price_tracker.engine.gsthefresh.gsthefresh import GsTheFreshEngine
 from custom_components.price_tracker.engine.idus import IdusEngine
 from custom_components.price_tracker.engine.kurly import KurlyEngine
 from custom_components.price_tracker.engine.naver_smartstore import SmartstoreEngine
@@ -36,11 +32,12 @@ class PriceTrackerSensor(SensorEntity):
     _price_change_amount: float = 0.0
     _updated_at: datetime = None
     _unit: ItemUnitData = None
-    _device: Device = None
+    _management_category: str = None
 
-    def __init__(self, hass, type: str, item_url: str, refresh: int, device = None, management_category: str = None, price_change_period: int = 24, unit: ItemUnitData = None):
+    def __init__(self, hass, type: str, item_url: str, refresh: int, device: Device = None,
+                 management_category: str = None, price_change_period: int = 24, unit: ItemUnitData = None):
         super().__init__()
-        self._device = device
+        self._attr_device_info = device.device_info if device is not None else None
         self.hass = hass
 
         if type == 'coupang':
@@ -66,17 +63,20 @@ class PriceTrackerSensor(SensorEntity):
 
         self._type = type
         self._item_url = item_url
-        self._id = self._engine.id()
+        self._id = self._engine.id
         self._refresh_period = refresh
         self._price_change_period = price_change_period
         self._unit = unit
+        self._management_category = management_category
         self.entity_id = ENTITY_ID_FORMAT.format(self._type, self._id)
 
     async def load(self):
         # Check last updated at
         if self._updated_at is not None:
             if (self._updated_at + timedelta(minutes=self._refresh_period)) > datetime.now():
-                _LOGGER.debug("Skip update cause refresh period. {} - {} ({} / {}).".format(self._type, self._id, self._updated_at, self._refresh_period))
+                _LOGGER.debug("Skip update cause refresh period. {} - {} ({} / {}).".format(self._type, self._id,
+                                                                                            self._updated_at,
+                                                                                            self._refresh_period))
                 return None
 
         if self._data is not None:
@@ -87,7 +87,9 @@ class PriceTrackerSensor(SensorEntity):
             return
 
         self._updated_at = datetime.now()
-        if self._data_previous is not None and self._data.total_price != self._data_previous.total_price and (self._price_changed_at is None or (self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
+        if self._data_previous is not None and self._data.total_price != self._data_previous.total_price and (
+                self._price_changed_at is None or (
+                self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
             self._price_change_status = ItemPriceChangeStatus.INC_PRICE if self._data.total_price > self._data_previous.total_price else ItemPriceChangeStatus.DEC_PRICE
             self._price_changed_at = datetime.now()
             self._price_change_amount = self._data.total_price - self._data_previous.total_price
@@ -145,6 +147,7 @@ class PriceTrackerSensor(SensorEntity):
         data = {
             'id': self._data.id,
             'price': self._data.price,
+            'original_price': self._data.original_price,
             'name': self._data.name,
             'description': self._data.description,
             'display_category': self._data.category,

@@ -24,20 +24,19 @@ async def async_setup_entry(
 
     devices = []
     sensors = []
-    
+
     if CONF_DEVICE in config:
         for device in config[CONF_DEVICE]:
-            deviceEntity = createDevice(
+            devices.append(createDevice(
                 type=config[CONF_TYPE],
                 attributes=device
-            )
-            devices.append(deviceEntity)
+            ))
 
     for target in config[CONF_TARGET]:
         try:
             device = None
             for d in devices:
-                if d.id == target[CONF_DEVICE]:
+                if d.device_id == target[CONF_DEVICE]:
                     device = d
                     break
 
@@ -61,7 +60,7 @@ async def async_setup_entry(
             sensors.append(sensor)
         except Exception as e:
             hass.data[DOMAIN][config_entry.entry_id][CONF_TARGET].remove(target)
-            _LOGGER.error("Device configuartion error {}".format(e), e)
+            _LOGGER.exception("Device configuration error {}".format(e), e)
 
     async_add_entities(sensors + devices, update_before_add=True)
 

@@ -25,7 +25,7 @@ _KIND = {
     'mercari': 'メルカリ',
 }
 ENTITY_ID_FORMAT = DOMAIN + ".price_{}_{}"
-DEVICE_ENTITY_ID_FORMAT = DOMAIN + ".device_{}"
+DEVICE_ENTITY_ID_FORMAT = DOMAIN + ".price_device_{}"
 CONF_OPTION_MODIFY = "option_modify"
 CONF_OPTION_ADD = "option_add"
 CONF_OPTION_ENTITIES = "option_entities"
@@ -39,26 +39,26 @@ CONF_OPTIONS = [
 
 CONF_TYPE = "type"
 CONF_DEVICE = "device"
-CONF_GS_NAVER_LOGIN_FLOW_1_URL="https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs"
-CONF_GS_NAVER_LOGIN_FLOW_2_URL="https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=VFjv3tsLofatP90P1a5H&client_secret=o2HQ70_GCN&code={}"
-CONF_GS_NAVER_LOGIN_FLOW_3_URL="https://b2c-bff.woodongs.com/api/bff/v2/auth/channelLogin"
-CONF_GS_NAVER_LOGIN_CODE="item_gs_naver_login_code"
-CONF_GS_STORE_CODE="item_gs_store_code"
-CONF_GS_LOGIN_FLOW_1="https://b2c-bff.woodongs.com/api/bff/v2/auth/accountLogin"
+CONF_GS_NAVER_LOGIN_FLOW_1_URL = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs"
+CONF_GS_NAVER_LOGIN_FLOW_2_URL = "https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=VFjv3tsLofatP90P1a5H&client_secret=o2HQ70_GCN&code={}"
+CONF_GS_NAVER_LOGIN_FLOW_3_URL = "https://b2c-bff.woodongs.com/api/bff/v2/auth/channelLogin"
+CONF_GS_NAVER_LOGIN_CODE = "item_gs_naver_login_code"
+CONF_GS_STORE_CODE = "item_gs_store_code"
+CONF_GS_LOGIN_FLOW_1 = "https://b2c-bff.woodongs.com/api/bff/v2/auth/accountLogin"
 CONF_ITEM_URL = "item_url"
 CONF_ITEM_DEVICE_CODE = "item_device_code"
 CONF_ITEM_REFRESH_INTERVAL = "item_refresh_interval"
 CONF_ITEM_MANAGEMENT_CATEGORY = "item_management_category"
 CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR = "item_price_change_interval_hour"
-CONF_ITEM_UNIT_TYPE="item_unit_type"
-CONF_ITEM_UNIT_PRICE="item_unit_price"
-CONF_ITEM_UNIT="item_unit"
-CONF_ITEM_UNIT_TYPE_KIND={
- 'G': 'g',
- 'KG': 'kg',
- 'L': 'l',
- 'ml': 'mL',
- 'piece': 'piece',
+CONF_ITEM_UNIT_TYPE = "item_unit_type"
+CONF_ITEM_UNIT_PRICE = "item_unit_price"
+CONF_ITEM_UNIT = "item_unit"
+CONF_ITEM_UNIT_TYPE_KIND = {
+    'G': 'g',
+    'KG': 'kg',
+    'L': 'l',
+    'ml': 'mL',
+    'piece': 'piece',
 }
 CONF_TARGET = "target"
 CONF_DATA_SCHEMA = vol.Schema({

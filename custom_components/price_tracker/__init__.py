@@ -38,8 +38,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         device_registry, entry.entry_id)
 
     for d in devices:
-       device_registry.async_update_device(
-           d.id, remove_config_entry_id=entry.entry_id)
+        device_registry.async_update_device(
+            d.id, remove_config_entry_id=entry.entry_id)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
