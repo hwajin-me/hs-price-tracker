@@ -1,6 +1,8 @@
 import asyncio
 from threading import Timer
 
+from custom_components.price_tracker.device import Device
+from custom_components.price_tracker.engine.gsthefresh.gsthefresh import GsTheFreshEngine
 from homeassistant.helpers.entity import Entity
 from homeassistant.components.sensor import SensorEntity
 
@@ -34,6 +36,7 @@ class PriceTrackerSensor(SensorEntity):
     _price_change_amount: float = 0.0
     _updated_at: datetime = None
     _unit: ItemUnitData = None
+    _device: Device = None
 
     def __init__(self, hass, type: str, item_url: str, refresh: int, device = None, management_category: str = None, price_change_period: int = 24, unit: ItemUnitData = None):
         super().__init__()
@@ -52,10 +55,12 @@ class PriceTrackerSensor(SensorEntity):
             self._engine = NcncEngine(item_url)
         elif type == 'oliveyoung':
             self._engine = OliveyoungEngine(item_url)
-        elif type =='oasis':
+        elif type == 'oasis':
             self._engine = OasisEngine(item_url)
         elif type == 'idus':
             self._engine = IdusEngine(item_url)
+        elif type == 'gsthefresh':
+            self._engine = GsTheFreshEngine(item_url=item_url, device=device)
         else:
             raise UnsupportedError("Unsupported e-commerce type: {}".format(type))
 

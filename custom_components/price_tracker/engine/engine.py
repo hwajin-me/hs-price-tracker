@@ -1,3 +1,4 @@
+from custom_components.price_tracker.device import Device
 from custom_components.price_tracker.engine.data import ItemData
 
 

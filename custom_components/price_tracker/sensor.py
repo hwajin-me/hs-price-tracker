@@ -18,22 +18,29 @@ async def async_setup_entry(
 ):
     hass.data[DOMAIN]["listener"] = []
     config = hass.data[DOMAIN][config_entry.entry_id]
-    _LOGGER.debug('sensor listen {} {}'.format(config, config_entry.options))
 
     if config_entry.options:
         config.update(config_entry.options)
 
-    if CONF_DEVICE in config:
-        device = createDevice(
-            type=config[CONF_TYPE],
-            attributes=config[CONF_DEVICE]
-        )
-    else:
-        device = None
-
+    devices = []
     sensors = []
+    
+    if CONF_DEVICE in config:
+        for device in config[CONF_DEVICE]:
+            deviceEntity = createDevice(
+                type=config[CONF_TYPE],
+                attributes=device
+            )
+            devices.append(deviceEntity)
+
     for target in config[CONF_TARGET]:
         try:
+            device = None
+            for d in devices:
+                if d.id == target[CONF_DEVICE]:
+                    device = d
+                    break
+
             sensor = PriceTrackerSensor(
                 hass=hass,
                 device=device,
@@ -54,12 +61,9 @@ async def async_setup_entry(
             sensors.append(sensor)
         except Exception as e:
             hass.data[DOMAIN][config_entry.entry_id][CONF_TARGET].remove(target)
-            raise e
+            _LOGGER.error("Device configuartion error {}".format(e), e)
 
-    if device is not None:
-        sensors.append(device)
-
-    async_add_entities(sensors, update_before_add=True)
+    async_add_entities(sensors + devices, update_before_add=True)
 
 
 async def update_listener(hass: core.HomeAssistant, entry: config_entries.ConfigEntry) -> None:

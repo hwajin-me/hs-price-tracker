@@ -111,8 +111,10 @@ class GsTheFreshLogin:
 
 class GsTheFreshEngine(PriceEngine):
 
-    def __init__(self, item_url: str):
+    def __init__(self, item_url: str, device: Device):
         self.item_url = item_url
+        self.id = GsTheFreshEngine.getId(item_url)
+        self.device = device
 
     async def load(self) -> ItemData:
         result = await request(_PRODUCT_URL.format(self.item_url), headers={**_REQUEST_HEADERS})
@@ -150,7 +152,7 @@ class GsTheFreshEngine(PriceEngine):
         )
 
     def id(self) -> str:
-        pass
+        return self.id
 
     @staticmethod
     def getId(item_url: str):
@@ -175,10 +177,13 @@ class GsTheFreshDevice(Device):
     """"""
 
     def __init__(self, device_id: str, access_token: str, refresh_token: str, name: str, number: str, store: str):
-        super().__init__("{}_{}_{}_{}".format(device_id, name, number, store))
+        super().__init__('gsthefresh', "{}_{}_{}_{}".format(device_id, name, number, store))
         self._device_id = device_id
         self._access_token = access_token
         self._refresh_token = refresh_token
         self._name = name
         self._number = number
         self._store = store
+
+    async def async_update(self):
+        _LOGGER.debug("GS THE FRESH Device updated")
