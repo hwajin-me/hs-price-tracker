@@ -5,9 +5,20 @@
     "step": {
       "user": {
         "title": "Add E-commerce Provider",
-        "description": "If you need help with the configuration have a look here: https://github.com/hwajin-me/hs-price-tracker. Some providers require specific configuration flows, such as authentication.",
+        "description": "E-commerce platform (Provider) refers to Amazon Inc., Coupang Inc., etc. Some e-commerce platforms require you to add a “device”. You may need to take additional steps like these if you need to log in or if there are regional requirements.",
         "data": {
           "type": "E-Commerce Types."
+        }
+      },
+      "setup": {
+        "title": "{title_en}",
+        "description": "{description_en}",
+        "data": {
+          "service_type": "Service Type (e.g. Amazon, Coupang, etc.)",
+          "conf_gs_naver_login_code": {
+            "title": "GS THE FRESH Login Code (NAVER Social)",
+            "description": "test"
+          }
         }
       },
       "gs_login": {

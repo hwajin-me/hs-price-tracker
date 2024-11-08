@@ -2,11 +2,11 @@ import hashlib
 
 import aiohttp
 
+from custom_components.price_tracker.components.error import ApiError
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.exception import ApiError
 
 
-def findItem(list: [dict], key: str, value: any):
+def find_item(list: [dict], key: str, value: any):
     for i in list:
         if key in i and i[key] == value:
             return i
@@ -29,7 +29,7 @@ async def request(method: str, url: str, headers=None):
             return await response.read()
 
 
-async def requestPlain(url: str, headers=None):
+async def request_plain(url: str, headers=None):
     if headers is None:
         headers = {}
 

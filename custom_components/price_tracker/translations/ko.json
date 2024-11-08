@@ -1,0 +1,18 @@
+{
+  "title": "E-commerce Price Tracker",
+  "config": {
+    "flow_title": "E-Commerce Price Tracker",
+    "step": {
+      "user": {
+        "title": "전자상거래 플랫폼 추가",
+        "description": "네이버 쇼핑, 아마존, 쿠팡 등의 전자상거래 플랫폼을 추가하세요. 일부 플랫폼은 로그인 등의 절차를 요구할 수 있습니다.",
+        "data": {
+          "type": "쇼핑몰(이커머스) 타입"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "해당 플랫폼은 이미 추가되어 있습니다. 중복 설정을 지원하지 않는 플랫폼입니다."
+    }
+  }
+}

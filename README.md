@@ -43,11 +43,6 @@ Almost out of stock is determined by the number of products in stock. The number
 
 ## TODO
 
-- [ ] Support Dynamic Inventory
-- [ ] Support Rakuten
-- [ ] Support Mercari
-- [ ] Support Amazon Japan
-- [ ] Support GS Shop (Korea) / Decrypt TLS Socket Communication
 - [ ] Support Proxy and enhance scraping performance
 
 ## License

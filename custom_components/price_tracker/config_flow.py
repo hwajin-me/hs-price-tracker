@@ -6,15 +6,18 @@ from typing import Any, Dict, Optional
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.core import callback
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import callback, HomeAssistant
 from homeassistant.helpers import (
     device_registry as dr,
     entity_registry as er,
 )
 from homeassistant.helpers import selector
 
-from custom_components.price_tracker.engine.gsthefresh.gsthefresh import GsTheFreshLogin
-from custom_components.price_tracker.utils import findItem, findValueOrDefault, md5
+from custom_components.price_tracker.services.gsthefresh.engine import GsTheFreshLogin
+from custom_components.price_tracker.utils import find_item, findValueOrDefault, md5
+from .components.error import UnsupportedError
+from .components.setup import PriceTrackerSetup
 from .const import CONF_DEVICE, CONF_GS_NAVER_LOGIN_CODE, CONF_GS_STORE_CODE, \
     CONF_ITEM_DEVICE_CODE, \
     CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, \
@@ -22,6 +25,9 @@ from .const import CONF_DEVICE, CONF_GS_NAVER_LOGIN_CODE, CONF_GS_STORE_CODE, \
     CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
     CONF_OPTION_MODIFY, CONF_OPTION_SELECT, CONF_OPTIONS, CONF_TARGET, DOMAIN, _KIND, CONF_TYPE, CONF_DATA_SCHEMA, \
     CONF_ITEM_URL, CONF_ITEM_MANAGEMENT_CATEGORY, CONF_OPTION_DEVICES
+from .services.coupang.setup import CoupangSetup
+from .services.setup import price_tracker_setup_service, price_tracker_setup_service_user_input, \
+    price_tracker_setup_init, price_tracker_setup_option_service
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,27 +35,44 @@ _LOGGER = logging.getLogger(__name__)
 class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     data: Optional[Dict[str, Any]]
 
-    async def async_step_user(self, user_input=None):
-        errors = {}
+    async def async_step_reconfigure(self, user_input: dict = None):
+        pass
 
-        if user_input is not None:
-            if user_input[CONF_TYPE] == 'gsthefresh':
-                return await self.async_step_gs_login()
+    async def async_migrate_entry(self, hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+        """Migrate old entry."""
+        _LOGGER.debug('Migrate entry (config-flow)')
 
-            await self.async_set_unique_id('price-tracker-{}'.format(user_input[CONF_TYPE]))
-            self._abort_if_unique_id_configured()
-
-            return self.async_create_entry(title='{}'.format(_KIND[user_input[CONF_TYPE]]),
-                                           data={CONF_TARGET: [],
-                                                 CONF_TYPE: user_input[CONF_TYPE],
-                                                 CONF_DEVICE: []})
-
-        return self.async_show_form(
-            step_id="user", data_schema=CONF_DATA_SCHEMA, errors=errors or {}
-        )
+        return False
 
     async def async_step_import(self, import_info):
         return await self.async_step_user(import_info)
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return PriceTrackerOptionsFlowHandler(config_entry)
+
+    async def async_step_user(self, user_input=None):
+        errors: dict = {}
+
+        try:
+            if (step := price_tracker_setup_service(
+                service_type=price_tracker_setup_service_user_input(user_input),
+                config_flow=self
+            )):
+                return await step.setup(user_input)
+        except UnsupportedError as e:
+            errors['base'] = 'unsupported'
+
+        return self.async_show_form(
+            step_id='user',
+            data_schema=price_tracker_setup_init(),
+            errors=errors
+        )
+
+    async def async_step_setup(self, user_input=None):
+        """Set-up flows."""
+        raise NotImplementedError('Not implemented (Set up). {}'.format(user_input))
 
     async def async_step_gs_login(self, user_input=None):
 
@@ -83,21 +106,19 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }), errors={}
         )
 
-    async def async_step_reconfigure(self, user_input: dict = None):
-        """"""
-
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        return PriceTrackerOptionsFlowHandler(config_entry)
-
 
 class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry) -> None:
         self.config_entry = config_entry
+        self.setup: PriceTrackerSetup = price_tracker_setup_option_service(service_type=self.config_entry.data[CONF_TYPE], option_flow=self)
 
     async def async_step_init(self, user_input: dict = None) -> dict:
+
+        """Delegate step"""
+        return await self.setup.option_setup(user_input)
+
+
         errors = {}
 
         if CONF_DEVICE in self.config_entry.data and len(self.config_entry.data[CONF_DEVICE]) > 0:
@@ -128,7 +149,7 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
                                                   translation_key=CONF_OPTION_SELECT)),
             }
         ) if user_input is None or (
-                    CONF_OPTION_DEVICES not in user_input and user_input[CONF_OPTION_DEVICES] is None) else vol.Schema(
+                CONF_OPTION_DEVICES not in user_input and user_input[CONF_OPTION_DEVICES] is None) else vol.Schema(
             {
                 vol.Required(CONF_OPTION_DEVICES, default=user_input[CONF_OPTION_DEVICES]): vol.In(
                     {user_input[CONF_OPTION_DEVICES]: user_input[CONF_OPTION_DEVICES]}),
@@ -189,11 +210,25 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="select", data_schema=options_schema, errors=errors
         )
 
+    async def async_step_setup(self, user_input: dict = None):
+        """Set-up flows."""
+
+        if user_input is None:
+            return await self.setup.option_setup(user_input)
+
+        if self.setup._option_setup_select in user_input:
+            if user_input[self.setup._option_setup_select] == self.setup._option_setup_select_modify:
+                return await self.setup.option_modify(user_input)
+            elif user_input[self.setup._option_setup_select] == self.setup._option_setup_select_add:
+                return await self.setup.option_add(user_input)
+
+        raise NotImplementedError('Not implemented (Set up). {}'.format(user_input))
+
     async def async_step_entity(self, user_input: dict = None):
         _LOGGER.debug(user_input)
         if user_input is not None and CONF_OPTION_MODIFY in user_input:
-            item = findItem(self.config_entry.options.get(CONF_TARGET, []), CONF_ITEM_URL,
-                            user_input[CONF_OPTION_MODIFY].original_name)
+            item = find_item(self.config_entry.options.get(CONF_TARGET, []), CONF_ITEM_URL,
+                             user_input[CONF_OPTION_MODIFY].original_name)
 
             if item is None:
                 raise ("Not found")

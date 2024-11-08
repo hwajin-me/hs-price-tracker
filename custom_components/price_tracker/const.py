@@ -7,7 +7,7 @@ LOGGER: Logger = getLogger(__package__)
 
 DOMAIN = "price_tracker"
 NAME = "E-Commerce Price Tracker"
-VERSION = "0.3.0"
+VERSION = "1.0.0"
 PLATFORMS = ["sensor"]
 _KIND = {
     'idus': '아이디어스',
@@ -19,10 +19,6 @@ _KIND = {
     'ncnc': '니콘내콘',
     'oasis': '오아시스',
     'gsthefresh': 'GS 더프레시',
-    'amazon_jp': 'Amazom (日本)',
-    'rakuten': '楽天',
-    'yodobashi': 'ヨドバシカメラ',
-    'mercari': 'メルカリ',
 }
 ENTITY_ID_FORMAT = DOMAIN + ".price_{}_{}"
 DEVICE_ENTITY_ID_FORMAT = DOMAIN + ".price_device_{}"

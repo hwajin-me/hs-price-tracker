@@ -16,6 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Set up the price tracker component."""
+    _LOGGER.debug("Setting up price tracker component {}".format(config))
     hass.data.setdefault(DOMAIN, {})
 
     return True
@@ -47,9 +49,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    for listener in hass.data[DOMAIN]["listener"]:
-        listener()
-
     unload_ok = all(
         await asyncio.gather(
             *[

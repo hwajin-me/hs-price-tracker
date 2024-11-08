@@ -1,10 +1,11 @@
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
-from custom_components.price_tracker.const import DEVICE_ENTITY_ID_FORMAT, DOMAIN, VERSION
+from custom_components.price_tracker.consts.defaults import DOMAIN, VERSION
+from custom_components.price_tracker.consts.format import DEVICE_ENTITY_ID_FORMAT
 
 
-class Device(Entity):
+class PriceTrackerDevice(Entity):
 
     def __init__(self, device_type: str, device_id: str):
         self._device_id = device_id

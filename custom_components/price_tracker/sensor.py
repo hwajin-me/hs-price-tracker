@@ -2,9 +2,9 @@ import logging
 
 from homeassistant import config_entries, core
 
-from custom_components.price_tracker.engine.data import ItemUnitData, ItemUnitType
-from custom_components.price_tracker.engine.device import createDevice
-from custom_components.price_tracker.engine.sensor import PriceTrackerSensor
+from custom_components.price_tracker.services.data import ItemUnitData, ItemUnitType
+from custom_components.price_tracker.services.device import createDevice
+from custom_components.price_tracker.services.sensor import PriceTrackerSensor
 from custom_components.price_tracker.utils import findValueOrDefault
 from .const import *
 
@@ -16,7 +16,6 @@ async def async_setup_entry(
         config_entry: config_entries.ConfigEntry,
         async_add_entities,
 ):
-    hass.data[DOMAIN]["listener"] = []
     config = hass.data[DOMAIN][config_entry.entry_id]
 
     if config_entry.options:
