@@ -8,13 +8,13 @@ from urllib.parse import unquote
 
 import aiohttp
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidError, ApiError
 from custom_components.price_tracker.const import CONF_GS_NAVER_LOGIN_FLOW_2_URL, \
     CONF_GS_NAVER_LOGIN_FLOW_3_URL, REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.device import Device
 from custom_components.price_tracker.services.data import DeliveryData, DeliveryPayType, ItemData, InventoryStatus, \
     BooleanType
-from custom_components.price_tracker.services.engine import PriceEngine
 from custom_components.price_tracker.utils import find_item, request
 
 _UA = "Dart/3.5 (dart:io)"
@@ -241,3 +241,6 @@ class GsTheFreshEngine(PriceEngine):
     @staticmethod
     def engine_name() -> str:
         return 'GS THE FRESH'
+
+    def url(self) -> str:
+        return self.item_url

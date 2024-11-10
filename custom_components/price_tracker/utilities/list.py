@@ -11,6 +11,13 @@ class Lu:
             return None
 
     @staticmethod
+    def get(target: [any], key: str):
+        if key in target:
+            return target[key]
+
+        return None
+
+    @staticmethod
     def remove_item(target: [any], key: str, value: any) -> list:
         return target(filter(lambda x: x[key] != value, target))
 
@@ -22,3 +29,6 @@ class Lu:
     def copy(target: [any]):
         return deepcopy(target)
 
+    @staticmethod
+    def map(target: [any], lambda_function):
+        return list(map(lambda_function, target))

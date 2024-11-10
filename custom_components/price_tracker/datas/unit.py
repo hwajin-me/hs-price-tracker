@@ -8,6 +8,10 @@ class ItemUnitType(Enum):
     L = 'l'
     PIECE = 'piece'
 
+    @classmethod
+    def list(cls) -> list:
+        return list(map(lambda c: c.value, cls))
+
     @staticmethod
     def of(label):
         if str(label).lower() in ('g', 'gram', 'グラム', '그램'):
@@ -49,4 +53,3 @@ class ItemUnitData:
             return ItemUnitData._calculate(unit - 1, (price / unit) * (unit - 1))
 
         return ItemUnitData._calculate(unit / 10, price / 10)
-

@@ -26,15 +26,15 @@ _SERVICE_SETUP = {
     SsgSetup.setup_code(): lambda cfg: SsgSetup(config_flow=cfg),
 }
 _SERVICE_OPTION_SETUP = {
-    CoupangSetup.setup_code(): lambda cfg: CoupangSetup(option_flow=cfg),
-    GsthefreshSetup.setup_code(): lambda cfg: GsthefreshSetup(option_flow=cfg),
-    IdusSetup.setup_code(): lambda cfg: IdusSetup(option_flow=cfg),
-    KurlySetup.setup_code(): lambda cfg: KurlySetup(option_flow=cfg),
-    NcncSetup.setup_code(): lambda cfg: NcncSetup(option_flow=cfg),
-    OasisSetup.setup_code(): lambda cfg: OasisSetup(option_flow=cfg),
-    OliveyoungSetup.setup_code(): lambda cfg: OliveyoungSetup(option_flow=cfg),
-    SmartstoreSetup.setup_code(): lambda cfg: SmartstoreSetup(option_flow=cfg),
-    SsgSetup.setup_code(): lambda cfg: SsgSetup(option_flow=cfg),
+    CoupangSetup.setup_code(): lambda cfg, e: CoupangSetup(option_flow=cfg, config_entry=e),
+    GsthefreshSetup.setup_code(): lambda cfg, e: GsthefreshSetup(option_flow=cfg, config_entry=e),
+    IdusSetup.setup_code(): lambda cfg, e: IdusSetup(option_flow=cfg, config_entry=e),
+    KurlySetup.setup_code(): lambda cfg, e: KurlySetup(option_flow=cfg, config_entry=e),
+    NcncSetup.setup_code(): lambda cfg, e: NcncSetup(option_flow=cfg, config_entry=e),
+    OasisSetup.setup_code(): lambda cfg, e: OasisSetup(option_flow=cfg, config_entry=e),
+    OliveyoungSetup.setup_code(): lambda cfg, e: OliveyoungSetup(option_flow=cfg, config_entry=e),
+    SmartstoreSetup.setup_code(): lambda cfg, e: SmartstoreSetup(option_flow=cfg, config_entry=e),
+    SsgSetup.setup_code(): lambda cfg, e: SsgSetup(option_flow=cfg, config_entry=e),
 }
 _KIND = {
     CoupangSetup.setup_code(): CoupangSetup.setup_name(),
@@ -68,7 +68,7 @@ def price_tracker_setup_service(service_type: str = None,
 
 
 def price_tracker_setup_option_service(service_type: str = None,
-                                       option_flow: config_entries.OptionsFlow = None) -> PriceTrackerSetup | None:
+                                       option_flow: config_entries.OptionsFlow = None, config_entry: any = None) -> PriceTrackerSetup | None:
     if service_type is None or option_flow is None:
         """Do nothing"""
         return None
@@ -76,7 +76,7 @@ def price_tracker_setup_option_service(service_type: str = None,
     if service_type not in _SERVICE_OPTION_SETUP:
         raise UnsupportedError(f"Unsupported service type: {service_type}")
 
-    return _SERVICE_OPTION_SETUP[service_type](option_flow)
+    return _SERVICE_OPTION_SETUP[service_type](option_flow, config_entry)
 
 
 def price_tracker_setup_service_user_input(user_input: dict = None) -> str | None:

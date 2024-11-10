@@ -4,10 +4,10 @@ import re
 
 import aiohttp
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidError
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.services.data import ItemData, DeliveryData, ItemUnitData, InventoryStatus
-from custom_components.price_tracker.services.engine import PriceEngine
 
 _LOGGER = logging.getLogger(__name__)
 _URL = 'https://api.idus.com/v3/product/info?uuid={}'
@@ -16,8 +16,9 @@ _ITEM_LINK = 'https://www.idus.com/v2/product/{}'
 
 class IdusEngine(PriceEngine):
     def __init__(self, item_url: str):
-        self.IdusEngine = item_url
-        self.product_id = IdusEngine.parse_id(item_url)
+        self.item_url = item_url
+        self.id = IdusEngine.parse_id(item_url)
+        self.product_id = self.id
 
     async def load(self) -> ItemData:
         try:

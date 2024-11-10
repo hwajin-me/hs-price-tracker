@@ -1,5 +1,4 @@
 import logging
-from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -8,24 +7,15 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import callback, HomeAssistant
-from homeassistant.helpers import (
-    device_registry as dr,
-    entity_registry as er,
-)
-from homeassistant.helpers import selector
 
 from custom_components.price_tracker.services.gsthefresh.engine import GsTheFreshLogin
-from custom_components.price_tracker.utils import find_item, findValueOrDefault, md5
+from custom_components.price_tracker.utilities.list import Lu
+from custom_components.price_tracker.utils import md5
 from .components.error import UnsupportedError
 from .components.setup import PriceTrackerSetup
 from .const import CONF_DEVICE, CONF_GS_NAVER_LOGIN_CODE, CONF_GS_STORE_CODE, \
     CONF_ITEM_DEVICE_CODE, \
-    CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, \
-    CONF_ITEM_REFRESH_INTERVAL, CONF_ITEM_UNIT, CONF_ITEM_UNIT_PRICE, CONF_ITEM_UNIT_TYPE, CONF_ITEM_UNIT_TYPE_KIND, \
-    CONF_OPTION_ADD, CONF_OPTION_DELETE, CONF_OPTION_ENTITIES, \
-    CONF_OPTION_MODIFY, CONF_OPTION_SELECT, CONF_OPTIONS, CONF_TARGET, DOMAIN, _KIND, CONF_TYPE, CONF_DATA_SCHEMA, \
-    CONF_ITEM_URL, CONF_ITEM_MANAGEMENT_CATEGORY, CONF_OPTION_DEVICES
-from .services.coupang.setup import CoupangSetup
+    CONF_TARGET, DOMAIN, _KIND, CONF_TYPE
 from .services.setup import price_tracker_setup_service, price_tracker_setup_service_user_input, \
     price_tracker_setup_init, price_tracker_setup_option_service
 
@@ -57,8 +47,8 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         try:
             if (step := price_tracker_setup_service(
-                service_type=price_tracker_setup_service_user_input(user_input),
-                config_flow=self
+                    service_type=price_tracker_setup_service_user_input(user_input),
+                    config_flow=self
             )):
                 return await step.setup(user_input)
         except UnsupportedError as e:
@@ -111,194 +101,40 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry) -> None:
         self.config_entry = config_entry
-        self.setup: PriceTrackerSetup = price_tracker_setup_option_service(service_type=self.config_entry.data[CONF_TYPE], option_flow=self)
+        self.setup: PriceTrackerSetup = price_tracker_setup_option_service(
+            service_type=self.config_entry.data[CONF_TYPE], option_flow=self, config_entry=config_entry)
 
     async def async_step_init(self, user_input: dict = None) -> dict:
-
         """Delegate step"""
         return await self.setup.option_setup(user_input)
-
-
-        errors = {}
-
-        if CONF_DEVICE in self.config_entry.data and len(self.config_entry.data[CONF_DEVICE]) > 0:
-            if user_input is None:
-                device_entitites = []
-
-                for d in dr.async_entries_for_config_entry(dr.async_get(self.hass), self.config_entry.entry_id):
-                    device_entitites.append(d.serial_number)
-
-                return self.async_show_form(
-                    step_id="init", data_schema=vol.Schema({
-                        vol.Optional(CONF_OPTION_DEVICES): vol.In(device_entitites),
-                    }), errors=errors)
-
-        if user_input is not None:
-            if not errors:
-                if user_input.get(CONF_OPTION_SELECT) == CONF_OPTION_MODIFY:
-                    return await self.async_step_select(
-                        user_input={CONF_OPTION_DEVICES: user_input.get(CONF_OPTION_DEVICES)})
-                elif user_input.get(CONF_OPTION_SELECT) == CONF_OPTION_ADD:
-                    return await self.async_step_entity(
-                        user_input={CONF_OPTION_DEVICES: user_input.get(CONF_OPTION_DEVICES)})
-
-        options_schema = vol.Schema(
-            {
-                vol.Optional(CONF_OPTION_SELECT): selector.SelectSelector(
-                    selector.SelectSelectorConfig(options=CONF_OPTIONS, mode=selector.SelectSelectorMode.LIST,
-                                                  translation_key=CONF_OPTION_SELECT)),
-            }
-        ) if user_input is None or (
-                CONF_OPTION_DEVICES not in user_input and user_input[CONF_OPTION_DEVICES] is None) else vol.Schema(
-            {
-                vol.Required(CONF_OPTION_DEVICES, default=user_input[CONF_OPTION_DEVICES]): vol.In(
-                    {user_input[CONF_OPTION_DEVICES]: user_input[CONF_OPTION_DEVICES]}),
-                vol.Optional(CONF_OPTION_SELECT): selector.SelectSelector(
-                    selector.SelectSelectorConfig(options=CONF_OPTIONS, mode=selector.SelectSelectorMode.LIST,
-                                                  translation_key=CONF_OPTION_SELECT)),
-            }
-        )
-
-        return self.async_show_form(
-            step_id="init", data_schema=options_schema, errors=errors
-        )
-
-    async def async_step_select(self, user_input: dict = None):
-        errors = {}
-
-        if user_input is not None and user_input.get(CONF_OPTION_ENTITIES) is not None:
-            if not errors:
-                entity_id = user_input.get(CONF_OPTION_ENTITIES)
-                hass = er.async_get(self.hass)
-                entity = hass.async_get(entity_id)
-
-                if user_input.get(CONF_OPTION_DELETE):
-                    hass.async_remove(entity_id=entity_id)
-                    return self.async_create_entry(title=DOMAIN, data={CONF_TARGET: list(
-                        filter(lambda x: entity.original_name != x[CONF_ITEM_URL],
-                               self.config_entry.options[CONF_TARGET]))})
-                else:
-
-                    return await self.async_step_entity(user_input={
-                        CONF_OPTION_MODIFY: entity,
-                    })
-
-        option_entities = []
-        entities = er.async_entries_for_config_entry(
-            er.async_get(self.hass), self.config_entry.entry_id)
-        hass = er.async_get(self.hass)
-
-        for e in entities:
-            entity = hass.async_get(e.entity_id)
-
-            if CONF_OPTION_DEVICES in user_input and user_input[CONF_OPTION_DEVICES] is not None:
-                for d in dr.async_entries_for_config_entry(dr.async_get(self.hass), self.config_entry.entry_id):
-                    if d.serial_number != user_input[CONF_OPTION_DEVICES]:
-                        continue
-
-            option_entities.append(e.entity_id)
-
-        options_schema = vol.Schema(
-            {
-                vol.Optional(CONF_OPTION_ENTITIES): selector.EntitySelector(
-                    selector.EntitySelectorConfig(include_entities=option_entities)),
-                vol.Optional(CONF_OPTION_DELETE): selector.BooleanSelector(selector.BooleanSelectorConfig())
-            }
-        )
-
-        return self.async_show_form(
-            step_id="select", data_schema=options_schema, errors=errors
-        )
 
     async def async_step_setup(self, user_input: dict = None):
         """Set-up flows."""
 
+        # Select option (1)
         if user_input is None:
             return await self.setup.option_setup(user_input)
 
-        if self.setup._option_setup_select in user_input:
-            if user_input[self.setup._option_setup_select] == self.setup._option_setup_select_modify:
-                return await self.setup.option_modify(user_input)
-            elif user_input[self.setup._option_setup_select] == self.setup._option_setup_select_add:
-                return await self.setup.option_add(user_input)
+        # 1
+        if self.setup.const_option_setup_select in user_input:
+            if self.setup.const_option_select_device not in user_input:
+                device = await self.setup.option_select_device(user_input)
+                if device is not None:
+                    return device
+
+        if Lu.get(user_input, self.setup.const_option_setup_select) == self.setup.const_option_modify_select \
+                and Lu.get(user_input, self.setup.const_option_select_entity) is None:
+            return await self.setup.option_select_entity(device=Lu.get(user_input, self.setup.const_option_select_device),
+                                                         user_input=user_input)
+
+        # 2
+        if self.setup.const_option_setup_select in user_input:
+            if user_input[self.setup.const_option_setup_select] == self.setup.const_option_modify_select:
+                return await self.setup.option_modify(device=Lu.get(user_input, self.setup.const_option_select_device),
+                                                      entity=Lu.get(user_input, self.setup.const_option_select_entity),
+                                                      user_input=user_input)
+            elif user_input[self.setup.const_option_setup_select] == self.setup.const_option_add_select:
+                return await self.setup.option_upsert(device=Lu.get(user_input, self.setup.const_option_select_device),
+                                                      user_input=user_input)
 
         raise NotImplementedError('Not implemented (Set up). {}'.format(user_input))
-
-    async def async_step_entity(self, user_input: dict = None):
-        _LOGGER.debug(user_input)
-        if user_input is not None and CONF_OPTION_MODIFY in user_input:
-            item = find_item(self.config_entry.options.get(CONF_TARGET, []), CONF_ITEM_URL,
-                             user_input[CONF_OPTION_MODIFY].original_name)
-
-            if item is None:
-                raise ("Not found")
-
-            if CONF_OPTION_DEVICES in user_input:
-                if CONF_DEVICE not in item or item[CONF_DEVICE] != user_input[CONF_OPTION_DEVICES]:
-                    raise ("Not found")
-
-            return self.async_show_form(step_id="entity", data_schema=vol.Schema({
-                vol.Required(CONF_ITEM_URL, default=item[CONF_ITEM_URL]): cv.string,
-                vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY,
-                             default=findValueOrDefault(item, CONF_ITEM_MANAGEMENT_CATEGORY, '')): cv.string,
-                vol.Optional(CONF_ITEM_UNIT_TYPE,
-                             default=findValueOrDefault(item, CONF_ITEM_UNIT_TYPE, 'piece')): vol.In(
-                    CONF_ITEM_UNIT_TYPE_KIND),
-                vol.Optional(CONF_ITEM_UNIT_PRICE,
-                             default=findValueOrDefault(item, CONF_ITEM_UNIT_PRICE, 0)): cv.positive_int,
-                vol.Optional(CONF_ITEM_UNIT, default=findValueOrDefault(item, CONF_ITEM_UNIT, 1)): cv.positive_int,
-                vol.Required(CONF_ITEM_REFRESH_INTERVAL,
-                             default=findValueOrDefault(item, CONF_ITEM_REFRESH_INTERVAL, 10)): cv.positive_int,
-                vol.Required(CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, default=24): cv.positive_int,
-            }), errors={})
-
-        if user_input is not None and CONF_ITEM_URL in user_input:
-            data = deepcopy(self.config_entry.options.get(CONF_TARGET, []))
-            for item in data[:]:
-                if item[CONF_ITEM_URL] == user_input[CONF_ITEM_URL]:
-                    if CONF_OPTION_DEVICES in user_input:
-                        if CONF_DEVICE in item and item[CONF_DEVICE] == user_input[CONF_OPTION_DEVICES]:
-                            data.remove(item)
-                    else:
-                        data.remove(item)
-
-            data.append({
-                CONF_DEVICE: user_input[CONF_OPTION_DEVICES] if CONF_OPTION_DEVICES in user_input else None,
-                CONF_ITEM_URL: user_input[CONF_ITEM_URL],
-                CONF_ITEM_MANAGEMENT_CATEGORY: user_input[
-                    CONF_ITEM_MANAGEMENT_CATEGORY] if CONF_ITEM_MANAGEMENT_CATEGORY in user_input else None,
-                CONF_ITEM_UNIT_TYPE: user_input[CONF_ITEM_UNIT_TYPE] if CONF_ITEM_UNIT_TYPE in user_input else 'piece',
-                CONF_ITEM_UNIT_PRICE: user_input[CONF_ITEM_UNIT_PRICE] if CONF_ITEM_UNIT_PRICE in user_input and
-                                                                          user_input[CONF_ITEM_UNIT_PRICE] != 0 else 0,
-                CONF_ITEM_UNIT: user_input[CONF_ITEM_UNIT] if CONF_ITEM_UNIT in user_input and user_input[
-                    CONF_ITEM_UNIT] != 0 else 0,
-                CONF_ITEM_REFRESH_INTERVAL: user_input[CONF_ITEM_REFRESH_INTERVAL],
-                CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR: user_input[
-                    CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR] if CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR in user_input and
-                                                             user_input[
-                                                                 CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR] >= 1 else 24,
-            })
-            return self.async_create_entry(title=DOMAIN, data={CONF_TARGET: data})
-
-        if CONF_OPTION_DEVICES in user_input and user_input[CONF_OPTION_DEVICES] is not None:
-            return self.async_show_form(step_id="entity", data_schema=vol.Schema({
-                vol.Required(CONF_OPTION_DEVICES, default=user_input[CONF_OPTION_DEVICES]): vol.In(
-                    {user_input[CONF_OPTION_DEVICES]: user_input[CONF_OPTION_DEVICES]}),
-                vol.Required(CONF_ITEM_URL, default=None): cv.string,
-                vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY, default=''): cv.string,
-                vol.Optional(CONF_ITEM_UNIT_TYPE, default='piece'): vol.In(CONF_ITEM_UNIT_TYPE_KIND),
-                vol.Optional(CONF_ITEM_UNIT_PRICE, default=0): cv.positive_int,
-                vol.Optional(CONF_ITEM_UNIT, default=1): cv.positive_int,
-                vol.Required(CONF_ITEM_REFRESH_INTERVAL, default=10): cv.positive_int,
-                vol.Required(CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, default=24): cv.positive_int,
-            }), errors={})
-        else:
-            return self.async_show_form(step_id="entity", data_schema=vol.Schema({
-                vol.Required(CONF_ITEM_URL, default=None): cv.string,
-                vol.Optional(CONF_ITEM_MANAGEMENT_CATEGORY, default=''): cv.string,
-                vol.Optional(CONF_ITEM_UNIT_TYPE, default='piece'): vol.In(CONF_ITEM_UNIT_TYPE_KIND),
-                vol.Optional(CONF_ITEM_UNIT_PRICE, default=0): cv.positive_int,
-                vol.Optional(CONF_ITEM_UNIT, default=1): cv.positive_int,
-                vol.Required(CONF_ITEM_REFRESH_INTERVAL, default=10): cv.positive_int,
-                vol.Required(CONF_ITEM_PRICE_CHANGE_INTERVAL_HOUR, default=24): cv.positive_int,
-            }), errors={})

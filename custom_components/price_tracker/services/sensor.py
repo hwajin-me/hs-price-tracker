@@ -4,12 +4,13 @@ from typing import final
 
 from homeassistant.components.sensor import SensorEntity
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import UnsupportedError
+from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.const import ENTITY_ID_FORMAT
 from custom_components.price_tracker.device import Device
 from custom_components.price_tracker.services.coupang.engine import CoupangEngine
 from custom_components.price_tracker.services.data import ItemPriceChangeStatus, ItemData, ItemUnitData
-from custom_components.price_tracker.services.engine import PriceEngine
 from custom_components.price_tracker.services.gsthefresh.engine import GsTheFreshEngine
 from custom_components.price_tracker.services.idus.engine import IdusEngine
 from custom_components.price_tracker.services.kurly.engine import KurlyEngine
@@ -69,7 +70,7 @@ class PriceTrackerSensor(SensorEntity):
         self._price_change_period = price_change_period
         self._unit = unit
         self._management_category = management_category
-        self.entity_id = ENTITY_ID_FORMAT.format(self._type, self._id)
+        self.entity_id = IdGenerator.generate_entity_id(service_type=self._type, device_id=self._engine.device_id, entity_target=self._engine.entity_id)
 
     async def load(self):
         # Check last updated at
@@ -80,28 +81,32 @@ class PriceTrackerSensor(SensorEntity):
                                                                                             self._refresh_period))
                 return None
 
-        if self._data is not None:
-            self._data_previous = self._data
-        self._data = await self._engine.load()
+        try:
+            if self._data is not None:
+                self._data_previous = self._data
+            self._data = await self._engine.load()
 
-        if self._data is None:
-            return
+            if self._data is None:
+                return
 
-        self._updated_at = datetime.now()
-        if self._data_previous is not None and self._data.total_price != self._data_previous.total_price and (
-                self._price_changed_at is None or (
-                self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
-            self._price_change_status = ItemPriceChangeStatus.INC_PRICE if self._data.total_price > self._data_previous.total_price else ItemPriceChangeStatus.DEC_PRICE
-            self._price_changed_at = datetime.now()
-            self._price_change_amount = self._data.total_price - self._data_previous.total_price
-        elif self._data_previous is None:
-            self._price_change_status = ItemPriceChangeStatus.NO_CHANGE
-            self._price_changed_at = datetime.now()
-            self._price_change_amount = 0.0
+            self._updated_at = datetime.now()
+            if self._data_previous is not None and self._data.total_price != self._data_previous.total_price and (
+                    self._price_changed_at is None or (
+                    self._price_changed_at < datetime.now() + timedelta(hours=self._price_change_period))):
+                self._price_change_status = ItemPriceChangeStatus.INC_PRICE if self._data.total_price > self._data_previous.total_price else ItemPriceChangeStatus.DEC_PRICE
+                self._price_changed_at = datetime.now()
+                self._price_change_amount = self._data.total_price - self._data_previous.total_price
+            elif self._data_previous is None:
+                self._price_change_status = ItemPriceChangeStatus.NO_CHANGE
+                self._price_changed_at = datetime.now()
+                self._price_change_amount = 0.0
+        except Exception as e:
+            _LOGGER.error("Error occurred while loading data. {}".format(e))
+            self._data = None
 
     @property
     def unique_id(self):
-        return 'sensor.price_tracker_{}_{}'.format(self._type, self._id)
+        return self.entity_id
 
     @property
     def entity_picture(self):

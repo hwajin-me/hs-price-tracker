@@ -23,6 +23,7 @@ class ItemData:
             id: any,
             price: float,
             name: str,
+            brand: str = None,
             original_price: float = None,
             description: str = None,
             category: str = None,

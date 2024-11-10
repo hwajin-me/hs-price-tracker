@@ -38,29 +38,9 @@
   },
   "options": {
     "step": {
-      "init": {
-        "title": "Choose action item",
-        "data": {
-          "option_select": "Select action item (create & modify, delete)"
-        }
-      },
-      "select": {
-        "title": "Modify entity",
-        "description": "Change the interval and category, or delete entities.",
-        "data": {
-          "item_category": "Category name",
-          "option_entities": "Select entities",
-          "option_delete": "Delete selected entities"
-        }
-      },
-      "entity": {
-        "title": "Upsert Item(a.k.a Product)",
-        "description": "Paste the URL of the product you want to track (collect). Some providers do not support URLs. In that case, you will need to track the API call in your mobile application.",
-        "data": {
-          "item_url": "Product URL (e.g. https://www.idus.com/v2/product/7f8cf2f8-74f6-4a95-b56a-9e16526791d1)",
-          "item_refresh_interval": "Refresh Interval (in minutes)",
-          "item_management_category": "Management Category Name"
-        }
+      "setup": {
+        "title": "{title_en}",
+        "description": "{description_en}"
       }
     }
   },

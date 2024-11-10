@@ -3,10 +3,10 @@ import re
 
 from bs4 import BeautifulSoup
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidError
 from custom_components.price_tracker.services.data import ItemData, InventoryStatus, ItemUnitType, DeliveryData, \
     DeliveryPayType, ItemUnitData
-from custom_components.price_tracker.services.engine import PriceEngine
 from custom_components.price_tracker.utils import request
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,8 +16,8 @@ _URL = 'https://m.oasis.co.kr/product/detail/{}'
 class OasisEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
-        id = OasisEngine.parse_id(item_url)
-        self.product_id = id
+        self.id = OasisEngine.parse_id(item_url)
+        self.product_id = self.id
 
     async def load(self) -> ItemData:
         response = await request('get', _URL.format(self.product_id))
@@ -75,6 +75,9 @@ class OasisEngine(PriceEngine):
         if m is None:
             raise InvalidError('Invalid OASIS Product URL {}'.format(item_url))
         g = m.groupdict()
+
+        if 'product_id' not in g:
+            raise InvalidError('Invalid OASIS Product URL {}'.format(item_url))
 
         return g['product_id']
 

@@ -7,10 +7,10 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.services.data import ItemData, InventoryStatus, DeliveryData, DeliveryPayType, \
     ItemOptionData
-from custom_components.price_tracker.services.engine import PriceEngine
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,9 +26,9 @@ _REQUEST_HEADER = {
 class SmartstoreEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
-        id = SmartstoreEngine.parse_id(item_url)
-        self.store = id['store']
-        self.product_id = id['product_id']
+        self.id = SmartstoreEngine.parse_id(item_url)
+        self.store = self.id['store']
+        self.product_id = self.id['product_id']
 
     async def load(self) -> ItemData:
         response = await asyncio.to_thread(requests.get, _URL.format(self.store, self.product_id),

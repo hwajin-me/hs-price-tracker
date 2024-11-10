@@ -4,10 +4,10 @@ import re
 
 import aiohttp
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidError
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.services.data import ItemData, DeliveryData, DeliveryPayType, InventoryStatus
-from custom_components.price_tracker.services.engine import PriceEngine
 
 _LOGGER = logging.getLogger(__name__)
 _AUTH_URL = 'https://www.kurly.com/nx/api/session'
@@ -18,7 +18,7 @@ _ITEM_LINK = 'https://www.kurly.com/goods/{}'
 class KurlyEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
-        self.product_id = KurlyEngine.parse_id(item_url)
+        self.id = KurlyEngine.parse_id(item_url)
 
     async def load(self) -> ItemData:
         try:
@@ -28,7 +28,7 @@ class KurlyEngine(PriceEngine):
 
                     if auth.status == 200:
                         auth_data = json.loads(auth_result)
-                        async with session.get(url=_URL.format(self.product_id), headers={**REQUEST_DEFAULT_HEADERS,
+                        async with session.get(url=_URL.format(self.id), headers={**REQUEST_DEFAULT_HEADERS,
                             'Authorization': 'Bearer {}'.format(
                                 auth_data[
                                     'accessToken'])}) as response:
@@ -64,7 +64,7 @@ class KurlyEngine(PriceEngine):
             _LOGGER.exception("Kurly Request Error")
 
     def id(self) -> str:
-        return self.product_id
+        return self.id
 
     @staticmethod
     def parse_id(item_url: str):

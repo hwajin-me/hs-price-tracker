@@ -6,9 +6,9 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.services.data import ItemData, InventoryStatus
-from custom_components.price_tracker.services.engine import PriceEngine
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,8 +20,8 @@ _THUMB = 'https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbn
 class OliveyoungEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
-        id = OliveyoungEngine.parse_id(item_url)
-        self.goods_number = id['goods_number']
+        self.id = OliveyoungEngine.parse_id(item_url)
+        self.goods_number = self.id['goods_number']
 
     async def load(self) -> ItemData:
         try:

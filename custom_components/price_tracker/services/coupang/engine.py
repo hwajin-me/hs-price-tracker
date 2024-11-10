@@ -7,11 +7,11 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 
+from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
 from custom_components.price_tracker.services.data import DeliveryPayType, ItemData, ItemUnitType, ItemUnitData, \
     InventoryStatus, \
     DeliveryData
-from custom_components.price_tracker.services.engine import PriceEngine
 from custom_components.price_tracker.utils import find_item
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,11 +32,10 @@ _REQUEST_HEADERS = {
 class CoupangEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
-        data = CoupangEngine.parse_id(item_url)
-
-        self.product_id = data['product_id']
-        self.item_id = data['item_id']
-        self.vendor_item_id = data['vendor_item_id']
+        self.id = CoupangEngine.parse_id(item_url)
+        self.product_id = self.id['product_id']
+        self.item_id = self.id['item_id']
+        self.vendor_item_id = self.id['vendor_item_id']
 
     async def load(self) -> ItemData:
         try:
