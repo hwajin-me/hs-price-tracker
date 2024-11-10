@@ -2,9 +2,9 @@ from enum import Enum
 
 
 class InventoryStatus(Enum):
-    IN_STOCK = 'in_stock'
-    ALMOST_SOLD_OUT = 'almost_sold_out'
-    OUT_OF_STOCK = 'out_of_stock'
+    IN_STOCK = "in_stock"
+    ALMOST_SOLD_OUT = "almost_sold_out"
+    OUT_OF_STOCK = "out_of_stock"
 
     @staticmethod
     def of(is_sold_out: bool, stock: int = None):

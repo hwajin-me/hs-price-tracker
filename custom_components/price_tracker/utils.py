@@ -18,13 +18,18 @@ async def request(method: str, url: str, headers=None):
     if headers is None:
         headers = {}
 
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-        async with session.request(method=method, url=url, headers={**REQUEST_DEFAULT_HEADERS, **headers}) as response:
+    async with aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(verify_ssl=False)
+    ) as session:
+        async with session.request(
+            method=method, url=url, headers={**REQUEST_DEFAULT_HEADERS, **headers}
+        ) as response:
             if response.status > 299:
                 raise ApiError(
-                    "Error while fetching data from the API (status code: {}, {}, {}, {})".format(response.status, url,
-                                                                                                  headers,
-                                                                                                  await response.text()))
+                    "Error while fetching data from the API (status code: {}, {}, {}, {})".format(
+                        response.status, url, headers, await response.text()
+                    )
+                )
 
             return await response.read()
 
@@ -33,8 +38,12 @@ async def request_plain(url: str, headers=None):
     if headers is None:
         headers = {}
 
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-        async with session.get(url=url, headers={**REQUEST_DEFAULT_HEADERS, **headers}) as response:
+    async with aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(verify_ssl=False)
+    ) as session:
+        async with session.get(
+            url=url, headers={**REQUEST_DEFAULT_HEADERS, **headers}
+        ) as response:
             return response
 
 
@@ -52,11 +61,11 @@ def parseNumber(value: any):
 
 def sha256(value: str):
     target = hashlib.sha256()
-    target.update(value.encode('utf-8'))
+    target.update(value.encode("utf-8"))
     return target.hexdigest()
 
 
 def md5(value: str):
     target = hashlib.md5()
-    target.update(value.encode('utf-8'))
+    target.update(value.encode("utf-8"))
     return target.hexdigest()

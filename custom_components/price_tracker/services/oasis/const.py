@@ -1,1 +1,1 @@
-CODE = 'oasis'
+CODE = "oasis"

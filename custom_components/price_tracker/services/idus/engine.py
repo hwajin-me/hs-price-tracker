@@ -7,11 +7,16 @@ import aiohttp
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidError
 from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.services.data import ItemData, DeliveryData, ItemUnitData, InventoryStatus
+from custom_components.price_tracker.services.data import (
+    ItemData,
+    DeliveryData,
+    ItemUnitData,
+    InventoryStatus,
+)
 
 _LOGGER = logging.getLogger(__name__)
-_URL = 'https://api.idus.com/v3/product/info?uuid={}'
-_ITEM_LINK = 'https://www.idus.com/v2/product/{}'
+_URL = "https://api.idus.com/v3/product/info?uuid={}"
+_ITEM_LINK = "https://www.idus.com/v2/product/{}"
 
 
 class IdusEngine(PriceEngine):
@@ -22,37 +27,45 @@ class IdusEngine(PriceEngine):
 
     async def load(self) -> ItemData:
         try:
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-                async with session.get(url=_URL.format(self.product_id),
-                                       headers={**REQUEST_DEFAULT_HEADERS}) as response:
+            async with aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(verify_ssl=False)
+            ) as session:
+                async with session.get(
+                    url=_URL.format(self.product_id),
+                    headers={**REQUEST_DEFAULT_HEADERS},
+                ) as response:
                     result = await response.read()
 
                     if response.status == 200:
                         j = json.loads(result)
-                        d = j['items']
+                        d = j["items"]
 
                         _LOGGER.debug("Backpackr Idus Response", d)
 
-                        if d['p_info']['pi_itemcount'] == -1:
+                        if d["p_info"]["pi_itemcount"] == -1:
                             inventory = InventoryStatus.IN_STOCK
-                        elif d['p_info']['pi_itemcount'] == 0:
+                        elif d["p_info"]["pi_itemcount"] == 0:
                             inventory = InventoryStatus.OUT_OF_STOCK
                         else:
                             inventory = InventoryStatus.ALMOST_SOLD_OUT
 
                         return ItemData(
-                            id=d['uuid'],
-                            name=d['p_info']['pi_name'],
-                            price=float(d['p_info']['pi_saleprice'].replace(",", "")),
-                            category=d['category_name'],
-                            description=d['p_keywords'],
-                            delivery=DeliveryData(
-                                price=0.0
+                            id=d["uuid"],
+                            name=d["p_info"]["pi_name"],
+                            price=float(d["p_info"]["pi_saleprice"].replace(",", "")),
+                            category=d["category_name"],
+                            description=d["p_keywords"],
+                            delivery=DeliveryData(price=0.0),
+                            url=_ITEM_LINK.format(d["uuid"]),
+                            image=d["p_images"]["pp_mainimage"]["ppi_origin"][
+                                "picPath"
+                            ],
+                            unit=ItemUnitData(
+                                price=float(
+                                    d["p_info"]["pi_saleprice"].replace(",", "")
+                                )
                             ),
-                            url=_ITEM_LINK.format(d['uuid']),
-                            image=d['p_images']['pp_mainimage']['ppi_origin']['picPath'],
-                            unit=ItemUnitData(price=float(d['p_info']['pi_saleprice'].replace(",", ""))),
-                            inventory=inventory
+                            inventory=inventory,
                         )
                     else:
                         _LOGGER.error("Backpackr Idus Response Error", response)
@@ -72,12 +85,12 @@ class IdusEngine(PriceEngine):
 
         g = u.groupdict()
 
-        return g['product_id']
+        return g["product_id"]
 
     @staticmethod
     def engine_code() -> str:
-        return 'idus'
+        return "idus"
 
     @staticmethod
     def engine_name() -> str:
-        return 'Idus'
+        return "Idus"

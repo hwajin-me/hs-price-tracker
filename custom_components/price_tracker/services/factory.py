@@ -32,8 +32,10 @@ _SERVICE_ITEM_TARGET_PARSER = {
     SsgEngine.engine_code(): lambda cfg: SsgEngine.target_id(cfg),
 }
 
+
 def create_service_item_url_parser(service_code):
     return _SERVICE_ITEM_URL_PARSER[service_code]
+
 
 def create_service_item_target_parser(service_code):
     return _SERVICE_ITEM_TARGET_PARSER[service_code]

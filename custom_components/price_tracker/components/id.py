@@ -2,13 +2,16 @@ from custom_components.price_tracker.consts.defaults import DOMAIN
 
 
 class IdGenerator:
-
     @staticmethod
-    def generate_entity_id(service_type: str, entity_target: str, device_id: str | None = None) -> str:
+    def generate_entity_id(
+        service_type: str, entity_target: str, device_id: str | None = None
+    ) -> str:
         if device_id is None or device_id == "":
             return DOMAIN + ".price_{}_type_{}".format(service_type, entity_target)
 
-        return DOMAIN + ".price_{}_type_{}_device_{}".format(service_type, device_id, entity_target)
+        return DOMAIN + ".price_{}_type_{}_device_{}".format(
+            service_type, device_id, entity_target
+        )
 
     @staticmethod
     def generate_device_id(device_target: str) -> str:

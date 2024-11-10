@@ -19,29 +19,25 @@ class ItemOptionData:
 
 class ItemData:
     def __init__(
-            self,
-            id: any,
-            price: float,
-            name: str,
-            brand: str = None,
-            original_price: float = None,
-            description: str = None,
-            category: str = None,
-            delivery: DeliveryData = None,
-            url: str = None,
-            image: str = None,
-            unit: ItemUnitData = None,
-            inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
-            currency: str = 'KRW',
-            options: [ItemOptionData] = None
+        self,
+        id: any,
+        price: float,
+        name: str,
+        brand: str = None,
+        original_price: float = None,
+        description: str = None,
+        category: str = None,
+        delivery: DeliveryData = None,
+        url: str = None,
+        image: str = None,
+        unit: ItemUnitData = None,
+        inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
+        currency: str = "KRW",
+        options: [ItemOptionData] = None,
     ) -> None:
         self.id = id
         if unit is None:
-            self.unit = ItemUnitData(
-                unit=1,
-                price=price,
-                unit_type=ItemUnitType.PIECE
-            )
+            self.unit = ItemUnitData(unit=1, price=price, unit_type=ItemUnitType.PIECE)
         else:
             self.unit = unit
         self.original_price = original_price
@@ -64,6 +60,4 @@ class ItemData:
 
     @property
     def dict(self):
-        return {
-
-        }
+        return {}

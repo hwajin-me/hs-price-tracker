@@ -3,7 +3,6 @@ from custom_components.price_tracker.services.data import ItemData
 
 
 class PriceEngine:
-
     @abstractmethod
     async def load(self) -> ItemData:
         """Load"""

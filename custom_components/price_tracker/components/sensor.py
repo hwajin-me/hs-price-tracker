@@ -17,6 +17,4 @@ class PriceTrackerSensor(SensorEntity):
         if self._item_data is None:
             return {}
 
-        return {
-            **self._item_data.dict
-        }
+        return {**self._item_data.dict}

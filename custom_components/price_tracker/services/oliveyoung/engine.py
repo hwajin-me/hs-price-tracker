@@ -12,21 +12,24 @@ from custom_components.price_tracker.services.data import ItemData, InventorySta
 
 _LOGGER = logging.getLogger(__name__)
 
-_URL = 'https://m.oliveyoung.co.kr/m/goods/getGoodsDetail.do?goodsNo={}'
-_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 appVer/3.18.1 osType/10 osVer/18.0'
-_THUMB = 'https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbnails/{}'
+_URL = "https://m.oliveyoung.co.kr/m/goods/getGoodsDetail.do?goodsNo={}"
+_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 appVer/3.18.1 osType/10 osVer/18.0"
+_THUMB = "https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbnails/{}"
 
 
 class OliveyoungEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
         self.id = OliveyoungEngine.parse_id(item_url)
-        self.goods_number = self.id['goods_number']
+        self.goods_number = self.id["goods_number"]
 
     async def load(self) -> ItemData:
         try:
-            response = await asyncio.to_thread(requests.get, _URL.format(self.goods_number),
-                                               headers={**REQUEST_DEFAULT_HEADERS, 'User-Agent': _UA})
+            response = await asyncio.to_thread(
+                requests.get,
+                _URL.format(self.goods_number),
+                headers={**REQUEST_DEFAULT_HEADERS, "User-Agent": _UA},
+            )
             if response is not None:
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, "html.parser")
@@ -38,17 +41,26 @@ class OliveyoungEngine(PriceEngine):
 
                         return ItemData(
                             id=self.goods_number,
-                            price=float(json_data['finalPrice']),
-                            name=json_data['goodsBaseInfo']['goodsName'],
-                            category=json_data['displayCategoryInfo']['displayCategoryFullPath'],
-                            description=json_data['brandName'],
-                            image=_THUMB.format(json_data['images'][0]) if len(json_data['images']) else None,
-                            inventory=InventoryStatus.OUT_OF_STOCK if json_data['optionInfo'][
-                                'allSoldoutFlag'] else InventoryStatus.IN_STOCK
+                            price=float(json_data["finalPrice"]),
+                            name=json_data["goodsBaseInfo"]["goodsName"],
+                            category=json_data["displayCategoryInfo"][
+                                "displayCategoryFullPath"
+                            ],
+                            description=json_data["brandName"],
+                            image=_THUMB.format(json_data["images"][0])
+                            if len(json_data["images"])
+                            else None,
+                            inventory=InventoryStatus.OUT_OF_STOCK
+                            if json_data["optionInfo"]["allSoldoutFlag"]
+                            else InventoryStatus.IN_STOCK,
                         )
                     else:
-                        _LOGGER.error("Oliveyoung Response Parse Error", response.request_info, response)
-        except:
+                        _LOGGER.error(
+                            "Oliveyoung Response Parse Error",
+                            response.request_info,
+                            response,
+                        )
+        except Exception:
             _LOGGER.exception("Oliveyoung Request Parse Error")
 
     def id(self) -> str:
@@ -62,14 +74,14 @@ class OliveyoungEngine(PriceEngine):
             raise Exception("Bad Oliveyoung item_url " + item_url)
         data = {}
         g = u.groupdict()
-        data['goods_number'] = g['goods_number']
+        data["goods_number"] = g["goods_number"]
 
         return data
 
     @staticmethod
     def engine_code() -> str:
-        return 'oliveyoung'
+        return "oliveyoung"
 
     @staticmethod
     def engine_name() -> str:
-        return 'Oliveyoung'
+        return "Oliveyoung"

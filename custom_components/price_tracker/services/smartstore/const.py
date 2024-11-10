@@ -1,1 +1,1 @@
-CODE = 'smartstore'
+CODE = "smartstore"

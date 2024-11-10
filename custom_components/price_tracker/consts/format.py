@@ -10,4 +10,3 @@ def entity_id_format(device_id: str, product_id: str) -> str:
 
 def device_entity_id_format(device_id: str) -> str:
     return DEVICE_ENTITY_ID_FORMAT.format(device_id)
-

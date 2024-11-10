@@ -1,1 +1,1 @@
-CODE = 'ssg'
+CODE = "ssg"

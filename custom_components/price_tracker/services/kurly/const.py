@@ -1,1 +1,1 @@
-CODE = 'kurly'
+CODE = "kurly"

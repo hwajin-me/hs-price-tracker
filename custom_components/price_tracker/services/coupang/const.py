@@ -1,1 +1,1 @@
-CODE = 'coupang'
+CODE = "coupang"

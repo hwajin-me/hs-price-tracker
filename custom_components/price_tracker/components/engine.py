@@ -5,8 +5,9 @@ from custom_components.price_tracker.services.data import ItemData
 
 
 _LOGGER = logging.getLogger(__name__)
-class PriceEngine:
 
+
+class PriceEngine:
     item_url: str
     id: any
 
@@ -30,11 +31,11 @@ class PriceEngine:
     @staticmethod
     def target_id(value: any) -> str:
         if isinstance(value, dict):
-            return '_'.join(list(value.values()))
+            return "_".join(list(value.values()))
         elif value is str:
             return value
         elif isinstance(value, list):
-            return '_'.join(value)
+            return "_".join(value)
         else:
             return str(value)
 
