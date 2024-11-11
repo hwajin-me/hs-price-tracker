@@ -1,3 +1,4 @@
+import dataclasses
 from enum import Enum
 
 
@@ -40,6 +41,7 @@ class ItemUnitType(Enum):
             return ItemUnitType.PIECE
 
 
+@dataclasses.dataclass
 class ItemUnitData:
     def __init__(
         self,

@@ -18,6 +18,13 @@ class Lu:
         return None
 
     @staticmethod
+    def get_or_default(target: [any], key: str, default_value: any = None):
+        if key in target:
+            return target[key]
+
+        return default_value
+
+    @staticmethod
     def remove_item(target: [any], key: str, value: any) -> list:
         return target(filter(lambda x: x[key] != value, target))
 

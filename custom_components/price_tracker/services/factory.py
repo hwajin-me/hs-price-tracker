@@ -1,4 +1,5 @@
 from custom_components.price_tracker.services.coupang.engine import CoupangEngine
+from custom_components.price_tracker.services.gsthefresh.device import GsTheFreshDevice
 from custom_components.price_tracker.services.gsthefresh.engine import GsTheFreshEngine
 from custom_components.price_tracker.services.idus.engine import IdusEngine
 from custom_components.price_tracker.services.kurly.engine import KurlyEngine
@@ -32,6 +33,10 @@ _SERVICE_ITEM_TARGET_PARSER = {
     SsgEngine.engine_code(): lambda cfg: SsgEngine.target_id(cfg),
 }
 
+_SERVICE_DEVICE_PARSER = {
+    GsTheFreshDevice.device_code(): lambda cfg: GsTheFreshDevice.create_device_id(cfg['number'], cfg['store']),
+}
+
 
 def create_service_item_url_parser(service_code):
     return _SERVICE_ITEM_URL_PARSER[service_code]
@@ -39,3 +44,10 @@ def create_service_item_url_parser(service_code):
 
 def create_service_item_target_parser(service_code):
     return _SERVICE_ITEM_TARGET_PARSER[service_code]
+
+
+def create_service_device_parser_and_parse(service_code: str, param: dict = None):
+    if service_code in _SERVICE_DEVICE_PARSER:
+        return _SERVICE_DEVICE_PARSER[service_code](param)
+
+    return None

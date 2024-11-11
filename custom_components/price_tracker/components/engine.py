@@ -3,7 +3,6 @@ from abc import abstractmethod
 
 from custom_components.price_tracker.services.data import ItemData
 
-
 _LOGGER = logging.getLogger(__name__)
 
 

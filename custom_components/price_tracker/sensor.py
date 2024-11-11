@@ -7,6 +7,7 @@ from custom_components.price_tracker.services.device import createDevice
 from custom_components.price_tracker.services.sensor import PriceTrackerSensor
 from custom_components.price_tracker.utils import findValueOrDefault
 from .const import *
+from .utilities.list import Lu
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ async def async_setup_entry(
         for device in config[CONF_DEVICE]:
             devices.append(createDevice(type=config[CONF_TYPE], attributes=device))
 
-    for target in config[CONF_TARGET]:
+    for target in Lu.get_or_default(config, CONF_TARGET, []):
         try:
             device = None
             for d in devices:

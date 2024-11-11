@@ -14,7 +14,7 @@ from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.const import DOMAIN, PLATFORMS
 from custom_components.price_tracker.services.factory import (
     create_service_item_url_parser,
-    create_service_item_target_parser,
+    create_service_item_target_parser, create_service_device_parser_and_parse,
 )
 from custom_components.price_tracker.utilities.list import Lu
 
@@ -34,19 +34,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up entry and options {} > {}".format(entry, entry.options))
 
     # For upgrade options (1.0.0)
-    if (
-        entry.options is not None
-        and "target" in entry.options
-        and len(entry.options["target"]) > 0
-    ):
-        """Update"""
+    if entry.data is not None and 'device' in entry.data:
+        """Update device_id"""
+        data = {
+            **entry.data,
+            'device': Lu.map(
+                entry.data['device'],
+                lambda x: {**x, "item_device_id": IdGenerator.generate_device_id(
+                    create_service_device_parser_and_parse(entry.data['type'], x)
+                ) if create_service_device_parser_and_parse(entry.data['type'], x) is not None else None},
+            ),
+        }
+    else:
+        data = entry.data
+
+    if entry.options is not None and 'target' in entry.options:
         options = {
             **entry.options,
             "target": Lu.map(
                 entry.options["target"],
-                lambda x: {**x, "item_device_id": Lu.get(x, "device")},
+                lambda x: {**x, "item_device_id": Lu.get(x, "device") if Lu.get(x, "device") is not None else Lu.get(x,
+                                                                                                                     "device_id")},
             ),
         }
+        """Update item_url (item_unique_id)"""
         options = {
             **options,
             "target": Lu.map(
@@ -67,12 +78,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 },
             ),
         }
+    else:
+        options = {
+            'target': []
+        }
 
-        hass.config_entries.async_update_entry(
-            entry=entry, data=entry.data, options=options
-        )
+    hass.config_entries.async_update_entry(
+        entry=entry, data=data, options=options
+    )
 
-    data = dict(entry.data)
+    data = dict(data)
     listeners = entry.add_update_listener(options_update_listener)
     hass.data[DOMAIN][entry.entry_id] = data
 

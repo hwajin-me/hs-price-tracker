@@ -1,3 +1,7 @@
+import dataclasses
+
+
+@dataclasses.dataclass
 class ItemCategoryData:
     def __init__(self, category: any):
         if isinstance(category, list):

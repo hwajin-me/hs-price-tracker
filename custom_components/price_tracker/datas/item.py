@@ -1,8 +1,11 @@
+import dataclasses
+
 from custom_components.price_tracker.datas.delivery import DeliveryData
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 
 
+@dataclasses.dataclass
 class ItemOptionData:
     def __init__(self, id: any, name: str, price: float, inventory: int = None):
         self.id = id
@@ -17,23 +20,24 @@ class ItemOptionData:
                 self.inventory = InventoryStatus.OUT_OF_STOCK
 
 
+@dataclasses.dataclass
 class ItemData:
     def __init__(
-        self,
-        id: any,
-        price: float,
-        name: str,
-        brand: str = None,
-        original_price: float = None,
-        description: str = None,
-        category: str = None,
-        delivery: DeliveryData = None,
-        url: str = None,
-        image: str = None,
-        unit: ItemUnitData = None,
-        inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
-        currency: str = "KRW",
-        options: [ItemOptionData] = None,
+            self,
+            id: any,
+            price: float,
+            name: str,
+            brand: str = None,
+            original_price: float = None,
+            description: str = None,
+            category: str = None,
+            delivery: DeliveryData = None,
+            url: str = None,
+            image: str = None,
+            unit: ItemUnitData = None,
+            inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
+            currency: str = "KRW",
+            options: [ItemOptionData] = None,
     ) -> None:
         self.id = id
         if unit is None:

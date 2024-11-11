@@ -61,7 +61,12 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_setup(self, user_input=None):
-        """Set-up flows."""
+        if step := price_tracker_setup_service(
+                service_type=price_tracker_setup_service_user_input(user_input),
+                config_flow=self,
+        ):
+            return await step.setup(user_input)
+
         raise NotImplementedError("Not implemented (Set up). {}".format(user_input))
 
 

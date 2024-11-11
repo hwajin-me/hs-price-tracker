@@ -1,3 +1,4 @@
+import dataclasses
 from enum import Enum
 
 
@@ -22,6 +23,7 @@ class DeliveryType(Enum):
     ONLINE = "online"
 
 
+@dataclasses.dataclass
 class DeliveryData:
     def __init__(
         self,

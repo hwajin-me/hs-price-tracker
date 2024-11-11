@@ -15,22 +15,15 @@
         "description": "{description_en}",
         "data": {
           "service_type": "Service Type (e.g. Amazon, Coupang, etc.)",
-          "conf_gs_naver_login_code": {
-            "title": "GS THE FRESH Login Code (NAVER Social)",
-            "description": "test"
-          }
-        }
-      },
-      "gs_login": {
-        "title": "Add GS THE FRESH Provider",
-        "description": "Open https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs and copy the 'Code' query string from the redirected page.",
-        "data": {
-          "item_gs_naver_login_code": "Login code"
+          "item_url": "{item_url_en}",
+          "item_management_category": "{item_management_category}"
         }
       }
     },
     "error": {
-      "unknown": "Unknown error occurred."
+      "base": "Unknown error occurred.",
+      "unknown": "Unknown error occurred.",
+      "no_search_results": "No search results found."
     },
     "abort": {
       "already_configured": "E-commerce provider is already configured."
