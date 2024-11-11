@@ -8,14 +8,10 @@ import requests
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.services.data import (
-    ItemData,
-    InventoryStatus,
-    DeliveryData,
-    DeliveryPayType,
-    ItemOptionData,
-)
+from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
+from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.item import ItemData, ItemOptionData
+from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +35,7 @@ class SmartstoreEngine(PriceEngine):
         response = await asyncio.to_thread(
             requests.get,
             _URL.format(self.store, self.product_id),
-            headers={**REQUEST_DEFAULT_HEADERS, **_REQUEST_HEADER},
+            headers={**default_request_headers(), **_REQUEST_HEADER},
         )
         if response is not None:
             if response.status_code == 200:
@@ -96,11 +92,11 @@ class SmartstoreEngine(PriceEngine):
                                 price=json_data["product"]["A"]["productDeliveryInfo"][
                                     "baseFee"
                                 ],
-                                type=DeliveryPayType.FREE
+                                pay_type=DeliveryPayType.FREE
                                 if json_data["product"]["A"]["productDeliveryInfo"][
-                                    "deliveryFeeType"
-                                ]
-                                == "FREE"
+                                       "deliveryFeeType"
+                                   ]
+                                   == "FREE"
                                 else DeliveryPayType.PAID,
                             ),
                             options=options if options else None,

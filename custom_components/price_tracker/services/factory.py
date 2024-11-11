@@ -33,10 +33,32 @@ _SERVICE_ITEM_TARGET_PARSER = {
     SsgEngine.engine_code(): lambda cfg: SsgEngine.target_id(cfg),
 }
 
+_SERVICE_ITEM_ENGINE = {
+    CoupangEngine.engine_code() : lambda cfg: CoupangEngine(cfg),
+    GsTheFreshEngine.engine_code(): lambda cfg: GsTheFreshEngine(item_url=cfg['item_url'], device=cfg['device']),
+    IdusEngine.engine_code(): lambda cfg: IdusEngine(cfg),
+    KurlyEngine.engine_code(): lambda cfg: KurlyEngine(cfg),
+    NcncEngine.engine_code(): lambda cfg: NcncEngine(cfg),
+    OasisEngine.engine_code(): lambda cfg: OasisEngine(cfg),
+    OliveyoungEngine.engine_code(): lambda cfg: OliveyoungEngine(cfg),
+    SmartstoreEngine.engine_code(): lambda cfg: SmartstoreEngine(cfg),
+    SsgEngine.engine_code(): lambda cfg: SsgEngine(cfg),
+}
+
 _SERVICE_DEVICE_PARSER = {
     GsTheFreshDevice.device_code(): lambda cfg: GsTheFreshDevice.create_device_id(cfg['number'], cfg['store']),
 }
 
+_SERVICE_DEVICE_GENERATOR = {
+    GsTheFreshDevice.device_code(): lambda cfg: GsTheFreshDevice(
+        gs_device_id=cfg['gs_device_id'],
+        access_token=cfg['access_token'],
+        refresh_token=cfg['refresh_token'],
+        name=cfg['name'],
+        number=cfg['number'],
+        store=cfg['store'],
+    )
+}
 
 def create_service_item_url_parser(service_code):
     return _SERVICE_ITEM_URL_PARSER[service_code]
@@ -51,3 +73,11 @@ def create_service_device_parser_and_parse(service_code: str, param: dict = None
         return _SERVICE_DEVICE_PARSER[service_code](param)
 
     return None
+
+
+def create_service_device_generator(service_code):
+    return _SERVICE_DEVICE_GENERATOR[service_code]
+
+
+def create_service_engine(service_code):
+    return _SERVICE_ITEM_ENGINE[service_code]

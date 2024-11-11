@@ -13,13 +13,12 @@ from homeassistant.helpers import selector
 from custom_components.price_tracker.components.error import NotFoundError
 from custom_components.price_tracker.components.forms import Forms
 from custom_components.price_tracker.components.id import IdGenerator
-from custom_components.price_tracker.const import CONF_TYPE
+from custom_components.price_tracker.consts.confs import CONF_TYPE
 from custom_components.price_tracker.datas.unit import ItemUnitType
 from custom_components.price_tracker.services.factory import (
     create_service_item_url_parser,
 )
 from custom_components.price_tracker.utilities.list import Lu
-from custom_components.price_tracker.utils import find_item
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -208,7 +207,7 @@ class PriceTrackerSetup:
             entity = (er.async_get(self._option_flow.hass)).async_get(
                 user_input[self.const_option_select_entity]
             )
-            item = find_item(
+            item = Lu.find_item(
                 self._config_entry.options.get(self.conf_target, []),
                 self.conf_item_unique_id,
                 entity.unique_id,

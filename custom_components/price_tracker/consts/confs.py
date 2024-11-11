@@ -1,0 +1,6 @@
+CONF_ITEM_DEVICE_ID = "item_device_id"
+CONF_ITEM_UNIQUE_ID = "item_unique_id"
+CONF_DEVICE="device"
+CONF_TARGET="target"
+CONF_TYPE="type"
+CONF_ITEM_URL="item_url"

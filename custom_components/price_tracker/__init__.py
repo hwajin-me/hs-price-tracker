@@ -11,7 +11,8 @@ from homeassistant.helpers import (
 )
 
 from custom_components.price_tracker.components.id import IdGenerator
-from custom_components.price_tracker.const import DOMAIN, PLATFORMS
+from custom_components.price_tracker.consts.confs import CONF_ITEM_DEVICE_ID, CONF_ITEM_UNIQUE_ID
+from custom_components.price_tracker.consts.defaults import DOMAIN, PLATFORMS
 from custom_components.price_tracker.services.factory import (
     create_service_item_url_parser,
     create_service_item_target_parser, create_service_device_parser_and_parse,
@@ -40,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             **entry.data,
             'device': Lu.map(
                 entry.data['device'],
-                lambda x: {**x, "item_device_id": IdGenerator.generate_device_id(
+                lambda x: {**x, CONF_ITEM_DEVICE_ID: IdGenerator.generate_device_id(
                     create_service_device_parser_and_parse(entry.data['type'], x)
                 ) if create_service_device_parser_and_parse(entry.data['type'], x) is not None else None},
             ),
@@ -53,8 +54,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             **entry.options,
             "target": Lu.map(
                 entry.options["target"],
-                lambda x: {**x, "item_device_id": Lu.get(x, "device") if Lu.get(x, "device") is not None else Lu.get(x,
-                                                                                                                     "device_id")},
+                lambda x: {**x, CONF_ITEM_DEVICE_ID: Lu.get(x, "device") if Lu.get(x, "device") is not None else Lu.get(x,
+                                                                                                                     CONF_ITEM_DEVICE_ID)},
             ),
         }
         """Update item_url (item_unique_id)"""
@@ -64,7 +65,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 options["target"],
                 lambda x: {
                     **x,
-                    "item_unique_id": IdGenerator.generate_entity_id(
+                    CONF_ITEM_UNIQUE_ID: IdGenerator.generate_entity_id(
                         service_type=entry.data["type"],
                         entity_target=create_service_item_target_parser(
                             entry.data["type"]
@@ -73,7 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                 x["item_url"]
                             )
                         ),
-                        device_id=Lu.get(x, "item_device_id"),
+                        device_id=IdGenerator.get_device_target_from_id(Lu.get(x, CONF_ITEM_DEVICE_ID)) if Lu.get(x, CONF_ITEM_DEVICE_ID) is not None else None,
                     ),
                 },
             ),

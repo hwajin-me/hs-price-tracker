@@ -5,8 +5,9 @@ from datetime import datetime
 import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.services.data import ItemData, InventoryStatus
+from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
 _URL = "https://qn9ovn2pnk.execute-api.ap-northeast-2.amazonaws.com/pro/items/v2/{}"
@@ -28,7 +29,7 @@ class NcncEngine(PriceEngine):
                 async with session.get(
                     url=_URL.format(self.id),
                     headers={
-                        **REQUEST_DEFAULT_HEADERS,
+                        **default_request_headers(),
                         "User-Agent": _UA,
                         "x-api-key": _X_API,
                     },

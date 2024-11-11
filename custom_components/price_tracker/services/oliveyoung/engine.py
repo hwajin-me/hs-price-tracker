@@ -7,8 +7,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.services.data import ItemData, InventoryStatus
+from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class OliveyoungEngine(PriceEngine):
             response = await asyncio.to_thread(
                 requests.get,
                 _URL.format(self.goods_number),
-                headers={**REQUEST_DEFAULT_HEADERS, "User-Agent": _UA},
+                headers={**default_request_headers(), "User-Agent": _UA},
             )
             if response is not None:
                 if response.status_code == 200:

@@ -6,13 +6,10 @@ import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidError
-from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.services.data import (
-    ItemData,
-    DeliveryData,
-    DeliveryPayType,
-    InventoryStatus,
-)
+from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
+from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
 _AUTH_URL = "https://www.kurly.com/nx/api/session"
@@ -28,23 +25,23 @@ class KurlyEngine(PriceEngine):
     async def load(self) -> ItemData:
         try:
             async with aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(verify_ssl=False)
+                    connector=aiohttp.TCPConnector(verify_ssl=False)
             ) as session:
                 async with session.get(
-                    url=_AUTH_URL, headers={**REQUEST_DEFAULT_HEADERS}
+                        url=_AUTH_URL, headers={**default_request_headers()}
                 ) as auth:
                     auth_result = await auth.read()
 
                     if auth.status == 200:
                         auth_data = json.loads(auth_result)
                         async with session.get(
-                            url=_URL.format(self.id),
-                            headers={
-                                **REQUEST_DEFAULT_HEADERS,
-                                "Authorization": "Bearer {}".format(
-                                    auth_data["accessToken"]
-                                ),
-                            },
+                                url=_URL.format(self.id),
+                                headers={
+                                    **default_request_headers(),
+                                    "Authorization": "Bearer {}".format(
+                                        auth_data["accessToken"]
+                                    ),
+                                },
                         ) as response:
                             result = await response.read()
 
@@ -63,7 +60,7 @@ class KurlyEngine(PriceEngine):
                                     category=d["category_ids"].join(">"),
                                     delivery=DeliveryData(
                                         price=0.0,
-                                        type=DeliveryPayType.FREE
+                                        pay_type=DeliveryPayType.FREE
                                         if d["is_direct_order"]
                                         else DeliveryPayType.PAID,
                                     ),

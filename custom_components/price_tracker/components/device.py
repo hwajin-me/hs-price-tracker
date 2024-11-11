@@ -9,9 +9,9 @@ class PriceTrackerDevice(Entity):
     _name: str | None = None
 
     def __init__(self, device_type: str, device_id: str):
-        self._device_id = device_id
+        self._device_id = str(device_id)
         self._device_type = device_type
-        self.entity_id = IdGenerator.generate_device_id(device_id)
+        self.entity_id = IdGenerator.generate_device_id(self._device_id)
 
     @property
     def device_id(self):
@@ -32,7 +32,7 @@ class PriceTrackerDevice(Entity):
     def device_info(self):
         return DeviceInfo(
             identifiers={(DOMAIN, self.entity_id)},
-            name=self._device_id,
+            name=self.name,
             manufacturer=self._device_type,
             model="Price Tracker Device",
             sw_version=VERSION,

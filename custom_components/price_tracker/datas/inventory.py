@@ -7,7 +7,7 @@ class InventoryStatus(Enum):
     OUT_OF_STOCK = "out_of_stock"
 
     @staticmethod
-    def of(is_sold_out: bool, stock: int = None):
+    def of(is_sold_out: bool = False, stock: int = None):
         if is_sold_out:
             return InventoryStatus.OUT_OF_STOCK
         elif not is_sold_out and stock is not None and stock < 10:

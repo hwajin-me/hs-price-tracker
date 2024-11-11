@@ -26,16 +26,22 @@ class DeliveryType(Enum):
 @dataclasses.dataclass
 class DeliveryData:
     def __init__(
-        self,
-        price: float = None,
-        threshold_price: float = None,
-        pay_type: DeliveryPayType = DeliveryPayType.FREE,
-        delivery_type: DeliveryType = DeliveryType.STANDARD,
+            self,
+            price: float = None,
+            threshold_price: float = None,
+            pay_type: DeliveryPayType = DeliveryPayType.FREE,
+            delivery_type: DeliveryType = DeliveryType.STANDARD,
     ):
         self.price = price
         self.threshold_price = threshold_price
         self.pay_type = pay_type
         self.delivery_type = delivery_type
 
+    @property
     def dict(self):
-        return {}
+        return {
+            "price": self.price,
+            "threshold_price": self.threshold_price,
+            "pay_type": self.pay_type.name,
+            "delivery_type": self.delivery_type.name,
+        }

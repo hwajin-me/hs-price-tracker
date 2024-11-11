@@ -11,14 +11,16 @@ class ItemOptionData:
         self.id = id
         self.name = name
         self.price = price
-        if inventory is not None:
-            if inventory > 10:
-                self.inventory = InventoryStatus.IN_STOCK
-            elif inventory > 0:
-                self.inventory = InventoryStatus.ALMOST_SOLD_OUT
-            else:
-                self.inventory = InventoryStatus.OUT_OF_STOCK
+        self.inventory = InventoryStatus.of(is_sold_out=False, stock=inventory)
 
+    @property
+    def dict(self):
+        return {
+            'option_id': self.id,
+            'name': self.name,
+            'price': self.price,
+            'inventory_status': self.inventory.name,
+        }
 
 @dataclasses.dataclass
 class ItemData:
@@ -48,6 +50,7 @@ class ItemData:
         if self.original_price is None:
             self.original_price = price
         self.price = price
+        self.brand = brand
         self.delivery = delivery
         self.category = category
         self.url = url
@@ -64,4 +67,19 @@ class ItemData:
 
     @property
     def dict(self):
-        return {}
+        return {
+            'product_id': self.id,
+            'brand': self.brand,
+            'name': self.name,
+            'description': self.description,
+            'display_category': self.category,
+            'price': self.price,
+            'original_price': self.original_price,
+            'delivery': self.delivery.dict if self.delivery is not None else None,
+            'url': self.url,
+            'image': self.image,
+            'inventory_status': self.inventory.name,
+            'currency': self.currency,
+            'unit': self.unit.dict,
+            'options': [option.dict for option in self.options] if self.options is not None else None,
+        }

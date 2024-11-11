@@ -8,10 +8,9 @@ from homeassistant.core import callback, HomeAssistant
 from custom_components.price_tracker.utilities.list import Lu
 from .components.error import UnsupportedError
 from .components.setup import PriceTrackerSetup
-from .const import (
-    DOMAIN,
-    CONF_TYPE,
-)
+from .consts.confs import CONF_TYPE
+from .consts.defaults import DOMAIN
+
 from .services.setup import (
     price_tracker_setup_service,
     price_tracker_setup_service_user_input,

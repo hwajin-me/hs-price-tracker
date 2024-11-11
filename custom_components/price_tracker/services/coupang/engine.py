@@ -8,16 +8,13 @@ import requests
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.services.data import (
-    DeliveryPayType,
-    ItemData,
-    ItemUnitType,
-    ItemUnitData,
-    InventoryStatus,
-    DeliveryData,
-)
-from custom_components.price_tracker.utils import find_item
+from custom_components.price_tracker.components.error import InvalidError
+from custom_components.price_tracker.datas.delivery import DeliveryPayType, DeliveryData
+from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
+from custom_components.price_tracker.utilities.list import Lu
+from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,7 +44,7 @@ class CoupangEngine(PriceEngine):
             response = await asyncio.to_thread(
                 requests.get,
                 _URL.format(self.product_id, self.item_id, self.vendor_item_id),
-                headers={**REQUEST_DEFAULT_HEADERS, **_REQUEST_HEADERS},
+                headers={**default_request_headers(), **_REQUEST_HEADERS},
             )
             if response is not None:
                 if response.status_code == 200:
@@ -56,22 +53,23 @@ class CoupangEngine(PriceEngine):
                         data = soup.find("script", {"id": "__NEXT_DATA__"}).get_text()
                         j = json.loads(data)
                         _LOGGER.debug("Coupang Fetched at {}".format(datetime.now()))
-                        page_atf = find_item(
-                            j["props"]["pageProps"]["pageList"], "page", "PAGE_ATF"
+
+                        page_atf = Lu.find_item(
+                            j["props"]["pageProps"]["pageList"], 'page', 'PAGE_ATF'
                         )
                         if page_atf is None:
-                            raise Exception(
-                                "Coupang Parse Error (No ATF) - {}".format(data)
+                            raise InvalidError(
+                                "Coupang Parse Error (No ATF) - {}".format(j["props"]["pageProps"]["pageList"])
                             )
                         page_atf = page_atf["widgetList"]
 
-                        name = find_item(
+                        name = Lu.find_item(
                             page_atf, "viewType", "MWEB_PRODUCT_DETAIL_PRODUCT_INFO"
                         )["data"]["title"]
-                        price = find_item(
+                        price = Lu.find_item(
                             page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO"
                         )["data"]["finalPrice"]["price"]
-                        price_info = find_item(
+                        price_info = Lu.find_item(
                             page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO"
                         )["data"]
                         delivery_price = (
@@ -92,12 +90,12 @@ class CoupangEngine(PriceEngine):
                             delivery_type = DeliveryPayType.FREE
 
                         description = ""
-                        image = find_item(
+                        image = Lu.find_item(
                             page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ITEM_THUMBNAILS"
                         )["data"]["medias"][0]["detail"]
                         category = ">".join(
                             str(t["name"])
-                            for t in find_item(
+                            for t in Lu.find_item(
                                 page_atf,
                                 "viewType",
                                 "MWEB_PRODUCT_DETAIL_SDP_BREADCURMB_DETAIL",
@@ -120,10 +118,10 @@ class CoupangEngine(PriceEngine):
                             unit_price = ItemUnitData(price=price)
 
                         inventory = (
-                            find_item(
+                            Lu.find_item(
                                 page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
                             )["data"]
-                            if find_item(
+                            if Lu.find_item(
                                 page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
                             )
                             is not None
@@ -156,7 +154,7 @@ class CoupangEngine(PriceEngine):
                             ),
                             image=image,
                             delivery=DeliveryData(
-                                price=delivery_price, type=delivery_type
+                                price=delivery_price, pay_type=delivery_type
                             ),
                             unit=unit_price,
                             category=category,
@@ -175,7 +173,7 @@ class CoupangEngine(PriceEngine):
     @staticmethod
     def parse_id(item_url: str):
         u = re.search(
-            r"products\/(?P<product_id>[\d]+)\?itemId=(?P<item_id>[\d]+).*?(?:|vendorItemId=(?P<vendor_item_id>[\d]+).*)$",
+            r"products\/(?P<product_id>\d+)\?itemId=(?P<item_id>[\d]+).*?(?:|vendorItemId=(?P<vendor_item_id>[\d]+).*)$",
             item_url,
         )
 

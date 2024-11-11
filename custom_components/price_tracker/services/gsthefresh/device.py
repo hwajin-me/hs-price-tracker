@@ -8,13 +8,8 @@ import aiohttp
 
 from custom_components.price_tracker.components.device import PriceTrackerDevice
 from custom_components.price_tracker.components.error import ApiError
-from custom_components.price_tracker.const import (
-    CONF_GS_NAVER_LOGIN_FLOW_2_URL,
-    CONF_GS_NAVER_LOGIN_FLOW_3_URL,
-    REQUEST_DEFAULT_HEADERS,
-)
 from custom_components.price_tracker.services.gsthefresh.const import CODE
-from custom_components.price_tracker.utils import request
+from custom_components.price_tracker.utilities.request import http_request, default_request_headers
 
 _UA = "Dart/3.5 (dart:io)"
 _REQUEST_HEADERS = {
@@ -28,7 +23,10 @@ _LOGIN_URL = "https://b2c-bff.woodongs.com/api/bff/v2/auth/accountLogin"
 _REAUTH_URL = "https://b2c-apigw.woodongs.com/auth/v1/token/reissue"
 _PRODUCT_URL = "https://b2c-apigw.woodongs.com/supermarket/v1/wdelivery/item/{}?pickupItemYn=Y&storeCode={}"
 _ITEM_LINK = "https://woodongs.com/link?view=gsTheFreshDeliveryDetail&orderType=pickup&itemCode={}"
-
+CONF_GS_NAVER_LOGIN_FLOW_2_URL = "https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=VFjv3tsLofatP90P1a5H&client_secret=o2HQ70_GCN&code={}"
+CONF_GS_NAVER_LOGIN_FLOW_3_URL = (
+    "https://b2c-bff.woodongs.com/api/bff/v2/auth/channelLogin"
+)
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -41,7 +39,10 @@ class GsTheFreshLogin:
         ) as session:
             async with session.get(
                     url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(code),
-                    headers={**REQUEST_DEFAULT_HEADERS, **_REQUEST_HEADERS},
+                    headers={
+                        **default_request_headers(),
+                        **_REQUEST_HEADERS
+                    },
             ) as response:
                 if response.status != 200:
                     raise ApiError("GS THE FRESH - NAVER Response Error")
@@ -55,7 +56,7 @@ class GsTheFreshLogin:
                 async with session.post(
                         url=CONF_GS_NAVER_LOGIN_FLOW_3_URL,
                         headers={
-                            **REQUEST_DEFAULT_HEADERS,
+                            **default_request_headers(),
                             **_REQUEST_HEADERS,
                             "device_id": device_id,
                             "appinfo_device_id": device_id,
@@ -116,7 +117,7 @@ class GsTheFreshLogin:
                 }
 
     async def reauth(self, device_id: str, refresh_token: str) -> dict[str, Any]:
-        response = await request(
+        response = await (await http_request(
             "post",
             _REAUTH_URL,
             headers={
@@ -126,7 +127,7 @@ class GsTheFreshLogin:
                 "device_id": device_id,
                 "authorization": "Bearer {}".format(refresh_token),
             },
-        )
+        )).text()
 
         if "data" in response:
             j = json.loads(response["data"])

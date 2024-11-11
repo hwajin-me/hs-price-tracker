@@ -4,11 +4,7 @@ from copy import deepcopy
 class Lu:
     @staticmethod
     def find_item(target: [any], key: str, value: any):
-        for i in target:
-            if key in i and i[key] == value:
-                return i
-
-            return None
+        return Lu.get_item(target, key, value)
 
     @staticmethod
     def get(target: [any], key: str):
@@ -30,7 +26,7 @@ class Lu:
 
     @staticmethod
     def get_item(target: [any], key: str, value: any):
-        return next(filter(lambda x: x[key] == value, target))
+        return next((x for x in target if x[key] == value), None)
 
     @staticmethod
     def copy(target: [any]):

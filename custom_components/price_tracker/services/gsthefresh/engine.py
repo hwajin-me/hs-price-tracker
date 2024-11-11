@@ -5,15 +5,14 @@ from urllib.parse import unquote
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidError, ApiError
-from custom_components.price_tracker.services.data import (
-    DeliveryData,
-    DeliveryPayType,
-    ItemData,
-    InventoryStatus,
-    BooleanType,
-)
+from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
+from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.services.gsthefresh.device import GsTheFreshDevice
-from custom_components.price_tracker.utils import find_item, request
+from custom_components.price_tracker.utilities.list import Lu
+from custom_components.price_tracker.utilities.parser import parse_bool
+from custom_components.price_tracker.utilities.request import http_request, http_request_async
 
 _UA = "Dart/3.5 (dart:io)"
 _REQUEST_HEADERS = {
@@ -38,11 +37,12 @@ class GsTheFreshEngine(PriceEngine):
         self.device: GsTheFreshDevice = device
 
     async def load(self) -> ItemData:
-        result = await request(
+        http_result = await http_request_async(
             "get",
             _PRODUCT_URL.format(self.id, self.device.store),
             headers={**_REQUEST_HEADERS, **self.device.headers},
         )
+        result = http_result.text
         response = json.loads(result)
 
         if (
@@ -60,18 +60,18 @@ class GsTheFreshEngine(PriceEngine):
         quantity = data["stockQuantity"] if "stockQuantity" in data else 0
         image = data["weDeliveryItemImageUrl"]
         price = data["normalSalePrice"] - data["totalDiscountRateAmount"]
-        sold_out = BooleanType.of(data["soldOutYn"]).value
+        sold_out = parse_bool(data["soldOutYn"])
         url = _ITEM_LINK.format(id)
 
         delivery_data = response["data"]["processingDeliveryAmountResultList"]
         if delivery_data is not None and len(delivery_data) > 0:
-            delivery_price = find_item(delivery_data, "commonCode", 3)
+            delivery_price = Lu.get_item(delivery_data, "commonCode", 3)
             if delivery_price is not None and delivery_price > 0:
-                delivery = DeliveryData(price=delivery_price, type=DeliveryPayType.PAID)
+                delivery = DeliveryData(price=delivery_price, pay_type=DeliveryPayType.PAID)
             else:
-                delivery = DeliveryData(price=0, type=DeliveryPayType.FREE)
+                delivery = DeliveryData(price=0, pay_type=DeliveryPayType.FREE)
         else:
-            delivery = DeliveryData(price=0, type=DeliveryPayType.FREE)
+            delivery = DeliveryData(price=0, pay_type=DeliveryPayType.FREE)
 
         inventory = (
             InventoryStatus.IN_STOCK
@@ -108,11 +108,11 @@ class GsTheFreshEngine(PriceEngine):
 
     @staticmethod
     def engine_code() -> str:
-        return "gsthefresh"
+        return CODE
 
     @staticmethod
     def engine_name() -> str:
-        return "GS THE FRESH"
+        return NAME
 
     def url(self) -> str:
         return self.item_url

@@ -12,3 +12,11 @@ class ApiError(Exception):
 
 class NotFoundError(Exception):
     pass
+
+
+class DataFetchError(Exception):
+    pass
+
+
+class DataFetchErrorCauseEmpty(DataFetchError):
+    pass

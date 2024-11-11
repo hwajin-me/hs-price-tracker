@@ -5,14 +5,11 @@ import re
 import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.const import REQUEST_DEFAULT_HEADERS
-from custom_components.price_tracker.services.data import (
-    ItemData,
-    InventoryStatus,
-    ItemUnitData,
-    ItemUnitType,
-)
-from custom_components.price_tracker.utils import parseNumber
+from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
+from custom_components.price_tracker.utilities.parser import parse_number
+from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,20 +27,20 @@ class SsgEngine(PriceEngine):
     async def load(self) -> ItemData:
         try:
             async with aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(verify_ssl=False)
+                    connector=aiohttp.TCPConnector(verify_ssl=False)
             ) as session:
                 async with session.post(
-                    url=_URL,
-                    json={
-                        "params": {
-                            "dispSiteNo": str(self.site_no),
-                            "itemId": str(self.product_id),
-                        }
-                    },
-                    headers={
-                        **REQUEST_DEFAULT_HEADERS,
-                        "Content-Type": "application/json",
-                    },
+                        url=_URL,
+                        json={
+                            "params": {
+                                "dispSiteNo": str(self.site_no),
+                                "itemId": str(self.product_id),
+                            }
+                        },
+                        headers={
+                            **default_request_headers(),
+                            "Content-Type": "application/json",
+                        },
                 ) as response:
                     result = await response.read()
 
@@ -63,9 +60,9 @@ class SsgEngine(PriceEngine):
                             if unit_data is not None:
                                 unitParse = unit_data.groupdict()
                                 unit = ItemUnitData(
-                                    price=parseNumber(unitParse["price"]),
+                                    price=parse_number(unitParse["price"]),
                                     unit_type=ItemUnitType.of(unitParse["type"]),
-                                    unit=parseNumber(unitParse["unit"]),
+                                    unit=parse_number(unitParse["unit"]),
                                 )
                             else:
                                 unit = ItemUnitData(float(d["price"]["sellprc"]))
@@ -75,7 +72,7 @@ class SsgEngine(PriceEngine):
                         return ItemData(
                             id=self.product_id,
                             name=d["itemNm"],
-                            price=parseNumber(d["price"]["sellprc"]),
+                            price=parse_number(d["price"]["sellprc"]),
                             description="",
                             url=_ITEM_LINK.format(self.product_id, self.site_no),
                             image=d["uitemImgList"][0]["imgUrl"]
