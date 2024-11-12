@@ -11,8 +11,8 @@ from homeassistant.helpers import (
 from homeassistant.helpers import selector
 
 from custom_components.price_tracker.components.error import NotFoundError, InvalidItemUrlError
-from custom_components.price_tracker.components.forms import Forms
 from custom_components.price_tracker.components.id import IdGenerator
+from custom_components.price_tracker.components.lang import Lang
 from custom_components.price_tracker.consts.confs import CONF_TYPE
 from custom_components.price_tracker.datas.unit import ItemUnitType
 from custom_components.price_tracker.services.factory import (
@@ -79,18 +79,16 @@ class PriceTrackerSetup:
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **self._form_i18n_title("en", "Select Settings"),
-                **self._form_i18n_description(
-                    "en", "Select the menu where you want to add or modify."
-                ),
-                **self._form_i18n_title("ja", "設定"),
-                **self._form_i18n_description(
-                    "ja", "エンティティを生成または修正します。"
-                ),
-                **self._form_i18n_title("ko", "설정"),
-                **self._form_i18n_description(
-                    "ko", "원하는 설정을 선택합니다."
-                ),
+                **Lang(self._option_flow.hass).f(key='title', items={
+                    'en': "Select Settings",
+                    'ja': "設定",
+                    'ko': "설정"
+                }),
+                **Lang(self._option_flow.hass).f(key='description', items={
+                    'en': "Select the menu where you want to add or modify.",
+                    'ja': "エンティティを生成または修正します。",
+                    'ko': "원하는 설정을 선택합니다."
+                })
             },
             data_schema=vol.Schema(
                 {
@@ -278,38 +276,16 @@ class PriceTrackerSetup:
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **self._form_i18n_title("en", "Item"),
-                **self._form_i18n_description(
-                    "en", "Add or modify a new item to track the price."
-                ),
-                **self._form_i18n_title("ja", "エンティティの生成/変更"),
-                **self._form_i18n_description(
-                    "ja", "エンティティ プロパティを定義します。 一部の値は必須であり、item_urlを通じて商品固有の値を抽出します。"
-                ),
-                **self._form_i18n_title("ko", "엔티티 생성 또는 변경"),
-                **self._form_i18n_description(
-                    "ko", "엔티티 속성을 정의합니다. 일부 값은 필수이며 item_url을 통해 상품 고유의 값을 추출합니다."
-                ),
-                **Forms.t('en', self.conf_item_url,
-                          'Item URL or Product (e.g. https://www.idus.com/v2/product/400876fb-fd26-4290-abb7-589d60bbceb2)'),
-                **Forms.t('ja', self.conf_item_url,
-                          '商品のURLアドレス(e.g. https://www.amazon.co.jp/%E3%82%AA%E3%83%A0%E3%83%AD%E3%83%B3-OMRON-KRD-703T-%E4%BD%93%E9%87%8D%E4%BD%93%E7%B5%84%E6%88%90%E8%A8%88KRD-703T-%E3%82%AB%E3%83%A9%E3%83%80%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3/dp/B07YLPHPHB/ref=s9_acsd_al_ot_c2_x_3_t?_encoding=UTF8&pf_rd_m=A1VC38T7YXB528&pf_rd_s=merchandised-search-5&pf_rd_r=ANYP8XE2V2F8GCA21MWJ&pf_rd_p=626c9cca-d8de-4403-beb8-5fdcd3cfeea1&pf_rd_t=&pf_rd_i=3534638051)'),
-                **Forms.t('ko', self.conf_item_url, '상품 URL 주소(e.g. https://www.coupang.com/vp/products/123456)'),
-                **Forms.t('en', self.conf_item_management_category, 'Management Category'),
-                **Forms.t('ja', self.conf_item_management_category, '管理カテゴリ'),
-                **Forms.t('ko', self.conf_item_management_category, '관리 카테고리'),
-                **Forms.t('en', self.conf_item_unit_type, 'Unit Type'),
-                **Forms.t('ja', self.conf_item_unit_type, '単位タイプ'),
-                **Forms.t('ko', self.conf_item_unit_type, '단위 유형'),
-                **Forms.t('en', self.conf_item_unit, 'Volume (e.g. unit type > ml, unit > 300)'),
-                **Forms.t('ja', self.conf_item_unit, '容量(e.g. unit type > ml, unit > 300)'),
-                **Forms.t('ko', self.conf_item_unit, '용량 (e.g. unit type > ml, unit > 300)'),
-                **Forms.t('en', self.conf_item_refresh_interval, 'Refresh Interval (minutes)'),
-                **Forms.t('ja', self.conf_item_refresh_interval, '更新間隔(分)'),
-                **Forms.t('ko', self.conf_item_refresh_interval, '새로 고침 간격(분)'),
-                **Forms.t('en', self.conf_item_price_change_interval_hour, 'Price Change Interval (hours)'),
-                **Forms.t('ja', self.conf_item_price_change_interval_hour, '価格変更間隔(時間)'),
-                **Forms.t('ko', self.conf_item_price_change_interval_hour, '가격 변경 간격(시간)'),
+                **Lang(self._option_flow.hass).f(key='title', items={
+                    'en': "Item",
+                    'ja': "エンティティ",
+                    'ko': "엔티티"
+                }),
+                **Lang(self._option_flow.hass).f(key='description', items={
+                    'en': "Add or modify a new item to track the price.",
+                    'ja': "エンティティ プロパティを定義します。 一部の値は必須であり、item_urlを通じて商品固有の値を抽出します。",
+                    'ko': "엔티티 속성을 정의합니다. 일부 값은 필수이며 item_url을 통해 상품 고유의 값을 추출합니다."
+                })
             },
             data_schema=vol.Schema(
                 {
@@ -338,18 +314,16 @@ class PriceTrackerSetup:
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **self._form_i18n_title("en", "Select Device"),
-                **self._form_i18n_description(
-                    "en", "Select the device."
-                ),
-                **self._form_i18n_title("ja", "デバイスを選択"),
-                **self._form_i18n_description(
-                    "ja", "エンティティを含む、または含まれている機器を選択します。"
-                ),
-                **self._form_i18n_title("ko", "기기를 선택"),
-                **self._form_i18n_description(
-                    "ko", "엔티티를 생성, 수정할 기기를 선택합니다."
-                ),
+                **Lang(self._option_flow.hass).f(key='title', items={
+                    'en': "Select Device",
+                    'ja': "デバイスを選択",
+                    'ko': "기기를 선택"
+                }),
+                **Lang(self._option_flow.hass).f(key='description', items={
+                    'en': "Select the device to include or be included in the entity.",
+                    'ja': "エンティティを含む、または含まれている機器を選択します。",
+                    'ko': "엔티티를 생성, 수정할 기기를 선택합니다."
+                })
             },
             data_schema=vol.Schema(
                 {
@@ -403,18 +377,16 @@ class PriceTrackerSetup:
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **self._form_i18n_title("en", "Select Entity"),
-                **self._form_i18n_description(
-                    "en", "Select the entity."
-                ),
-                **self._form_i18n_title("ja", "エンティティ"),
-                **self._form_i18n_description(
-                    "ja", "管理するエンティティを選択します。"
-                ),
-                **self._form_i18n_title("ko", "엔티티"),
-                **self._form_i18n_description(
-                    "ko", "관리할 엔티티를 선택합니다."
-                ),
+                **Lang(self._option_flow.hass).f(key='title', items={
+                    'en': "Select Entity",
+                    'ja': "エンティティを選択",
+                    'ko': "엔티티를 선택"
+                }),
+                **Lang(self._option_flow.hass).f(key='description', items={
+                    'en': "Select the entity to manage.",
+                    'ja': "管理するエンティティを選択します。",
+                    'ko': "관리할 엔티티를 선택합니다."
+                })
             },
             data_schema=vol.Schema(
                 {**self._schema_user_input_option_select(user_input), **schema}

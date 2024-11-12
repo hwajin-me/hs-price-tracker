@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
+from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData, ItemOptionData
@@ -84,9 +85,9 @@ class SmartstoreEngine(PriceEngine):
                             description=json_data["product"]["A"]["detailContents"][
                                 "detailContentText"
                             ],
-                            category=json_data["product"]["A"]["category"][
+                            category=ItemCategoryData(json_data["product"]["A"]["category"][
                                 "wholeCategoryName"
-                            ],
+                            ]),
                             image=json_data["product"]["A"]["representImage"]["url"],
                             url=json_data["product"]["A"]["productUrl"],
                             inventory=stock,

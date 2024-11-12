@@ -44,6 +44,7 @@ async def http_request(
         auth: str = None,
         timeout: int | None = None,
         proxy: bool = False,
+        is_retry: bool = False,
 ):
     if headers is None:
         headers = {}
@@ -52,7 +53,7 @@ async def http_request(
         headers["authorization"] = "Bearer {}".format(auth)
 
     session = aiohttp.ClientSession(
-        connector=aiohttp.TCPConnector(verify_ssl=False)
+        connector=aiohttp.TCPConnector(verify_ssl=False, use_dns_cache=False, limit=10240)
     )
 
     try:
@@ -80,6 +81,15 @@ async def http_request(
                 url, headers, e
             )
         ) from e
+    except aiohttp.ClientConnectionError as e:
+        if is_retry:
+            raise ApiError(
+                "Error while fetching data from the API - ClientConnectionError (url: {}, headers: {}) {}".format(
+                    url, headers, e
+                )
+            ) from e
+        else:
+            return await http_request(method, url, headers, auth, timeout, proxy, True)
     except asyncio.TimeoutError as e:
         if proxy:
             return await http_request(method, url, headers, auth, timeout, False)

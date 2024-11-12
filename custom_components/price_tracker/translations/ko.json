@@ -11,8 +11,8 @@
         }
       },
       "setup": {
-        "title": "{title_ko}",
-        "description": "{description_ko}",
+        "title": "{title}",
+        "description": "{description}",
         "data": {
           "service_type": "타입 (쿠팡, 네이버 스마트스토어 등)",
           "conf_gs_store_name_like": "마트명 검색 (최소 두 글자 이상)",
@@ -33,8 +33,8 @@
   "options": {
     "step": {
       "setup": {
-        "title": "{title_ko}",
-        "description": "{description_ko}",
+        "title": "{title}",
+        "description": "{description}",
         "data": {
           "service_type": "타입 (쿠팡, 네이버 스마트스토어 등)",
           "service_device": "기기 선택",

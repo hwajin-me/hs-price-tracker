@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 
-from custom_components.price_tracker.services.data import ItemData
+from custom_components.price_tracker.datas.item import ItemData
 
 _LOGGER = logging.getLogger(__name__)
 

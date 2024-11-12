@@ -6,10 +6,12 @@ import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError, ApiError
+from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.services.ssg.const import CODE, NAME
+from custom_components.price_tracker.services.ssg.parser import SsgParser
 from custom_components.price_tracker.utilities.list import Lu
 from custom_components.price_tracker.utilities.parser import parse_number, parse_bool
 from custom_components.price_tracker.utilities.request import default_request_headers
@@ -46,6 +48,7 @@ class SsgEngine(PriceEngine):
                         },
                 ) as response:
                     result = await response.text()
+                    ssg_parser = SsgParser(result)
 
                     if response.status == 200:
                         j = json.loads(result)
@@ -76,15 +79,14 @@ class SsgEngine(PriceEngine):
                             id=self.product_id,
                             brand=d['brand']['brandNm'] if 'brand' in d else None,
                             name=d["itemNm"],
-                            price=parse_number(d["price"]["sellprc"]),
+                            price=ssg_parser.price,
                             description="",
                             url=_ITEM_LINK.format(self.product_id, self.site_no),
                             image=d["uitemImgList"][0]["imgUrl"]
                             if len(d["uitemImgList"]) > 0
                             else None,
-                            category=d["ctgNm"],
-                            inventory=InventoryStatus.of(parse_bool(d["itemBuyInfo"]["soldOut"]),
-                                                         Lu.get(d, 'usablInvQty')),
+                            category=ItemCategoryData(d["ctgNm"]),
+                            inventory=ssg_parser.inventory_status,
                             unit=unit,
                         )
                     else:

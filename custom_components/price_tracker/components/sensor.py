@@ -92,34 +92,36 @@ class PriceTrackerSensor(RestoreEntity):
             _LOGGER.exception("Error while updating the sensor: %s", e)
 
     async def async_added_to_hass(self) -> None:
-        """Handle entity which will be added."""
-        await super().async_added_to_hass()
-        state = await self.async_get_last_state()
-        if not state:
-            return
-        self._state = state.state
+        try:
+            """Handle entity which will be added."""
+            await super().async_added_to_hass()
+            state = await self.async_get_last_state()
+            if not state:
+                return
 
-        _LOGGER.debug('Restoring state from previous version, {}'.format(state.attributes))
+            _LOGGER.debug('Restoring state from previous version, {}'.format(state.attributes))
 
-        if 'product_id' in state.attributes \
-                and 'price' in state.attributes \
-                and 'name' in state.attributes:
-            # self._item_data = ItemData(
-            #     id=state.attributes['product_id'],
-            #     name=state.attributes['name'],
-            #     price=state.attributes['price'],
-            #     image=state.attributes['image'] if 'image' in state.attributes else None,
-            #     url=state.attributes['url'] if 'url' in state.attributes else None,
-            # )
-            self._attr_state = self._item_data.price.price
-            self._attr_name = self._item_data.name
-            self._attr_available = True
+            if 'product_id' in state.attributes \
+                    and 'price' in state.attributes \
+                    and 'name' in state.attributes:
+                # self._item_data = ItemData(
+                #     id=state.attributes['product_id'],
+                #     name=state.attributes['name'],
+                #     price=state.attributes['price'],
+                #     image=state.attributes['image'] if 'image' in state.attributes else None,
+                #     url=state.attributes['url'] if 'url' in state.attributes else None,
+                # )
+                # self._attr_state = self._item_data.price.price
+                # self._attr_name = self._item_data.name
+                self._attr_available = True
 
-        await self.async_update()
+            await self.async_update()
 
-        async_dispatcher_connect(
-            self.hass, DATA_UPDATED, self._schedule_immediate_update
-        )
+            async_dispatcher_connect(
+                self.hass, DATA_UPDATED, self._schedule_immediate_update
+            )
+        except Exception as e:
+            _LOGGER.warning("Error while adding the sensor: %s", e)
 
     @callback
     def _schedule_immediate_update(self):

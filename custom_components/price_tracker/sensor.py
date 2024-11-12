@@ -2,6 +2,7 @@ import logging
 
 from homeassistant import config_entries, core
 
+from .components.id import IdGenerator
 from .components.sensor import PriceTrackerSensor
 from .consts.confs import CONF_ITEM_DEVICE_ID, CONF_DEVICE, CONF_TARGET, CONF_TYPE, CONF_ITEM_URL
 from .consts.defaults import DOMAIN
@@ -42,6 +43,7 @@ async def async_setup_entry(
                 }
     async_add_entities(list(devices.values()), update_before_add=True)
 
+    _LOGGER.debug("Devices: {}".format(devices))
     for target in Lu.get_or_default(config, CONF_TARGET, []):
         try:
             if CONF_ITEM_DEVICE_ID in target \

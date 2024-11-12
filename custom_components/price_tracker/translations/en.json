@@ -11,8 +11,8 @@
         }
       },
       "setup": {
-        "title": "{title_en}",
-        "description": "{description_en}",
+        "title": "{title}",
+        "description": "{description}",
         "data": {
           "service_type": "Service Type (e.g. Amazon, Coupang, etc.)",
           "conf_gs_store_name_like": "Store name (at least 2 characters)",
@@ -33,8 +33,8 @@
   "options": {
     "step": {
       "setup": {
-        "title": "{title_en}",
-        "description": "{description_en}",
+        "title": "{title}",
+        "description": "{description}",
         "data": {
           "service_type": "Service Type (e.g. Amazon, Coupang, etc.)",
           "service_device": "Select device",

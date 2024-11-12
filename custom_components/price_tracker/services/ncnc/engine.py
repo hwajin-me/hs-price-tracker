@@ -5,6 +5,7 @@ from datetime import datetime
 import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
+from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.ncnc.const import CODE, NAME
@@ -42,7 +43,7 @@ class NcncEngine(PriceEngine):
                         ncnc_parser = NcncParser(text=result)
                         j = json.loads(result)
                         _LOGGER.debug(
-                            "NCNC Fetched at {} - {}", datetime.now(), self.id
+                            "NCNC Fetched at %s, %s", datetime.now(), self.id
                         )
 
                         d = j["item"]
@@ -57,10 +58,10 @@ class NcncEngine(PriceEngine):
                             if len(d["conItems"])
                             else "",
                             image=d["imageUrl"],
-                            category="{}>{}".format(
+                            category=ItemCategoryData("{}>{}".format(
                                 d["conCategory2"]["conCategory1"]["name"],
                                 d["conCategory2"]["name"],
-                            ),
+                            )),
                             inventory=InventoryStatus.OUT_OF_STOCK
                             if d["isSoldOut"]
                             else InventoryStatus.IN_STOCK,

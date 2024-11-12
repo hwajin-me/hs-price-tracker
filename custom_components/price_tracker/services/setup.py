@@ -2,6 +2,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 
 from custom_components.price_tracker.components.error import UnsupportedError
+from custom_components.price_tracker.components.lang import Lang
 from custom_components.price_tracker.components.setup import PriceTrackerSetup
 from custom_components.price_tracker.services.coupang.setup import CoupangSetup
 from custom_components.price_tracker.services.gsthefresh.setup import GsthefreshSetup
@@ -57,8 +58,11 @@ _KIND = {
 }
 
 
-def price_tracker_setup_init():
-    return vol.Schema({vol.Required(_SERVICE_TYPE, default=None): vol.In(_KIND)})
+def price_tracker_setup_init(hass):
+    return vol.Schema({
+        vol.Required(_SERVICE_TYPE, default=None): vol.In(_KIND),
+        **Lang(hass).selector(),
+    })
 
 
 def price_tracker_setup_service(

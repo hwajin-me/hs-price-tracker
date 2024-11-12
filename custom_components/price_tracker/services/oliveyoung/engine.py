@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
+from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.oliveyoung.const import CODE, NAME
@@ -48,9 +49,9 @@ class OliveyoungEngine(PriceEngine):
                             id=self.goods_number,
                             price=oliveyoung_parser.price,
                             name=json_data["goodsBaseInfo"]["goodsName"],
-                            category=json_data["displayCategoryInfo"][
+                            category=ItemCategoryData(json_data["displayCategoryInfo"][
                                 "displayCategoryFullPath"
-                            ],
+                            ]),
                             description=json_data["brandName"],
                             image=_THUMB.format(json_data["images"][0])
                             if len(json_data["images"])

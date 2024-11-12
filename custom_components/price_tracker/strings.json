@@ -1,67 +1,17 @@
 {
-  "title": "E-commerce Price Tracker",
   "config": {
-    "flow_title": "E-Commerce Price Tracker",
     "step": {
-      "user": {
-        "title": "Add E-commerce Provider",
-        "description": "E-commerce platform (Provider) refers to Amazon Inc., Coupang Inc., etc. Some e-commerce platforms require you to add a “device”. You may need to take additional steps like these if you need to log in or if there are regional requirements.",
-        "data": {
-          "type": "E-Commerce Types."
-        }
-      },
       "setup": {
-        "title": "{title_en}",
-        "description": "{description_en}",
-        "data": {
-          "service_type": "Service Type (e.g. Amazon, Coupang, etc.)",
-          "conf_gs_store_name_like": "Store name (at least 2 characters)",
-          "conf_gs_store_code_and_name": "Select a store",
-          "conf_gs_naver_login_code": "Naver login code"
-        }
+        "title": "{title}",
+        "description": "{description}"
       }
-    },
-    "error": {
-      "base": "Unknown error occurred.",
-      "unknown": "Unknown error occurred.",
-      "no_search_results": "No search results found."
-    },
-    "abort": {
-      "already_configured": "E-commerce provider is already configured."
     }
   },
   "options": {
     "step": {
       "setup": {
-        "title": "{title_en}",
-        "description": "{description_en}",
-        "data": {
-          "service_type": "Service Type (e.g. Amazon, Coupang, etc.)",
-          "service_device": "Select device",
-          "service_entity": "Service entity",
-          "option_setup_select": "Select an option",
-          "option_entity_delete": "Delete entity",
-          "option_add_select": "Add entity",
-          "item_url": "Product URL (e.g. https://www.amazon.com/dp/B07VGRJDFY)",
-          "item_management_category": "Category (e.g. Electronics, Clothing, etc.)",
-          "item_unit_type": "Product unit (kg, g, etc.) - Use when not automatically provided in product information",
-          "item_refresh_interval": "Refresh interval (in minutes)",
-          "item_price_change_interval_hour": "Price change interval (in hours)"
-        }
-      }
-    },
-    "error": {
-      "base": "Unknown error occurred.",
-      "unknown": "Unknown error occurred.",
-      "no_search_results": "No search results found.",
-      "invalid_item_url": "Invalid product URL."
-    }
-  },
-  "selector": {
-    "option_setup_select": {
-      "options": {
-        "option_modify_select": "Modify entity",
-        "option_add_select": "Add entity"
+        "title": "{title}",
+        "description": "{description}"
       }
     }
   }

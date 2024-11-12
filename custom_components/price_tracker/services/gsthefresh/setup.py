@@ -8,6 +8,7 @@ from homeassistant.data_entry_flow import AbortFlow
 
 from custom_components.price_tracker.components.error import InvalidError, ApiError
 from custom_components.price_tracker.components.id import IdGenerator
+from custom_components.price_tracker.components.lang import Lang
 from custom_components.price_tracker.components.setup import PriceTrackerSetup
 from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.services.gsthefresh.device import GsTheFreshDevice, GsTheFreshLogin
@@ -22,7 +23,7 @@ class GsthefreshSetup(PriceTrackerSetup):
     """"""
 
     _api_search_mart = 'http://gsthefresh.gsretail.com/thefresh/ko/market-info/find-storelist?searchType=&searchShopName={}&pageNum=1&pageSize=100'
-
+    _login_url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs'
     _conf_gs_naver_login_code = "conf_gs_naver_login_code"
     _conf_gs_store_code_and_name = "conf_gs_store_code_and_name"
     _conf_gs_store_name = "conf_gs_store_name"
@@ -100,32 +101,22 @@ class GsthefreshSetup(PriceTrackerSetup):
         return self._config_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **self._form_i18n_title("en", "GS THE FRESH Login Step"),
-                **self._form_i18n_title("ja", "GS THE FRESH Login Step"),
-                **self._form_i18n_title("ko", "GS THE FRESH 로그인"),
-                **self._form_i18n_description(
-                    "en",
-                    "Open https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id"
-                    "=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs and copy "
-                    'the "Code" query string from the redirected page.',
-                ),
-                **self._form_i18n_description(
-                    "ja",
-                    "Open https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id"
-                    "=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs and copy "
-                    'the "Code" query string from the redirected page.',
-                ),
-                **self._form_i18n_description(
-                    "ko",
-                    "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id"
-                    '=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs 로 이동하신 후 주소창의 "code" 항목을 복사해주십시오.',
-                ),
-
+                **Lang(self._config_flow.hass).select(user_input).f(key='title', items={
+                    'en': "GS THE FRESH Login",
+                    'ja': "GS THE FRESH ログイン",
+                    'ko': "GS THE FRESH 로그인"
+                }),
+                **Lang(self._config_flow.hass).select(user_input).f(key='description', items={
+                    'en': "Please enter the code you copied from the " + self._login_url + "page. The code is in the query string which is the part after the 'code='.",
+                    'ja': self._login_url + " からコピーしたコードを入力してください。コードは「code=」の後にあるクエリ文字列の一部です。",
+                    'ko': self._login_url + " 페이지에서 복사한 코드를 입력하십시오. 코드는 'code=' 이후의 쿼리 문자열입니다."
+                })
             },
             data_schema=vol.Schema(
                 {
                     **self._schema_user_input_service_type(user_input),
                     **self._schema_user_input_gs_mart(user_input),
+                    **Lang(self._config_flow.hass).selector(user_input),
                     vol.Required(
                         self._conf_gs_naver_login_code, default=None
                     ): cv.string,
@@ -160,25 +151,21 @@ class GsthefreshSetup(PriceTrackerSetup):
                     return self._config_flow.async_show_form(
                         step_id=self._step_setup,
                         description_placeholders={
-                            **self._form_i18n_title("en", "GS THE FRESH Mart Search"),
-                            **self._form_i18n_title("ja", "GS THE FRESH Mart Search"),
-                            **self._form_i18n_title("ko", "GS THE FRESH 마트 검색"),
-                            **self._form_i18n_description(
-                                "en",
-                                "Please select the mart you want to track.",
-                            ),
-                            **self._form_i18n_description(
-                                "ja",
-                                "Please select the mart you want to track.",
-                            ),
-                            **self._form_i18n_description(
-                                "ko",
-                                "추적하려는 마트를 선택하십시오.",
-                            ),
+                            **Lang(self._config_flow.hass).select(user_input).f(key='title', items={
+                                'en': "GS THE FRESH Mart Search",
+                                'ja': "GS THE FRESHのマートを検索",
+                                'ko': "GS THE FRESH 마트 검색"
+                            }),
+                            **Lang(self._config_flow.hass).select(user_input).f(key='description', items={
+                                'en': "Please select the mart you want to track.",
+                                'ja': '検索したいマートを選択してください。',
+                                'ko': '추적하려는 마트를 선택하십시오.'
+                            })
                         },
                         data_schema=vol.Schema(
                             {
                                 **self._schema_user_input_service_type(user_input),
+                                **Lang(self._config_flow.hass).selector(user_input),
                                 vol.Required(
                                     self._conf_gs_store_code_and_name, default=None
                                 ): vol.In(input_result),
@@ -190,25 +177,21 @@ class GsthefreshSetup(PriceTrackerSetup):
         return self._config_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **self._form_i18n_title("en", "GS THE FRESH Mart Search"),
-                **self._form_i18n_title("ja", "GS THE FRESH Mart Search"),
-                **self._form_i18n_title("ko", "GS THE FRESH 마트 검색"),
-                **self._form_i18n_description(
-                    "en",
-                    "Please enter at least 2 characters to search for the mart.",
-                ),
-                **self._form_i18n_description(
-                    "ja",
-                    "Please enter at least 2 characters to search for the mart.",
-                ),
-                **self._form_i18n_description(
-                    "ko",
-                    "마트를 검색하려면 최소 2자 이상 입력하십시오.",
-                ),
+                **Lang(self._config_flow.hass).select(user_input).f(key='title', items={
+                    'en': "GS THE FRESH Mart Search",
+                    'ja': "GS THE FRESHのマートを検索",
+                    'ko': "GS THE FRESH 마트 검색"
+                }),
+                **Lang(self._config_flow.hass).select(user_input).f(key='description', items={
+                    'en': "Please enter at least 2 characters to search for the mart.",
+                    'ja': 'マートを検索するには、少なくとも2文字を入力してください。',
+                    'ko': '마트를 검색하려면 최소 2자 이상 입력하십시오.'
+                })
             },
             data_schema=vol.Schema(
                 {
                     **self._schema_user_input_service_type(user_input),
+                    **Lang(self._config_flow.hass).selector(user_input),
                     vol.Required(
                         self._conf_gs_store_name_like, default=None
                     ): cv.string,

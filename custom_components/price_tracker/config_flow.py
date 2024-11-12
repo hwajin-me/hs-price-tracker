@@ -56,7 +56,7 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors["base"] = "unsupported"
 
         return self.async_show_form(
-            step_id="user", data_schema=price_tracker_setup_init(), errors=errors
+            step_id="user", data_schema=price_tracker_setup_init(self.hass), errors=errors
         )
 
     async def async_step_setup(self, user_input=None):
