@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
@@ -8,10 +10,14 @@ from custom_components.price_tracker.consts.defaults import DOMAIN, VERSION
 class PriceTrackerDevice(Entity):
     _name: str | None = None
 
-    def __init__(self, device_type: str, device_id: str):
+    def __init__(self, entry_id: str, device_type: str, device_id: str):
+        self._entry_id = entry_id
         self._device_id = str(device_id)
         self._device_type = device_type
-        self.entity_id = IdGenerator.generate_device_id(self._device_id)
+        self._generate_device_id = IdGenerator.generate_device_id(self._device_id)
+        self.entity_id = self._generate_device_id
+        self._attr_available = True
+        self._updated_at: datetime | None = None
 
     @property
     def device_id(self):

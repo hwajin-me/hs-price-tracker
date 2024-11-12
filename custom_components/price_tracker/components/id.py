@@ -27,5 +27,18 @@ class IdGenerator:
         return target
 
     @staticmethod
+    def get_entity_device_target_from_id(entity_id: str) -> str:
+        target = entity_id.removeprefix(DOMAIN + ".price_").split("_type_")[1]
+
+        if "_device_" in target:
+            return target.split("_device_")[0]
+
+        return target
+
+    @staticmethod
     def get_device_target_from_id(device_id: str) -> str:
         return device_id.removeprefix(DOMAIN + ".price-device_")
+
+    @staticmethod
+    def is_device_id(entity_id: str) -> bool:
+        return entity_id.startswith(DOMAIN + ".price-device_")

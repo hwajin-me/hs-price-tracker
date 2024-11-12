@@ -1,7 +1,9 @@
 import dataclasses
 
+from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import DeliveryData
 from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.datas.price import ItemPriceData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 
 
@@ -22,33 +24,29 @@ class ItemOptionData:
             'inventory_status': self.inventory.name,
         }
 
+
 @dataclasses.dataclass
 class ItemData:
     def __init__(
             self,
             id: any,
-            price: float,
+            price: ItemPriceData,
             name: str,
             brand: str = None,
-            original_price: float = None,
             description: str = None,
-            category: str = None,
+            category: ItemCategoryData = None,
             delivery: DeliveryData = None,
             url: str = None,
             image: str = None,
             unit: ItemUnitData = None,
             inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
-            currency: str = "KRW",
             options: [ItemOptionData] = None,
     ) -> None:
         self.id = id
         if unit is None:
-            self.unit = ItemUnitData(unit=1, price=price, unit_type=ItemUnitType.PIECE)
+            self.unit = ItemUnitData(unit=1, price=price.price, unit_type=ItemUnitType.PIECE)
         else:
             self.unit = unit
-        self.original_price = original_price
-        if self.original_price is None:
-            self.original_price = price
         self.price = price
         self.brand = brand
         self.delivery = delivery
@@ -57,7 +55,6 @@ class ItemData:
         self.image = image
         self.name = name
         self.description = description
-        self.currency = currency
         self.inventory = inventory
         self.options = options
 
@@ -72,14 +69,12 @@ class ItemData:
             'brand': self.brand,
             'name': self.name,
             'description': self.description,
-            'display_category': self.category,
-            'price': self.price,
-            'original_price': self.original_price,
+            'display_category': self.category.split if self.category is not None else None,
+            'price': self.price.dict,
             'delivery': self.delivery.dict if self.delivery is not None else None,
             'url': self.url,
             'image': self.image,
             'inventory_status': self.inventory.name,
-            'currency': self.currency,
             'unit': self.unit.dict,
             'options': [option.dict for option in self.options] if self.options is not None else None,
         }

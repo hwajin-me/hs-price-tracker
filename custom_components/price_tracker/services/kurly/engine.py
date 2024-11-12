@@ -5,10 +5,12 @@ import re
 import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError
+from custom_components.price_tracker.components.error import InvalidError, InvalidItemUrlError
 from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.services.kurly.const import NAME, CODE
+from custom_components.price_tracker.services.kurly.parser import KurlyParser
 from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,10 +45,11 @@ class KurlyEngine(PriceEngine):
                                     ),
                                 },
                         ) as response:
-                            result = await response.read()
+                            result = await response.text()
 
                             if response.status == 200:
                                 j = json.loads(result)
+                                kurly_parser = KurlyParser(text=result)
                                 d = j["data"]
 
                                 _LOGGER.debug("Kurly Response", d)
@@ -54,7 +57,7 @@ class KurlyEngine(PriceEngine):
                                 return ItemData(
                                     id=d["no"],
                                     name=d["name"],
-                                    price=float(d["retail_price"]),
+                                    price=kurly_parser.price,
                                     image=d["main_image_url"],
                                     description=d["short_description"],
                                     category=d["category_ids"].join(">"),
@@ -85,7 +88,7 @@ class KurlyEngine(PriceEngine):
         u = re.search(r"(?:goods|products)/(?P<product_id>[\d]+)", item_url)
 
         if u is None:
-            raise InvalidError("Bad Kurly item_url {}.".format(item_url))
+            raise InvalidItemUrlError("Bad Kurly item_url {}.".format(item_url))
 
         g = u.groupdict()
 
@@ -93,8 +96,8 @@ class KurlyEngine(PriceEngine):
 
     @staticmethod
     def engine_code() -> str:
-        return "kurly"
+        return CODE
 
     @staticmethod
     def engine_name() -> str:
-        return "Kurly"
+        return NAME

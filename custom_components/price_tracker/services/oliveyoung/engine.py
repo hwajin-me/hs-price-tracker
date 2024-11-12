@@ -7,8 +7,11 @@ import requests
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
+from custom_components.price_tracker.components.error import InvalidItemUrlError
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.services.oliveyoung.const import CODE, NAME
+from custom_components.price_tracker.services.oliveyoung.parser import OliveyoungParser
 from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +36,7 @@ class OliveyoungEngine(PriceEngine):
             )
             if response is not None:
                 if response.status_code == 200:
+                    oliveyoung_parser = OliveyoungParser(text=response.text)
                     soup = BeautifulSoup(response.text, "html.parser")
                     data = soup.find("textarea", {"id": "goodsData"}).get_text()
                     if data is not None:
@@ -42,7 +46,7 @@ class OliveyoungEngine(PriceEngine):
 
                         return ItemData(
                             id=self.goods_number,
-                            price=float(json_data["finalPrice"]),
+                            price=oliveyoung_parser.price,
                             name=json_data["goodsBaseInfo"]["goodsName"],
                             category=json_data["displayCategoryInfo"][
                                 "displayCategoryFullPath"
@@ -72,7 +76,7 @@ class OliveyoungEngine(PriceEngine):
         u = re.search(r"goodsNo=(?P<goods_number>[\w\d]+)", item_url)
 
         if u is None:
-            raise Exception("Bad Oliveyoung item_url " + item_url)
+            raise InvalidItemUrlError("Bad Oliveyoung item_url " + item_url)
         data = {}
         g = u.groupdict()
         data["goods_number"] = g["goods_number"]
@@ -81,8 +85,8 @@ class OliveyoungEngine(PriceEngine):
 
     @staticmethod
     def engine_code() -> str:
-        return "oliveyoung"
+        return CODE
 
     @staticmethod
     def engine_name() -> str:
-        return "Oliveyoung"
+        return NAME

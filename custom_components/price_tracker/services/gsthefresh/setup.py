@@ -9,7 +9,7 @@ from homeassistant.data_entry_flow import AbortFlow
 from custom_components.price_tracker.components.error import InvalidError, ApiError
 from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.components.setup import PriceTrackerSetup
-from custom_components.price_tracker.services.gsthefresh.const import CODE
+from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.services.gsthefresh.device import GsTheFreshDevice, GsTheFreshLogin
 from custom_components.price_tracker.utilities.hash import md5
 from custom_components.price_tracker.utilities.list import Lu
@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 class GsthefreshSetup(PriceTrackerSetup):
     """"""
 
-    _api_search_mart = 'http://gsthefresh.gsretail.com/thefresh/ko/market-info/find-storelist?searchType=&searchShopName={}&pageNum=1&pageSize=50'
+    _api_search_mart = 'http://gsthefresh.gsretail.com/thefresh/ko/market-info/find-storelist?searchType=&searchShopName={}&pageNum=1&pageSize=100'
 
     _conf_gs_naver_login_code = "conf_gs_naver_login_code"
     _conf_gs_store_code_and_name = "conf_gs_store_code_and_name"
@@ -45,7 +45,7 @@ class GsthefreshSetup(PriceTrackerSetup):
                     and user_input[self._conf_gs_naver_login_code] != ""
             ):
                 _LOGGER.debug(
-                    "GS THE FRESH Setup Validation Passed %s / %s / %s",
+                    "GS THE FRESH Setup Validation Passed %s / %s",
                     user_input[self._conf_gs_naver_login_code],
                     user_input[self._conf_gs_store_code_and_name],
                 )
@@ -61,7 +61,8 @@ class GsthefreshSetup(PriceTrackerSetup):
                     **response,
                     'item_device_id': unique_id,
                     'gs_device_id': device_id,
-                    'store': store_code
+                    'store': store_code,
+                    'store_name': self._schema_get_gs_mart(user_input)['name'],
                 }
 
                 await self._config_flow.async_set_unique_id(self._async_set_unique_id(user_input))
@@ -71,29 +72,29 @@ class GsthefreshSetup(PriceTrackerSetup):
                             self._config_flow.handler, self._config_flow.unique_id
                         )
                 ):
-                    for already_in_device in entry.data['device']:
-                        if already_in_device['item_device_id'] == unique_id:
-                            self._config_flow._abort_if_unique_id_configured()
-                            return
 
                     self._config_flow._abort_if_unique_id_configured(
-                        updates={**entry.data, 'device': entry.data['device'] + [devices]})
-
-                    return
+                        updates={**entry.data,
+                                 'device': Lu.remove_item(entry.data['device'], 'item_device_id', unique_id) + [
+                                     devices]})
                 else:
                     self._config_flow._abort_if_unique_id_configured()
 
-                return self._config_flow.async_create_entry(title=CODE,
-                                                            data={'type': CODE, 'device': [devices]})
+                return self._config_flow.async_create_entry(title=self.setup_name(),
+                                                            data={'type': CODE, 'device': [devices]},
+                                                            options=dict(
+                                                                entry.options if entry is not None else {}))
         except AbortFlow as e:
             entry = self._config_flow.hass.config_entries.async_entry_for_domain_unique_id(
                 self._config_flow.handler, self._config_flow.unique_id
             )
-            return self._config_flow.async_create_entry(title=CODE, data=entry.data)
+            return self._config_flow.async_create_entry(title=self.setup_name(), data=dict(entry.data), options=dict(
+                entry.options if entry is not None else {}))
         except ApiError as e:
             _LOGGER.exception('GS THE FRESH Setup Error')
             errors['base'] = 'invalid_code'
         except Exception as e:
+            _LOGGER.exception('GS THE FRESH Setup Error')
             errors['unknown'] = e
 
         return self._config_flow.async_show_form(
@@ -119,6 +120,7 @@ class GsthefreshSetup(PriceTrackerSetup):
                     "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id"
                     '=VFjv3tsLofatP90P1a5H&locale=en&oauth_os=ios&redirect_uri=woodongs 로 이동하신 후 주소창의 "code" 항목을 복사해주십시오.',
                 ),
+
             },
             data_schema=vol.Schema(
                 {
@@ -221,7 +223,7 @@ class GsthefreshSetup(PriceTrackerSetup):
 
     @staticmethod
     def setup_name() -> str:
-        return "GS THE FRESH (Korea)"
+        return NAME
 
     def _schema_user_input_gs_mart(self, user_input: dict = None):
         if user_input is None or self._conf_gs_store_code_and_name not in user_input:

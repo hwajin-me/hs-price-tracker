@@ -30,13 +30,17 @@ async def async_setup_entry(
             # Get device generator
             device_generator = create_service_device_generator(type)
             if device_generator:
-                target_device = device_generator(device)
+                target_device = device_generator({
+                    **device,
+                    'entry_id': config_entry.entry_id,
+                })
                 devices = {
                     **devices,
                     **{
                         target_device.device_id: target_device
                     }
                 }
+    async_add_entities(list(devices.values()), update_before_add=True)
 
     for target in Lu.get_or_default(config, CONF_TARGET, []):
         try:
@@ -59,7 +63,7 @@ async def async_setup_entry(
         except Exception as e:
             _LOGGER.exception("Device configuration error {}".format(e), e)
 
-    async_add_entities(sensors + list(devices.values()), update_before_add=True)
+    async_add_entities(sensors, update_before_add=True)
 
 
 async def update_listener(

@@ -4,12 +4,13 @@ import re
 from urllib.parse import unquote
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError, ApiError
+from custom_components.price_tracker.components.error import InvalidError, ApiError, InvalidItemUrlError, ApiAuthError
 from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.services.gsthefresh.device import GsTheFreshDevice
+from custom_components.price_tracker.services.gsthefresh.parser import GsthefreshParser
 from custom_components.price_tracker.utilities.list import Lu
 from custom_components.price_tracker.utilities.parser import parse_bool
 from custom_components.price_tracker.utilities.request import http_request, http_request_async
@@ -35,14 +36,26 @@ class GsTheFreshEngine(PriceEngine):
         self.item_url = item_url
         self.id = GsTheFreshEngine.parse_id(item_url)
         self.device: GsTheFreshDevice = device
+        self._last_failed = False
 
     async def load(self) -> ItemData:
-        http_result = await http_request_async(
-            "get",
-            _PRODUCT_URL.format(self.id, self.device.store),
-            headers={**_REQUEST_HEADERS, **self.device.headers},
-        )
-        result = http_result.text
+        try:
+            http_result = await http_request(
+                "get",
+                _PRODUCT_URL.format(self.id, self.device.store),
+                headers={**_REQUEST_HEADERS, **self.device.headers},
+                auth=self.device.access_token,
+                timeout=5
+            )
+        except ApiAuthError as e:
+            self.device.invalid()
+            if self._last_failed is False:
+                self._last_failed = True
+            else:
+                raise e
+
+        result = await http_result.text()
+        gs_parser = GsthefreshParser(text=result)
         response = json.loads(result)
 
         if (
@@ -84,8 +97,7 @@ class GsTheFreshEngine(PriceEngine):
         return ItemData(
             id=id,
             name=name,
-            original_price=data["normalSalePrice"],
-            price=price,
+            price=gs_parser.price,
             delivery=delivery,
             image=image,
             url=url,
@@ -102,7 +114,7 @@ class GsTheFreshEngine(PriceEngine):
         g = u.groupdict()
 
         if g is None:
-            raise InvalidError("GS THE FRESH Item ID Parse(Regex) Error")
+            raise InvalidItemUrlError("GS THE FRESH Item ID Parse(Regex) Error")
 
         return g["product_id"]
 

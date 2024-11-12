@@ -67,9 +67,9 @@ class PriceTrackerSensor(RestoreEntity):
             self._item_data_previous = self._item_data
             self._item_data = data
             self._price_change = ItemPriceChangeData(
-                status=ItemPriceChangeStatus.NO_CHANGE if self._item_data_previous is None else ItemPriceChangeStatus.INCREMENT_PRICE if self._item_data.price > self._item_data_previous.price else ItemPriceChangeStatus.DECREMENT_PRICE,
+                status=ItemPriceChangeStatus.NO_CHANGE if self._item_data_previous is None else ItemPriceChangeStatus.INCREMENT_PRICE if self._item_data.price.price > self._item_data_previous.price.price else ItemPriceChangeStatus.DECREMENT_PRICE,
                 before_price=self._item_data_previous.price if self._item_data_previous is not None else 0.0,
-                after_price=self._item_data.price,
+                after_price=self._item_data.price.price,
             ) if self._item_data is not None and self._item_data_previous else ItemPriceChangeData(
                 status=ItemPriceChangeStatus.NO_CHANGE)
             self._updated_at = datetime.now()
@@ -81,10 +81,10 @@ class PriceTrackerSensor(RestoreEntity):
                 'refresh_period': self._refresh_period,
             }
             self._attr_name = self._item_data.name
-            self._attr_state = self._item_data.price
+            self._attr_state = self._item_data.price.price
             self._attr_entity_picture = self._item_data.image
             self._attr_available = True
-            self._attr_unit_of_measurement = self._item_data.currency
+            self._attr_unit_of_measurement = self._item_data.price.currency
         except Exception as e:
             self._attr_available = False
             self._attr_state = STATE_UNKNOWN
@@ -99,18 +99,23 @@ class PriceTrackerSensor(RestoreEntity):
             return
         self._state = state.state
 
-        _LOGGER.debug('Restoring state from previous version, {} >>>>> {}'.format(state, state.attributes))
+        _LOGGER.debug('Restoring state from previous version, {}'.format(state.attributes))
 
-        # ADDED CODE HERE
-        # self._attr_unique_id = state.attributes['unique_id']
+        if 'product_id' in state.attributes \
+                and 'price' in state.attributes \
+                and 'name' in state.attributes:
+            # self._item_data = ItemData(
+            #     id=state.attributes['product_id'],
+            #     name=state.attributes['name'],
+            #     price=state.attributes['price'],
+            #     image=state.attributes['image'] if 'image' in state.attributes else None,
+            #     url=state.attributes['url'] if 'url' in state.attributes else None,
+            # )
+            self._attr_state = self._item_data.price.price
+            self._attr_name = self._item_data.name
+            self._attr_available = True
 
-            # self.attrs = {
-            #     'expiration_date': datetime.strptime(
-            #         state.attributes['expiration_date'], '%Y-%m-%dT%H:%M:%S'),
-            #     'expired': state.attributes['expired'],
-            #     'purchased': state.attributes['purchased'],
-            #     'remaining': state.attributes['remaining'],
-            # }
+        await self.async_update()
 
         async_dispatcher_connect(
             self.hass, DATA_UPDATED, self._schedule_immediate_update

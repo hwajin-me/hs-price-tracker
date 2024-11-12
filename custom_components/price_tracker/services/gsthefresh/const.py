@@ -1,2 +1,2 @@
 CODE = "gsthefresh"
-NAME = "GS THE FRESH"
+NAME = "GS THE FRESH (Korea)"

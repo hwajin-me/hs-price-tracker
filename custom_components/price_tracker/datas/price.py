@@ -9,16 +9,25 @@ class ItemPriceData:
             price: float = 0.0,
             currency: str = "KRW",
             original_price: float = None,
-            discount_price: float = None,
-            discount_rate: float = None,
             payback_price: float = None,
     ):
         self.price = price
         self.currency = currency
         self.original_price = original_price if original_price else price
-        self.discount_price = discount_price
-        self.discount_rate = discount_rate
+        self.discount_amount = original_price - price if original_price else 0
+        self.discount_rate = self.discount_amount / original_price * 100 if original_price else 0
         self.payback_price = payback_price
+
+    @property
+    def dict(self):
+        return {
+            "price": self.price,
+            "currency": self.currency,
+            "original_price": self.original_price,
+            "discount_amount": self.discount_amount,
+            "discount_rate": self.discount_rate,
+            "payback_price": self.payback_price,
+        }
 
 
 class ItemPriceChangeStatus(Enum):
@@ -40,7 +49,8 @@ class ItemPriceSummaryData:
 
 @dataclass
 class ItemPriceChangeData:
-    def __init__(self, status: ItemPriceChangeStatus, before_price: float | None = None, after_price: float | None = None):
+    def __init__(self, status: ItemPriceChangeStatus, before_price: float | None = None,
+                 after_price: float | None = None):
         self.status = status
         self.before_price = before_price
         self.after_price = after_price

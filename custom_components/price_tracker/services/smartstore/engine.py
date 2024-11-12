@@ -8,9 +8,12 @@ import requests
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
+from custom_components.price_tracker.components.error import InvalidItemUrlError
 from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData, ItemOptionData
+from custom_components.price_tracker.services.smartstore.const import NAME, CODE
+from custom_components.price_tracker.services.smartstore.parser import SmartstoreParser
 from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,6 +42,7 @@ class SmartstoreEngine(PriceEngine):
         )
         if response is not None:
             if response.status_code == 200:
+                naver_parser = SmartstoreParser(data=response.text)
                 soup = BeautifulSoup(response.text, "html.parser")
                 scripts = soup.find_all("script")
                 for script in scripts:
@@ -75,9 +79,7 @@ class SmartstoreEngine(PriceEngine):
                             id="{}_{}".format(
                                 self.store, json_data["product"]["A"]["id"]
                             ),
-                            price=float(
-                                json_data["product"]["A"]["discountedSalePrice"]
-                            ),
+                            price=naver_parser.price,
                             name=json_data["product"]["A"]["name"],
                             description=json_data["product"]["A"]["detailContents"][
                                 "detailContentText"
@@ -115,7 +117,7 @@ class SmartstoreEngine(PriceEngine):
         )
 
         if u is None:
-            raise Exception("Bad item_url " + item_url)
+            raise InvalidItemUrlError("Bad item_url " + item_url)
         data = {}
         g = u.groupdict()
         data["store"] = g["store"]
@@ -125,8 +127,8 @@ class SmartstoreEngine(PriceEngine):
 
     @staticmethod
     def engine_code() -> str:
-        return "smartstore"
+        return CODE
 
     @staticmethod
     def engine_name() -> str:
-        return "SmartStore"
+        return NAME

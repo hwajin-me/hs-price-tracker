@@ -7,6 +7,8 @@ import aiohttp
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.services.ncnc.const import CODE, NAME
+from custom_components.price_tracker.services.ncnc.parser import NcncParser
 from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,9 +36,10 @@ class NcncEngine(PriceEngine):
                         "x-api-key": _X_API,
                     },
                 ) as response:
-                    result = await response.read()
+                    result = await response.text()
 
                     if response.status == 200:
+                        ncnc_parser = NcncParser(text=result)
                         j = json.loads(result)
                         _LOGGER.debug(
                             "NCNC Fetched at {} - {}", datetime.now(), self.id
@@ -49,9 +52,7 @@ class NcncEngine(PriceEngine):
                         return ItemData(
                             id=d["id"],
                             name=d["name"],
-                            price=float(d["conItems"][0]["minSellingPrice"])
-                            if len(d["conItems"]) and d["conItems"][0]
-                            else d["originalPrice"],
+                            price=ncnc_parser.price,
                             description=d["conItems"][0]["info"]
                             if len(d["conItems"])
                             else "",
@@ -80,8 +81,8 @@ class NcncEngine(PriceEngine):
 
     @staticmethod
     def engine_code() -> str:
-        return "ncnc"
+        return CODE
 
     @staticmethod
     def engine_name() -> str:
-        return "NCNC"
+        return NAME

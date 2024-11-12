@@ -4,12 +4,14 @@ import re
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError
+from custom_components.price_tracker.components.error import InvalidItemUrlError
 from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
-from custom_components.price_tracker.utilities.request import http_request, http_request_async
+from custom_components.price_tracker.services.oasis.const import NAME, CODE
+from custom_components.price_tracker.services.oasis.parser import OasisParser
+from custom_components.price_tracker.utilities.request import http_request_async
 
 _LOGGER = logging.getLogger(__name__)
 _URL = "https://m.oasis.co.kr/product/detail/{}"
@@ -24,8 +26,10 @@ class OasisEngine(PriceEngine):
     async def load(self) -> ItemData:
         http_result = await http_request_async("get", _URL.format(self.product_id))
         response = http_result.text
+        oasis_parser = OasisParser(text=http_result.text)
         soup = BeautifulSoup(response, "html.parser")
-        name = soup.find("div", class_="oDetail_info_group_title").find("h1").get_text().replace("\n", "").replace("\t", "")
+        name = soup.find("div", class_="oDetail_info_group_title").find("h1").get_text().replace("\n", "").replace("\t",
+                                                                                                                   "")
         price = soup.find("div", class_="discountPrice").get_text().replace("원", "")
         delivery_price = (
             soup.find("dd", class_="deliverySave")
@@ -69,7 +73,7 @@ class OasisEngine(PriceEngine):
         return ItemData(
             id=self.product_id,
             name=name,
-            price=float(price.replace(",", "")),
+            price=oasis_parser.price,
             delivery=delivery,
             image=image,
             url=self.item_url,
@@ -85,18 +89,18 @@ class OasisEngine(PriceEngine):
         m = re.search(r"(?P<product_id>[\d\-]+)(?:$|\?.*?$)", item_url)
 
         if m is None:
-            raise InvalidError("Invalid OASIS Product URL {}".format(item_url))
+            raise InvalidItemUrlError("Invalid OASIS Product URL {}".format(item_url))
         g = m.groupdict()
 
         if "product_id" not in g:
-            raise InvalidError("Invalid OASIS Product URL {}".format(item_url))
+            raise InvalidItemUrlError("Invalid OASIS Product URL {}".format(item_url))
 
         return g["product_id"]
 
     @staticmethod
     def engine_code() -> str:
-        return "oasis"
+        return CODE
 
     @staticmethod
     def engine_name() -> str:
-        return "OASIS"
+        return NAME

@@ -4,14 +4,13 @@ import random
 import aiohttp
 import requests
 
-from custom_components.price_tracker.components.error import ApiError
+from custom_components.price_tracker.components.error import ApiError, ApiAuthError
 
 _REQUEST_DEFAULT_HEADERS = {
     "Accept": "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept-Encoding": "gzip, deflate, br, zstd",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
-    "Connection": "close",
     "Cache-Control": "max-age=0",
 }
 
@@ -39,69 +38,83 @@ def default_request_headers():
 
 
 async def http_request(
-    method: str,
-    url: str,
-    headers=None,
-    auth: str = None,
-    timeout: int = 10,
-    proxy: bool = False,
+        method: str,
+        url: str,
+        headers=None,
+        auth: str = None,
+        timeout: int | None = None,
+        proxy: bool = False,
 ):
     if headers is None:
         headers = {}
 
     if auth is not None:
-        headers["Authorization"] = "Bearer {}".format(auth)
+        headers["authorization"] = "Bearer {}".format(auth)
 
-    async with aiohttp.ClientSession(
+    session = aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(verify_ssl=False)
-    ) as session:
-        try:
-            async with session.request(
-                method=method,
-                url=url,
-                headers={**_REQUEST_DEFAULT_HEADERS, **headers},
-                timeout=timeout,
-                proxy=proxy_server() if proxy else None,
-            ) as response:
-                if response.status > 299:
-                    raise ApiError(
-                        "Error while fetching data from the API (status code: {}, {}, {}, {})".format(
-                            response.status, url, headers, await response.text()
-                        )
-                    )
+    )
 
-                return response
+    try:
+        response = await session.request(
+            method=method,
+            url=url,
+            headers={**_REQUEST_DEFAULT_HEADERS, **headers},
+            timeout=timeout,
+            proxy=proxy_server() if proxy else None,
+        )
+        if response.status == 401 or response.status == 403:
+            raise ApiAuthError('API authentication error {} {}'.format(response.request_info.headers, response.text))
+        if response.status > 299:
+            raise ApiError(
+                "Error while fetching data from the API (status code: {}, {}, {}, {})".format(
+                    response.status, url, headers, await response.text()
+                )
+            )
+        await session.close()
 
-        except asyncio.TimeoutError as e:
-            if proxy:
-                return await http_request(method, url, headers, auth, timeout, False)
-            else:
-                raise ApiError(
-                    "Timeout while fetching data from the API (url: {}, headers: {})".format(
-                        url, headers
-                    )
-                ) from e
+        return response
+    except aiohttp.ServerConnectionError as e:
+        raise ApiError(
+            "Error while fetching data from the API - ServerConnectionError (url: {}, headers: {}) {}".format(
+                url, headers, e
+            )
+        ) from e
+    except asyncio.TimeoutError as e:
+        if proxy:
+            return await http_request(method, url, headers, auth, timeout, False)
+        else:
+            raise ApiError(
+                "Timeout while fetching data from the API (url: {}, headers: {})".format(
+                    url, headers
+                )
+            ) from e
+    finally:
+        await session.close()
 
 
 async def http_request_async(
-    method: str,
-    url: str,
-    headers=None,
-    auth: str = None,
-    timeout: int = 10,
-    proxy: bool = False,
+        method: str,
+        url: str,
+        headers=None,
+        auth: str = None,
+        timeout: int = 5,
+        proxy: bool = False,
 ):
     if headers is None:
         headers = {}
 
-    if auth is not None:
-        headers["Authorization"] = "Bearer {}".format(auth)
+    if auth is not None and auth != '':
+        headers["authorization"] = "Bearer {}".format(auth)
 
     req = requests.get if method == "get" else requests.post
     response = await asyncio.to_thread(
         req, url, headers={**_REQUEST_DEFAULT_HEADERS, **headers}
     )
     if response is not None:
+        if response.status_code == 401 or response.status_code == 403:
+            raise ApiAuthError('API authentication error {} {}'.format(headers, response.text))
+
         if response.status_code > 299:
             raise ApiError(
                 "Error while fetching data from the API (status code: {}, {}, {}, {})".format(

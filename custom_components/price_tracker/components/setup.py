@@ -10,13 +10,13 @@ from homeassistant.helpers import (
 )
 from homeassistant.helpers import selector
 
-from custom_components.price_tracker.components.error import NotFoundError
+from custom_components.price_tracker.components.error import NotFoundError, InvalidItemUrlError
 from custom_components.price_tracker.components.forms import Forms
 from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.consts.confs import CONF_TYPE
 from custom_components.price_tracker.datas.unit import ItemUnitType
 from custom_components.price_tracker.services.factory import (
-    create_service_item_url_parser,
+    create_service_item_url_parser, create_service_item_target_parser,
 )
 from custom_components.price_tracker.utilities.list import Lu
 
@@ -48,10 +48,10 @@ class PriceTrackerSetup:
     conf_item_price_change_interval_hour: str = "item_price_change_interval_hour"
 
     def __init__(
-        self,
-        config_flow: config_entries.ConfigFlow = None,
-        option_flow: config_entries.OptionsFlow = None,
-        config_entry=None,
+            self,
+            config_flow: config_entries.ConfigFlow = None,
+            option_flow: config_entries.OptionsFlow = None,
+            config_entry=None,
     ):
         self._config_flow = config_flow
         self._option_flow = option_flow
@@ -116,6 +116,24 @@ class PriceTrackerSetup:
         """Modify an existing entry."""
         _LOGGER.debug("Setup Modify(option): %s", user_input)
 
+        if user_input is not None \
+                and self.const_option_entity_delete in user_input \
+                and user_input[self.const_option_entity_delete] is True:
+            data = deepcopy(self._config_entry.options.get(self.conf_target, []))
+            target_entity = (er.async_get(self._option_flow.hass)).async_get(
+                user_input[self.const_option_select_entity]
+            )
+
+            for item in data[:]:
+                if target_entity.unique_id == item[self.conf_item_unique_id]:
+                    data.remove(item)
+
+            _LOGGER.debug('Setup Modify(option) / Delete data: %s', user_input)
+
+            return self._option_flow.async_create_entry(
+                title="Deleted", data={self.conf_target: data}
+            )
+
         return await self.option_upsert(
             device=device,
             user_input={
@@ -131,58 +149,64 @@ class PriceTrackerSetup:
 
         errors = {}
 
-        if user_input is not None:
-            """Add a new entry."""
-            if (
-                self.conf_item_url in user_input
-                and self.conf_item_management_category in user_input
-                and self.conf_item_unit_type in user_input
-                and self.conf_item_unit in user_input
-                and self.conf_item_refresh_interval in user_input
-                and self.conf_item_price_change_interval_hour in user_input
-                and self.conf_item_url != ""
-                and self.conf_item_management_category != ""
-                and self.conf_item_unit_type != ""
-                and self.conf_item_unit != ""
-                and self.conf_item_refresh_interval != ""
-                and self.conf_item_price_change_interval_hour != ""
-            ):
-                data = deepcopy(self._config_entry.options.get(self.conf_target, []))
+        try:
+            if user_input is not None:
+                """Add a new entry."""
+                if (
+                        self.conf_item_url in user_input
+                        and self.conf_item_management_category in user_input
+                        and self.conf_item_unit_type in user_input
+                        and self.conf_item_unit in user_input
+                        and self.conf_item_refresh_interval in user_input
+                        and self.conf_item_price_change_interval_hour in user_input
+                        and self.conf_item_url != ""
+                        and self.conf_item_unit_type != ""
+                        and self.conf_item_unit != ""
+                        and self.conf_item_refresh_interval != ""
+                        and self.conf_item_price_change_interval_hour != ""
+                ):
+                    _LOGGER.debug('Setup Upsert(option) / Creation from: %s', user_input)
 
-                for item in data[:]:
-                    if item[self.conf_item_url] == user_input[self.conf_item_url]:
-                        if self.const_option_select_device in user_input:
-                            if (
-                                self.const_option_select_device in item
-                                and item[self.const_option_select_device]
-                                == user_input[self.const_option_select_device]
-                            ):
-                                data.remove(item)
-                        else:
+                    data = deepcopy(self._config_entry.options.get(self.conf_target, []))
+                    service_type = self._config_entry.data["type"]
+                    entity_id = IdGenerator.generate_entity_id(
+                        service_type=service_type,
+                        entity_target=create_service_item_target_parser(service_type)(
+                            create_service_item_url_parser(
+                                service_type
+                            )(user_input[self.conf_item_url])
+                        ),
+                        device_id=Lu.get(user_input, self.const_option_select_device),
+                    )
+
+                    for item in data[:]:
+                        if entity_id == item[self.conf_item_unique_id]:
                             data.remove(item)
 
-                data_input = {
-                    self.conf_item_unique_id: IdGenerator.generate_entity_id(
-                        service_type=self._config_entry.data["type"],
-                        entity_target=create_service_item_url_parser(
-                            self._config_entry.data["type"]
-                        )(user_input[self.conf_item_url]),
-                        device_id=Lu.get(user_input, self.const_option_select_device),
-                    ),
-                    self.conf_item_device_id: Lu.get(
-                        user_input, self.const_option_select_device
-                    ),
-                    **user_input,
-                }
+                    data_input = {
+                        self.conf_item_unique_id: entity_id,
+                        self.conf_item_device_id: Lu.get(
+                            user_input, self.const_option_select_device
+                        ),
+                        **user_input,
+                    }
 
-                if self.const_option_select_device in user_input:
-                    del data_input[self.const_option_setup_select]
+                    if self.const_option_select_device in user_input:
+                        del data_input[self.const_option_select_device]
 
-                data.append(data_input)
+                    if self.const_option_setup_select in user_input:
+                        del data_input[self.const_option_setup_select]
 
-                return self._option_flow.async_create_entry(
-                    title=user_input[self.conf_item_url], data={self.conf_target: data}
-                )
+                    if self.const_option_select_entity in user_input:
+                        del data_input[self.const_option_select_entity]
+
+                    data.append(data_input)
+
+                    return self._option_flow.async_create_entry(
+                        title=user_input[self.conf_item_url], data={self.conf_target: data}
+                    )
+        except InvalidItemUrlError as e:
+            errors["invalid_item_url"] = user_input[self.conf_item_url]
 
         schema = {
             vol.Required(self.conf_item_url, default=None): cv.string,
@@ -199,9 +223,10 @@ class PriceTrackerSetup:
 
         # If the device and entity are selected
         if (
-            user_input is not None
-            and self.const_option_select_entity in user_input
-            and Lu.get(user_input, self.const_option_select_entity) is not None
+                user_input is not None
+                and self.const_option_select_entity in user_input
+                and Lu.get(user_input, self.const_option_select_entity) is not None
+                and errors == {}
         ):
             """Change default variables"""
             entity = (er.async_get(self._option_flow.hass)).async_get(
@@ -234,15 +259,19 @@ class PriceTrackerSetup:
                     vol.Optional(
                         self.conf_item_management_category, default=Lu.get(item, self.conf_item_management_category)
                     ): cv.string,
-                    vol.Optional(self.conf_item_unit_type, default=Lu.get_or_default(item, self.conf_item_unit_type, 'auto')): vol.In(
+                    vol.Optional(self.conf_item_unit_type,
+                                 default=Lu.get_or_default(item, self.conf_item_unit_type, 'auto')): vol.In(
                         ["auto"] + ItemUnitType.list()
                     ),
-                    vol.Optional(self.conf_item_unit, default=Lu.get_or_default(item, self.conf_item_unit, 0)): cv.positive_int,
+                    vol.Optional(self.conf_item_unit,
+                                 default=Lu.get_or_default(item, self.conf_item_unit, 0)): cv.positive_int,
                     vol.Required(
-                        self.conf_item_refresh_interval, default=Lu.get_or_default(item, self.conf_item_refresh_interval, 10)
+                        self.conf_item_refresh_interval,
+                        default=Lu.get_or_default(item, self.conf_item_refresh_interval, 10)
                     ): cv.positive_int,
                     vol.Required(
-                        self.conf_item_price_change_interval_hour, default=Lu.get_or_default(item, self.conf_item_price_change_interval_hour, 24)
+                        self.conf_item_price_change_interval_hour,
+                        default=Lu.get_or_default(item, self.conf_item_price_change_interval_hour, 24)
                     ): cv.positive_int,
                 }
 
@@ -261,8 +290,10 @@ class PriceTrackerSetup:
                 **self._form_i18n_description(
                     "ko", "엔티티 속성을 정의합니다. 일부 값은 필수이며 item_url을 통해 상품 고유의 값을 추출합니다."
                 ),
-                **Forms.t('en', self.conf_item_url, 'Item URL or Product (e.g. https://www.idus.com/v2/product/400876fb-fd26-4290-abb7-589d60bbceb2)'),
-                **Forms.t('ja', self.conf_item_url, '商品のURLアドレス(e.g. https://www.amazon.co.jp/%E3%82%AA%E3%83%A0%E3%83%AD%E3%83%B3-OMRON-KRD-703T-%E4%BD%93%E9%87%8D%E4%BD%93%E7%B5%84%E6%88%90%E8%A8%88KRD-703T-%E3%82%AB%E3%83%A9%E3%83%80%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3/dp/B07YLPHPHB/ref=s9_acsd_al_ot_c2_x_3_t?_encoding=UTF8&pf_rd_m=A1VC38T7YXB528&pf_rd_s=merchandised-search-5&pf_rd_r=ANYP8XE2V2F8GCA21MWJ&pf_rd_p=626c9cca-d8de-4403-beb8-5fdcd3cfeea1&pf_rd_t=&pf_rd_i=3534638051)'),
+                **Forms.t('en', self.conf_item_url,
+                          'Item URL or Product (e.g. https://www.idus.com/v2/product/400876fb-fd26-4290-abb7-589d60bbceb2)'),
+                **Forms.t('ja', self.conf_item_url,
+                          '商品のURLアドレス(e.g. https://www.amazon.co.jp/%E3%82%AA%E3%83%A0%E3%83%AD%E3%83%B3-OMRON-KRD-703T-%E4%BD%93%E9%87%8D%E4%BD%93%E7%B5%84%E6%88%90%E8%A8%88KRD-703T-%E3%82%AB%E3%83%A9%E3%83%80%E3%82%B9%E3%82%AD%E3%83%A3%E3%83%B3/dp/B07YLPHPHB/ref=s9_acsd_al_ot_c2_x_3_t?_encoding=UTF8&pf_rd_m=A1VC38T7YXB528&pf_rd_s=merchandised-search-5&pf_rd_r=ANYP8XE2V2F8GCA21MWJ&pf_rd_p=626c9cca-d8de-4403-beb8-5fdcd3cfeea1&pf_rd_t=&pf_rd_i=3534638051)'),
                 **Forms.t('ko', self.conf_item_url, '상품 URL 주소(e.g. https://www.coupang.com/vp/products/123456)'),
                 **Forms.t('en', self.conf_item_management_category, 'Management Category'),
                 **Forms.t('ja', self.conf_item_management_category, '管理カテゴリ'),
@@ -297,7 +328,7 @@ class PriceTrackerSetup:
         device_entities = []
 
         for d in dr.async_entries_for_config_entry(
-            dr.async_get(self._option_flow.hass), self._config_entry.entry_id
+                dr.async_get(self._option_flow.hass), self._config_entry.entry_id
         ):
             device_entities.append(d.serial_number)
 
@@ -339,15 +370,17 @@ class PriceTrackerSetup:
         entities = er.async_entries_for_config_entry(
             er.async_get(self._option_flow.hass), self._config_entry.entry_id
         )
-        hass = er.async_get(self._option_flow.hass)
 
         for e in entities:
+            if IdGenerator.is_device_id(e.unique_id):
+                continue
+
             if device is not None:
-                for d in dr.async_entries_for_config_entry(
-                    dr.async_get(self._option_flow.hass), self._config_entry.entry_id
-                ):
-                    if d.serial_number != device:
-                        continue
+                device_id = IdGenerator.get_entity_device_target_from_id(e.unique_id)
+
+                if device_id != device:
+                    continue
+
             option_entities.append(e.entity_id)
 
         schema = {
@@ -421,9 +454,9 @@ class PriceTrackerSetup:
 
     def _schema_user_input_option_service_device(self, user_input: dict = None):
         if (
-            user_input is None
-            or self.const_option_select_device not in user_input
-            or user_input[self.const_option_select_device] is None
+                user_input is None
+                or self.const_option_select_device not in user_input
+                or user_input[self.const_option_select_device] is None
         ):
             return {}
         return {

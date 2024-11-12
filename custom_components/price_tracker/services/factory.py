@@ -34,7 +34,7 @@ _SERVICE_ITEM_TARGET_PARSER = {
 }
 
 _SERVICE_ITEM_ENGINE = {
-    CoupangEngine.engine_code() : lambda cfg: CoupangEngine(cfg),
+    CoupangEngine.engine_code(): lambda cfg: CoupangEngine(cfg),
     GsTheFreshEngine.engine_code(): lambda cfg: GsTheFreshEngine(item_url=cfg['item_url'], device=cfg['device']),
     IdusEngine.engine_code(): lambda cfg: IdusEngine(cfg),
     KurlyEngine.engine_code(): lambda cfg: KurlyEngine(cfg),
@@ -51,14 +51,17 @@ _SERVICE_DEVICE_PARSER = {
 
 _SERVICE_DEVICE_GENERATOR = {
     GsTheFreshDevice.device_code(): lambda cfg: GsTheFreshDevice(
+        entry_id=cfg['entry_id'],
         gs_device_id=cfg['gs_device_id'],
         access_token=cfg['access_token'],
         refresh_token=cfg['refresh_token'],
         name=cfg['name'],
         number=cfg['number'],
         store=cfg['store'],
+        store_name=cfg['store_name'],
     )
 }
+
 
 def create_service_item_url_parser(service_code):
     return _SERVICE_ITEM_URL_PARSER[service_code]

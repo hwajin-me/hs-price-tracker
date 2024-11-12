@@ -43,6 +43,9 @@ def parse_float(value: any) -> float:
 
 
 def parse_number(value: any) -> int:
+    if value is None:
+        return 0
+
     try:
         return int(
             str(value)

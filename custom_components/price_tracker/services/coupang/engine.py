@@ -8,11 +8,13 @@ import requests
 from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError
+from custom_components.price_tracker.components.error import InvalidError, InvalidItemUrlError
+from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import DeliveryPayType, DeliveryData
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
+from custom_components.price_tracker.services.coupang.parser import CoupangParser
 from custom_components.price_tracker.utilities.list import Lu
 from custom_components.price_tracker.utilities.request import default_request_headers
 
@@ -48,6 +50,7 @@ class CoupangEngine(PriceEngine):
             )
             if response is not None:
                 if response.status_code == 200:
+                    coupang_parser = CoupangParser(text=response.text)
                     soup = BeautifulSoup(response.text, "html.parser")
                     if soup is not None:
                         data = soup.find("script", {"id": "__NEXT_DATA__"}).get_text()
@@ -93,14 +96,14 @@ class CoupangEngine(PriceEngine):
                         image = Lu.find_item(
                             page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ITEM_THUMBNAILS"
                         )["data"]["medias"][0]["detail"]
-                        category = ">".join(
-                            str(t["name"])
+                        category = ItemCategoryData(
+                            list(str(t["name"])
                             for t in Lu.find_item(
                                 page_atf,
                                 "viewType",
                                 "MWEB_PRODUCT_DETAIL_SDP_BREADCURMB_DETAIL",
                             )["data"]["breadcrumb"]
-                            if t["linkcode"] != "0"
+                            if t["linkcode"] != "0")
                         )
 
                         if "unitPriceDescription" in price_info["finalPrice"]:
@@ -124,7 +127,7 @@ class CoupangEngine(PriceEngine):
                             if Lu.find_item(
                                 page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
                             )
-                            is not None
+                               is not None
                             else None
                         )
                         sold_out = j["props"]["pageProps"]["properties"]["itemDetail"][
@@ -132,7 +135,7 @@ class CoupangEngine(PriceEngine):
                         ]
 
                         if (
-                            inventory is None or "limitMessage" not in inventory
+                                inventory is None or "limitMessage" not in inventory
                         ) and sold_out == False:
                             stock = InventoryStatus.IN_STOCK
                         elif sold_out == False and "limitMessage" in inventory:
@@ -146,7 +149,7 @@ class CoupangEngine(PriceEngine):
                             id="{}_{}_{}".format(
                                 self.product_id, self.item_id, self.vendor_item_id
                             ),
-                            price=price,
+                            price=coupang_parser.price,
                             name=name,
                             description=description,
                             url=_ITEM_LINK.format(
@@ -178,7 +181,7 @@ class CoupangEngine(PriceEngine):
         )
 
         if u is None:
-            raise Exception("Bad item_url " + item_url)
+            raise InvalidItemUrlError("Bad item_url " + item_url)
         data = {}
         g = u.groupdict()
         data["product_id"] = g["product_id"]

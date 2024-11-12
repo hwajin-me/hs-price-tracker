@@ -5,11 +5,12 @@ import re
 import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError
+from custom_components.price_tracker.components.error import InvalidError, InvalidItemUrlError
 from custom_components.price_tracker.datas.delivery import DeliveryData
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.datas.unit import ItemUnitData
+from custom_components.price_tracker.services.idus.parser import IdusParser
 from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,11 +33,12 @@ class IdusEngine(PriceEngine):
                         url=_URL.format(self.product_id),
                         headers={**default_request_headers()},
                 ) as response:
-                    result = await response.read()
+                    result = await response.text()
 
                     if response.status == 200:
                         j = json.loads(result)
                         d = j["items"]
+                        idus_parser = IdusParser(text=result)
 
                         _LOGGER.debug("Backpackr Idus Response", d)
 
@@ -50,7 +52,7 @@ class IdusEngine(PriceEngine):
                         return ItemData(
                             id=d["uuid"],
                             name=d["p_info"]["pi_name"],
-                            price=float(d["p_info"]["pi_saleprice"].replace(",", "")),
+                            price=idus_parser.price,
                             category=d["category_name"],
                             description=d["p_keywords"],
                             delivery=DeliveryData(price=0.0),
@@ -79,7 +81,7 @@ class IdusEngine(PriceEngine):
         u = re.search(r"product/(?P<product_id>[\w\d\-]+)", item_url)
 
         if u is None:
-            raise InvalidError('Bad backpackr(idus) item_url "{}".'.format(item_url))
+            raise InvalidItemUrlError('Bad backpackr(idus) item_url "{}".'.format(item_url))
 
         g = u.groupdict()
 

@@ -10,6 +10,10 @@ class ApiError(Exception):
     pass
 
 
+class ApiAuthError(ApiError):
+    pass
+
+
 class NotFoundError(Exception):
     pass
 
@@ -19,4 +23,12 @@ class DataFetchError(Exception):
 
 
 class DataFetchErrorCauseEmpty(DataFetchError):
+    pass
+
+
+class DataParseError(Exception):
+    pass
+
+
+class InvalidItemUrlError(InvalidError):
     pass

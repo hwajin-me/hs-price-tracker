@@ -1,5 +1,5 @@
 from custom_components.price_tracker.components.setup import PriceTrackerSetup
-from custom_components.price_tracker.services.kurly.const import CODE
+from custom_components.price_tracker.services.kurly.const import CODE, NAME
 
 
 class KurlySetup(PriceTrackerSetup):
@@ -11,4 +11,4 @@ class KurlySetup(PriceTrackerSetup):
 
     @staticmethod
     def setup_name() -> str:
-        return "Kurly"
+        return NAME

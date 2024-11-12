@@ -5,10 +5,13 @@ import re
 import aiohttp
 
 from custom_components.price_tracker.components.engine import PriceEngine
+from custom_components.price_tracker.components.error import InvalidItemUrlError, ApiError
 from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
-from custom_components.price_tracker.utilities.parser import parse_number
+from custom_components.price_tracker.services.ssg.const import CODE, NAME
+from custom_components.price_tracker.utilities.list import Lu
+from custom_components.price_tracker.utilities.parser import parse_number, parse_bool
 from custom_components.price_tracker.utilities.request import default_request_headers
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,7 +45,7 @@ class SsgEngine(PriceEngine):
                             "Content-Type": "application/json",
                         },
                 ) as response:
-                    result = await response.read()
+                    result = await response.text()
 
                     if response.status == 200:
                         j = json.loads(result)
@@ -71,6 +74,7 @@ class SsgEngine(PriceEngine):
 
                         return ItemData(
                             id=self.product_id,
+                            brand=d['brand']['brandNm'] if 'brand' in d else None,
                             name=d["itemNm"],
                             price=parse_number(d["price"]["sellprc"]),
                             description="",
@@ -79,16 +83,16 @@ class SsgEngine(PriceEngine):
                             if len(d["uitemImgList"]) > 0
                             else None,
                             category=d["ctgNm"],
-                            inventory=InventoryStatus.OUT_OF_STOCK
-                            if d["itemBuyInfo"]["soldOut"] == "Y"
-                            else InventoryStatus.IN_STOCK,
+                            inventory=InventoryStatus.of(parse_bool(d["itemBuyInfo"]["soldOut"]),
+                                                         Lu.get(d, 'usablInvQty')),
                             unit=unit,
                         )
                     else:
                         _LOGGER.error("SSG Response Error", response)
-
-        except Exception:
-            _LOGGER.exception("SSG Error")
+        except ApiError as e:
+            _LOGGER.exception("SSG Error %s", e)
+        except Exception as e:
+            _LOGGER.exception("SSG Unknown Error %s", e)
 
     def id(self) -> str:
         return "{}_{}".format(self.product_id, self.site_no)
@@ -100,7 +104,7 @@ class SsgEngine(PriceEngine):
         )
 
         if u is None:
-            raise Exception("Bad item_url " + item_url)
+            raise InvalidItemUrlError("Bad item_url " + item_url)
         data = {}
         g = u.groupdict()
         data["product_id"] = g["product_id"]
@@ -110,8 +114,8 @@ class SsgEngine(PriceEngine):
 
     @staticmethod
     def engine_code() -> str:
-        return "ssg"
+        return CODE
 
     @staticmethod
     def engine_name() -> str:
-        return "SSG"
+        return NAME
