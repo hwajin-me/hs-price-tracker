@@ -225,9 +225,9 @@ class GsTheFreshDevice(PriceTrackerDevice):
             new_entry_data = {'device': []} if entry_data is None else {'device': [], **entry_data}
             if entry_data is not None and 'device' in new_entry_data:
                 actual = {
-                    **Lu.get_item_or_default(new_entry_data['device'], 'item_device_id', self.entity_id, {})
+                    **Lu.get_item_or_default(new_entry_data['device'], 'item_device_id', self._generate_device_id, {})
                 }
-                new_entry_data['device'] = Lu.remove_item(new_entry_data['device'], 'item_device_id', self.entity_id)
+                new_entry_data['device'] = Lu.remove_item(new_entry_data['device'], 'item_device_id', self._generate_device_id)
                 new_entry_data['device'].append({
                     **actual,
                     **{
@@ -248,16 +248,16 @@ class GsTheFreshDevice(PriceTrackerDevice):
             self._attr_available = True
             self._updated_at = datetime.now()
             _LOGGER.debug(
-                "GS THE FRESH - Device Update Success {}, {} / {}".format(self.entity_id, self._access_token,
+                "GS THE FRESH - Device Update Success {}, {} / {}".format(self._generate_device_id, self._access_token,
                                                                           self._refresh_token)
             )
         except ApiAuthError as e:
-            _LOGGER.error("GS THE FRESH - Device Update Error Auth: {}".format(self.entity_id, e))
+            _LOGGER.error("GS THE FRESH - Device Update Error Auth: {}".format(self._generate_device_id, e))
             self._state = False
             self._attr_available = False
             self._updated_at = datetime.now() - timedelta(minutes=1)
         except Exception as e:
-            _LOGGER.exception("GS THE FRESH - Device Update Error: {}, {}".format(self.entity_id, e))
+            _LOGGER.exception("GS THE FRESH - Device Update Error: {}, {}".format(self._generate_device_id, e))
             self._state = False
             self._attr_available = False
             self._updated_at = datetime.now() - timedelta(minutes=1)
