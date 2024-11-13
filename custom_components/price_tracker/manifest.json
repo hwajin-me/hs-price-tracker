@@ -18,5 +18,5 @@
     "requests~=2.32.3",
     "voluptuous~=0.15.2"
   ],
-  "version": "1.0.0"
+  "version": "1.0.1"
 }
