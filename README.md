@@ -13,12 +13,29 @@ This is a custom component for [Home Assistant](https://www.home-assistant.io/) 
    - Click on Integrations.
    - Click on the three dots in the top right corner.
    - Click on Custom repositories.
-   - Add the URL of this repository:
-2. Add Entry
+   - Add the URL of this repository
 
 ## Manual
 
 You can add entity to your system by configure button in the integrations page. Upsert Item page requires URL of the product page which you want to track.
+
+### Add e-commerce platform
+
+1. Go to the integrations page in Home Assistant.
+2. Click on the `Add Integration` button.
+3. Search for `E-Commerce Price Tracker`.
+4. Click on the integration and configure it.
+5. Click on the `Submit` button.
+
+### Add product
+
+1. Click `Configure` button in the integration page.
+2. Click on the `Add entity` button. Some provider may require device id.
+3. Fill the form and click on the `Submit` button.
+
+
+
+
 
 ### Configurations
 
