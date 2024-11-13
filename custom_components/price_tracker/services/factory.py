@@ -35,7 +35,9 @@ _SERVICE_ITEM_TARGET_PARSER = {
 
 _SERVICE_ITEM_ENGINE = {
     CoupangEngine.engine_code(): lambda cfg: CoupangEngine(cfg),
-    GsTheFreshEngine.engine_code(): lambda cfg: GsTheFreshEngine(item_url=cfg['item_url'], device=cfg['device']),
+    GsTheFreshEngine.engine_code(): lambda cfg: GsTheFreshEngine(
+        item_url=cfg["item_url"], device=cfg["device"]
+    ),
     IdusEngine.engine_code(): lambda cfg: IdusEngine(cfg),
     KurlyEngine.engine_code(): lambda cfg: KurlyEngine(cfg),
     NcncEngine.engine_code(): lambda cfg: NcncEngine(cfg),
@@ -46,19 +48,21 @@ _SERVICE_ITEM_ENGINE = {
 }
 
 _SERVICE_DEVICE_PARSER = {
-    GsTheFreshDevice.device_code(): lambda cfg: GsTheFreshDevice.create_device_id(cfg['number'], cfg['store']),
+    GsTheFreshDevice.device_code(): lambda cfg: GsTheFreshDevice.create_device_id(
+        cfg["number"], cfg["store"]
+    ),
 }
 
 _SERVICE_DEVICE_GENERATOR = {
     GsTheFreshDevice.device_code(): lambda cfg: GsTheFreshDevice(
-        entry_id=cfg['entry_id'],
-        gs_device_id=cfg['gs_device_id'],
-        access_token=cfg['access_token'],
-        refresh_token=cfg['refresh_token'],
-        name=cfg['name'],
-        number=cfg['number'],
-        store=cfg['store'],
-        store_name=cfg['store_name'],
+        entry_id=cfg["entry_id"],
+        gs_device_id=cfg["gs_device_id"],
+        access_token=cfg["access_token"],
+        refresh_token=cfg["refresh_token"],
+        name=cfg["name"],
+        number=cfg["number"],
+        store=cfg["store"],
+        store_name=cfg["store_name"],
     )
 }
 

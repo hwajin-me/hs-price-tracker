@@ -16,7 +16,7 @@ class PriceEngine:
         pass
 
     @abstractmethod
-    def id(self) -> str:
+    def id_str(self) -> str:
         pass
 
     @property
@@ -51,9 +51,4 @@ class PriceEngine:
     @staticmethod
     def engine_name() -> str:
         """Engine read-able name"""
-        pass
-
-    @abstractmethod
-    def url(self) -> str:
-        """Get Item URL (redirect)"""
         pass

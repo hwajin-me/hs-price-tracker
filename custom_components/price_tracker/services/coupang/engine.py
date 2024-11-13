@@ -1,24 +1,13 @@
-import asyncio
-import json
-import logging
 import re
-from datetime import datetime
-
-import requests
-from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError, InvalidItemUrlError
-from custom_components.price_tracker.datas.category import ItemCategoryData
-from custom_components.price_tracker.datas.delivery import DeliveryPayType, DeliveryData
-from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.components.error import (
+    InvalidItemUrlError,
+)
 from custom_components.price_tracker.datas.item import ItemData
-from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.services.coupang.parser import CoupangParser
-from custom_components.price_tracker.utilities.list import Lu
-from custom_components.price_tracker.utilities.request import default_request_headers
-
-_LOGGER = logging.getLogger(__name__)
+from custom_components.price_tracker.utilities.logs import logging_for_response
+from custom_components.price_tracker.utilities.request import http_request
 
 _URL = "https://m.coupang.com/vm/products/{}?itemId={}&vendorItemId={}"
 _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
@@ -42,135 +31,31 @@ class CoupangEngine(PriceEngine):
         self.vendor_item_id = self.id["vendor_item_id"]
 
     async def load(self) -> ItemData:
-        try:
-            response = await asyncio.to_thread(
-                requests.get,
-                _URL.format(self.product_id, self.item_id, self.vendor_item_id),
-                headers={**default_request_headers(), **_REQUEST_HEADERS},
-            )
-            if response is not None:
-                if response.status_code == 200:
-                    coupang_parser = CoupangParser(text=response.text)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    if soup is not None:
-                        data = soup.find("script", {"id": "__NEXT_DATA__"}).get_text()
-                        j = json.loads(data)
-                        _LOGGER.debug("Coupang Fetched at {}".format(datetime.now()))
+        response = await http_request(
+            method="get",
+            url=_URL.format(self.product_id, self.item_id, self.vendor_item_id),
+            headers={**_REQUEST_HEADERS},
+        )
+        data = response["data"]
+        coupang_parser = CoupangParser(text=data)
+        logging_for_response(data, __name__)
 
-                        page_atf = Lu.find_item(
-                            j["props"]["pageProps"]["pageList"], 'page', 'PAGE_ATF'
-                        )
-                        if page_atf is None:
-                            raise InvalidError(
-                                "Coupang Parse Error (No ATF) - {}".format(j["props"]["pageProps"]["pageList"])
-                            )
-                        page_atf = page_atf["widgetList"]
+        return ItemData(
+            id=self.id_str(),
+            name=coupang_parser.name,
+            description=coupang_parser.description,
+            brand=coupang_parser.brand,
+            price=coupang_parser.price,
+            image=coupang_parser.image,
+            category=coupang_parser.category,
+            url=_ITEM_LINK.format(self.product_id, self.item_id, self.vendor_item_id),
+            options=coupang_parser.options,
+            unit=coupang_parser.unit,
+            inventory=coupang_parser.inventory,
+            delivery=coupang_parser.delivery,
+        )
 
-                        name = Lu.find_item(
-                            page_atf, "viewType", "MWEB_PRODUCT_DETAIL_PRODUCT_INFO"
-                        )["data"]["title"]
-                        price = Lu.find_item(
-                            page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO"
-                        )["data"]["finalPrice"]["price"]
-                        price_info = Lu.find_item(
-                            page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO"
-                        )["data"]
-                        delivery_price = (
-                            price_info["deliveryMessages"]
-                            if "deliveryMessage" in price_info
-                            else None
-                        )
-                        delivery_type = DeliveryPayType.PAID
-                        if delivery_price is not None:
-                            delivery_price = float(
-                                delivery_price.replace("배송비", "")
-                                .replace("원", "")
-                                .replace(",", "")
-                                .replace(" ", "")
-                            )
-                        else:
-                            delivery_price = 0.0
-                            delivery_type = DeliveryPayType.FREE
-
-                        description = ""
-                        image = Lu.find_item(
-                            page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ITEM_THUMBNAILS"
-                        )["data"]["medias"][0]["detail"]
-                        category = ItemCategoryData(
-                            list(str(t["name"])
-                            for t in Lu.find_item(
-                                page_atf,
-                                "viewType",
-                                "MWEB_PRODUCT_DETAIL_SDP_BREADCURMB_DETAIL",
-                            )["data"]["breadcrumb"]
-                            if t["linkcode"] != "0")
-                        )
-
-                        if "unitPriceDescription" in price_info["finalPrice"]:
-                            u = re.match(
-                                r"^\((?P<per>[\d,]+)(?P<unit_type>g|개|ml|kg|l)당 (?P<price>[\d,]+)원\)$",
-                                price_info["finalPrice"]["unitPriceDescription"],
-                            )
-                            g = u.groupdict()
-                            unit_price = ItemUnitData(
-                                unit_type=ItemUnitType.of(g["unit_type"]),
-                                unit=float(g["per"].replace(",", "")),
-                                price=float(g["price"].replace(",", "")),
-                            )
-                        else:
-                            unit_price = ItemUnitData(price=price)
-
-                        inventory = (
-                            Lu.find_item(
-                                page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
-                            )["data"]
-                            if Lu.find_item(
-                                page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
-                            )
-                               is not None
-                            else None
-                        )
-                        sold_out = j["props"]["pageProps"]["properties"]["itemDetail"][
-                            "soldOut"
-                        ]
-
-                        if (
-                                inventory is None or "limitMessage" not in inventory
-                        ) and sold_out == False:
-                            stock = InventoryStatus.IN_STOCK
-                        elif sold_out == False and "limitMessage" in inventory:
-                            stock = InventoryStatus.ALMOST_SOLD_OUT
-                        elif not sold_out:
-                            stock = InventoryStatus.IN_STOCK
-                        else:
-                            stock = InventoryStatus.OUT_OF_STOCK
-
-                        return ItemData(
-                            id="{}_{}_{}".format(
-                                self.product_id, self.item_id, self.vendor_item_id
-                            ),
-                            price=coupang_parser.price,
-                            name=name,
-                            description=description,
-                            url=_ITEM_LINK.format(
-                                self.product_id, self.item_id, self.vendor_item_id
-                            ),
-                            image=image,
-                            delivery=DeliveryData(
-                                price=delivery_price, pay_type=delivery_type
-                            ),
-                            unit=unit_price,
-                            category=category,
-                            inventory=stock,
-                        )
-                    else:
-                        raise Exception(
-                            "Coupang unknown request exception {}".format(response)
-                        )
-        except Exception:
-            _LOGGER.exception("Coupang Parse Error")
-
-    def id(self) -> str:
+    def id_str(self) -> str:
         return "{}_{}_{}".format(self.product_id, self.item_id, self.vendor_item_id)
 
     @staticmethod

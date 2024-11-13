@@ -1,19 +1,14 @@
-import json
-import logging
 import re
 
-import aiohttp
-
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError, InvalidItemUrlError
-from custom_components.price_tracker.datas.delivery import DeliveryData
-from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.components.error import (
+    InvalidItemUrlError,
+)
 from custom_components.price_tracker.datas.item import ItemData
-from custom_components.price_tracker.datas.unit import ItemUnitData
 from custom_components.price_tracker.services.idus.parser import IdusParser
-from custom_components.price_tracker.utilities.request import default_request_headers
+from custom_components.price_tracker.utilities.logs import logging_for_response
+from custom_components.price_tracker.utilities.request import http_request
 
-_LOGGER = logging.getLogger(__name__)
 _URL = "https://api.idus.com/v3/product/info?uuid={}"
 _ITEM_LINK = "https://www.idus.com/v2/product/{}"
 
@@ -25,55 +20,27 @@ class IdusEngine(PriceEngine):
         self.product_id = self.id
 
     async def load(self) -> ItemData:
-        try:
-            async with aiohttp.ClientSession(
-                    connector=aiohttp.TCPConnector(verify_ssl=False)
-            ) as session:
-                async with session.get(
-                        url=_URL.format(self.product_id),
-                        headers={**default_request_headers()},
-                ) as response:
-                    result = await response.text()
+        response = await http_request(method="get", url=_URL.format(self.product_id))
+        data = response["data"]
+        idus_parser = IdusParser(text=data)
+        logging_for_response(data, __name__)
 
-                    if response.status == 200:
-                        j = json.loads(result)
-                        d = j["items"]
-                        idus_parser = IdusParser(text=result)
+        return ItemData(
+            id=self.id_str(),
+            name=idus_parser.name,
+            description=idus_parser.description,
+            brand=idus_parser.brand,
+            price=idus_parser.price,
+            category=idus_parser.category,
+            delivery=idus_parser.delivery,
+            inventory=idus_parser.inventory_status,
+            url=idus_parser.url,
+            unit=idus_parser.unit,
+            image=idus_parser.image,
+            options=idus_parser.options,
+        )
 
-                        _LOGGER.debug("Backpackr Idus Response", d)
-
-                        if d["p_info"]["pi_itemcount"] == -1:
-                            inventory = InventoryStatus.IN_STOCK
-                        elif d["p_info"]["pi_itemcount"] == 0:
-                            inventory = InventoryStatus.OUT_OF_STOCK
-                        else:
-                            inventory = InventoryStatus.ALMOST_SOLD_OUT
-
-                        return ItemData(
-                            id=d["uuid"],
-                            name=d["p_info"]["pi_name"],
-                            price=idus_parser.price,
-                            category=d["category_name"],
-                            description=d["p_keywords"],
-                            delivery=DeliveryData(price=0.0),
-                            url=_ITEM_LINK.format(d["uuid"]),
-                            image=d["p_images"]["pp_mainimage"]["ppi_origin"][
-                                "picPath"
-                            ],
-                            unit=ItemUnitData(
-                                price=float(
-                                    d["p_info"]["pi_saleprice"].replace(",", "")
-                                )
-                            ),
-                            inventory=inventory,
-                        )
-                    else:
-                        _LOGGER.error("Backpackr Idus Response Error", response)
-
-        except Exception as e:
-            _LOGGER.exception("Backpackr Idus Request Error %s", e)
-
-    def id(self) -> str:
+    def id_str(self) -> str:
         return self.product_id
 
     @staticmethod
@@ -81,7 +48,9 @@ class IdusEngine(PriceEngine):
         u = re.search(r"product/(?P<product_id>[\w\d\-]+)", item_url)
 
         if u is None:
-            raise InvalidItemUrlError('Bad backpackr(idus) item_url "{}".'.format(item_url))
+            raise InvalidItemUrlError(
+                'Bad backpackr(idus) item_url "{}".'.format(item_url)
+            )
 
         g = u.groupdict()
 

@@ -11,11 +11,15 @@ from homeassistant.helpers import (
 )
 
 from custom_components.price_tracker.components.id import IdGenerator
-from custom_components.price_tracker.consts.confs import CONF_ITEM_DEVICE_ID, CONF_ITEM_UNIQUE_ID
+from custom_components.price_tracker.consts.confs import (
+    CONF_ITEM_DEVICE_ID,
+    CONF_ITEM_UNIQUE_ID,
+)
 from custom_components.price_tracker.consts.defaults import DOMAIN, PLATFORMS
 from custom_components.price_tracker.services.factory import (
     create_service_item_url_parser,
-    create_service_item_target_parser, create_service_device_parser_and_parse,
+    create_service_item_target_parser,
+    create_service_device_parser_and_parse,
 )
 from custom_components.price_tracker.utilities.list import Lu
 
@@ -35,27 +39,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up entry and options {} > {}".format(entry, entry.options))
 
     # For upgrade options (1.0.0)
-    if entry.data is not None and 'device' in entry.data:
+    if entry.data is not None and "device" in entry.data:
         """Update device_id"""
         data = {
             **entry.data,
-            'device': Lu.map(
-                entry.data['device'],
-                lambda x: {**x, CONF_ITEM_DEVICE_ID: IdGenerator.generate_device_id(
-                    create_service_device_parser_and_parse(entry.data['type'], x)
-                ) if create_service_device_parser_and_parse(entry.data['type'], x) is not None else None},
+            "device": Lu.map(
+                entry.data["device"],
+                lambda x: {
+                    **x,
+                    CONF_ITEM_DEVICE_ID: IdGenerator.generate_device_id(
+                        create_service_device_parser_and_parse(entry.data["type"], x)
+                    )
+                    if create_service_device_parser_and_parse(entry.data["type"], x)
+                    is not None
+                    else None,
+                },
             ),
         }
     else:
         data = entry.data
 
-    if entry.options is not None and 'target' in entry.options:
+    if entry.options is not None and "target" in entry.options:
         options = {
             **entry.options,
             "target": Lu.map(
                 entry.options["target"],
-                lambda x: {**x, CONF_ITEM_DEVICE_ID: Lu.get(x, "device") if Lu.get(x, "device") is not None else Lu.get(x,
-                                                                                                                     CONF_ITEM_DEVICE_ID)},
+                lambda x: {
+                    **x,
+                    CONF_ITEM_DEVICE_ID: Lu.get(x, "device")
+                    if Lu.get(x, "device") is not None
+                    else Lu.get(x, CONF_ITEM_DEVICE_ID),
+                },
             ),
         }
         """Update item_url (item_unique_id)"""
@@ -74,19 +88,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                 x["item_url"]
                             )
                         ),
-                        device_id=IdGenerator.get_device_target_from_id(Lu.get(x, CONF_ITEM_DEVICE_ID)) if Lu.get(x, CONF_ITEM_DEVICE_ID) is not None else None,
+                        device_id=IdGenerator.get_device_target_from_id(
+                            Lu.get(x, CONF_ITEM_DEVICE_ID)
+                        )
+                        if Lu.get(x, CONF_ITEM_DEVICE_ID) is not None
+                        else None,
                     ),
                 },
             ),
         }
     else:
-        options = {
-            'target': []
-        }
+        options = {"target": []}
 
-    hass.config_entries.async_update_entry(
-        entry=entry, data=data, options=options
-    )
+    hass.config_entries.async_update_entry(entry=entry, data=data, options=options)
 
     data = dict(data)
     listeners = entry.add_update_listener(options_update_listener)

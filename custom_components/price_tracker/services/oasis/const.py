@@ -1,2 +1,2 @@
 CODE = "oasis"
-NAME = 'OASIS (Korea)'
+NAME = "OASIS (Korea)"

@@ -1,21 +1,12 @@
-import asyncio
-import json
-import logging
 import re
-
-import requests
-from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
-from custom_components.price_tracker.datas.category import ItemCategoryData
-from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.oliveyoung.const import CODE, NAME
 from custom_components.price_tracker.services.oliveyoung.parser import OliveyoungParser
-from custom_components.price_tracker.utilities.request import default_request_headers
-
-_LOGGER = logging.getLogger(__name__)
+from custom_components.price_tracker.utilities.logs import logging_for_response
+from custom_components.price_tracker.utilities.request import http_request_async
 
 _URL = "https://m.oliveyoung.co.kr/m/goods/getGoodsDetail.do?goodsNo={}"
 _UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 appVer/3.18.1 osType/10 osVer/18.0"
@@ -26,50 +17,32 @@ class OliveyoungEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
         self.id = OliveyoungEngine.parse_id(item_url)
-        self.goods_number = self.id["goods_number"]
+        self.goods_number = self.id
 
     async def load(self) -> ItemData:
-        try:
-            response = await asyncio.to_thread(
-                requests.get,
-                _URL.format(self.goods_number),
-                headers={**default_request_headers(), "User-Agent": _UA},
-            )
-            if response is not None:
-                if response.status_code == 200:
-                    oliveyoung_parser = OliveyoungParser(text=response.text)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    data = soup.find("textarea", {"id": "goodsData"}).get_text()
-                    if data is not None:
-                        json_data = json.loads(data)
+        response = await http_request_async(
+            method="get",
+            url=_URL.format(self.goods_number),
+            headers={"User-Agent": _UA},
+        )
+        logging_for_response(response, __name__)
+        oliveyoung_parser = OliveyoungParser(text=response.text)
 
-                        _LOGGER.debug("Oliveyoung Response", json_data)
+        return ItemData(
+            id=self.id_str(),
+            brand=oliveyoung_parser.brand,
+            name=oliveyoung_parser.name,
+            price=oliveyoung_parser.price,
+            description=oliveyoung_parser.description,
+            category=oliveyoung_parser.category,
+            delivery=oliveyoung_parser.delivery,
+            unit=oliveyoung_parser.unit,
+            image=oliveyoung_parser.image,
+            options=oliveyoung_parser.options,
+            inventory=oliveyoung_parser.inventory_status,
+        )
 
-                        return ItemData(
-                            id=self.goods_number,
-                            price=oliveyoung_parser.price,
-                            name=json_data["goodsBaseInfo"]["goodsName"],
-                            category=ItemCategoryData(json_data["displayCategoryInfo"][
-                                "displayCategoryFullPath"
-                            ]),
-                            description=json_data["brandName"],
-                            image=_THUMB.format(json_data["images"][0])
-                            if len(json_data["images"])
-                            else None,
-                            inventory=InventoryStatus.OUT_OF_STOCK
-                            if json_data["optionInfo"]["allSoldoutFlag"]
-                            else InventoryStatus.IN_STOCK,
-                        )
-                    else:
-                        _LOGGER.error(
-                            "Oliveyoung Response Parse Error",
-                            response.request_info,
-                            response,
-                        )
-        except Exception:
-            _LOGGER.exception("Oliveyoung Request Parse Error")
-
-    def id(self) -> str:
+    def id_str(self) -> str:
         return self.goods_number
 
     @staticmethod
@@ -78,11 +51,9 @@ class OliveyoungEngine(PriceEngine):
 
         if u is None:
             raise InvalidItemUrlError("Bad Oliveyoung item_url " + item_url)
-        data = {}
         g = u.groupdict()
-        data["goods_number"] = g["goods_number"]
 
-        return data
+        return g["goods_number"]
 
     @staticmethod
     def engine_code() -> str:

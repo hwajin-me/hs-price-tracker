@@ -10,13 +10,17 @@ from homeassistant.helpers import (
 )
 from homeassistant.helpers import selector
 
-from custom_components.price_tracker.components.error import NotFoundError, InvalidItemUrlError
+from custom_components.price_tracker.components.error import (
+    NotFoundError,
+    InvalidItemUrlError,
+)
 from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.components.lang import Lang
 from custom_components.price_tracker.consts.confs import CONF_TYPE
 from custom_components.price_tracker.datas.unit import ItemUnitType
 from custom_components.price_tracker.services.factory import (
-    create_service_item_url_parser, create_service_item_target_parser,
+    create_service_item_url_parser,
+    create_service_item_target_parser,
 )
 from custom_components.price_tracker.utilities.list import Lu
 
@@ -48,10 +52,10 @@ class PriceTrackerSetup:
     conf_item_price_change_interval_hour: str = "item_price_change_interval_hour"
 
     def __init__(
-            self,
-            config_flow: config_entries.ConfigFlow = None,
-            option_flow: config_entries.OptionsFlow = None,
-            config_entry=None,
+        self,
+        config_flow: config_entries.ConfigFlow = None,
+        option_flow: config_entries.OptionsFlow = None,
+        config_entry=None,
     ):
         self._config_flow = config_flow
         self._option_flow = option_flow
@@ -79,16 +83,18 @@ class PriceTrackerSetup:
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **Lang(self._option_flow.hass).f(key='title', items={
-                    'en': "Select Settings",
-                    'ja': "設定",
-                    'ko': "설정"
-                }),
-                **Lang(self._option_flow.hass).f(key='description', items={
-                    'en': "Select the menu where you want to add or modify.",
-                    'ja': "エンティティを生成または修正します。",
-                    'ko': "원하는 설정을 선택합니다."
-                })
+                **Lang(self._option_flow.hass).f(
+                    key="title",
+                    items={"en": "Select Settings", "ja": "設定", "ko": "설정"},
+                ),
+                **Lang(self._option_flow.hass).f(
+                    key="description",
+                    items={
+                        "en": "Select the menu where you want to add or modify.",
+                        "ja": "エンティティを生成または修正します。",
+                        "ko": "원하는 설정을 선택합니다.",
+                    },
+                ),
             },
             data_schema=vol.Schema(
                 {
@@ -114,9 +120,11 @@ class PriceTrackerSetup:
         """Modify an existing entry."""
         _LOGGER.debug("Setup Modify(option): %s", user_input)
 
-        if user_input is not None \
-                and self.const_option_entity_delete in user_input \
-                and user_input[self.const_option_entity_delete] is True:
+        if (
+            user_input is not None
+            and self.const_option_entity_delete in user_input
+            and user_input[self.const_option_entity_delete] is True
+        ):
             data = deepcopy(self._config_entry.options.get(self.conf_target, []))
             target_entity = (er.async_get(self._option_flow.hass)).async_get(
                 user_input[self.const_option_select_entity]
@@ -126,7 +134,7 @@ class PriceTrackerSetup:
                 if target_entity.unique_id == item[self.conf_item_unique_id]:
                     data.remove(item)
 
-            _LOGGER.debug('Setup Modify(option) / Delete data: %s', user_input)
+            _LOGGER.debug("Setup Modify(option) / Delete data: %s", user_input)
 
             return self._option_flow.async_create_entry(
                 title="Deleted", data={self.conf_target: data}
@@ -151,28 +159,32 @@ class PriceTrackerSetup:
             if user_input is not None:
                 """Add a new entry."""
                 if (
-                        self.conf_item_url in user_input
-                        and self.conf_item_management_category in user_input
-                        and self.conf_item_unit_type in user_input
-                        and self.conf_item_unit in user_input
-                        and self.conf_item_refresh_interval in user_input
-                        and self.conf_item_price_change_interval_hour in user_input
-                        and self.conf_item_url != ""
-                        and self.conf_item_unit_type != ""
-                        and self.conf_item_unit != ""
-                        and self.conf_item_refresh_interval != ""
-                        and self.conf_item_price_change_interval_hour != ""
+                    self.conf_item_url in user_input
+                    and self.conf_item_management_category in user_input
+                    and self.conf_item_unit_type in user_input
+                    and self.conf_item_unit in user_input
+                    and self.conf_item_refresh_interval in user_input
+                    and self.conf_item_price_change_interval_hour in user_input
+                    and self.conf_item_url != ""
+                    and self.conf_item_unit_type != ""
+                    and self.conf_item_unit != ""
+                    and self.conf_item_refresh_interval != ""
+                    and self.conf_item_price_change_interval_hour != ""
                 ):
-                    _LOGGER.debug('Setup Upsert(option) / Creation from: %s', user_input)
+                    _LOGGER.debug(
+                        "Setup Upsert(option) / Creation from: %s", user_input
+                    )
 
-                    data = deepcopy(self._config_entry.options.get(self.conf_target, []))
+                    data = deepcopy(
+                        self._config_entry.options.get(self.conf_target, [])
+                    )
                     service_type = self._config_entry.data["type"]
                     entity_id = IdGenerator.generate_entity_id(
                         service_type=service_type,
                         entity_target=create_service_item_target_parser(service_type)(
-                            create_service_item_url_parser(
-                                service_type
-                            )(user_input[self.conf_item_url])
+                            create_service_item_url_parser(service_type)(
+                                user_input[self.conf_item_url]
+                            )
                         ),
                         device_id=Lu.get(user_input, self.const_option_select_device),
                     )
@@ -201,9 +213,10 @@ class PriceTrackerSetup:
                     data.append(data_input)
 
                     return self._option_flow.async_create_entry(
-                        title=user_input[self.conf_item_url], data={self.conf_target: data}
+                        title=user_input[self.conf_item_url],
+                        data={self.conf_target: data},
                     )
-        except InvalidItemUrlError as e:
+        except InvalidItemUrlError:
             errors["invalid_item_url"] = user_input[self.conf_item_url]
 
         schema = {
@@ -221,10 +234,10 @@ class PriceTrackerSetup:
 
         # If the device and entity are selected
         if (
-                user_input is not None
-                and self.const_option_select_entity in user_input
-                and Lu.get(user_input, self.const_option_select_entity) is not None
-                and errors == {}
+            user_input is not None
+            and self.const_option_select_entity in user_input
+            and Lu.get(user_input, self.const_option_select_entity) is not None
+            and errors == {}
         ):
             """Change default variables"""
             entity = (er.async_get(self._option_flow.hass)).async_get(
@@ -255,37 +268,48 @@ class PriceTrackerSetup:
                         self.conf_item_url, default=item[self.conf_item_url]
                     ): cv.string,
                     vol.Optional(
-                        self.conf_item_management_category, default=Lu.get(item, self.conf_item_management_category)
+                        self.conf_item_management_category,
+                        default=Lu.get(item, self.conf_item_management_category),
                     ): cv.string,
-                    vol.Optional(self.conf_item_unit_type,
-                                 default=Lu.get_or_default(item, self.conf_item_unit_type, 'auto')): vol.In(
-                        ["auto"] + ItemUnitType.list()
-                    ),
-                    vol.Optional(self.conf_item_unit,
-                                 default=Lu.get_or_default(item, self.conf_item_unit, 0)): cv.positive_int,
+                    vol.Optional(
+                        self.conf_item_unit_type,
+                        default=Lu.get_or_default(
+                            item, self.conf_item_unit_type, "auto"
+                        ),
+                    ): vol.In(["auto"] + ItemUnitType.list()),
+                    vol.Optional(
+                        self.conf_item_unit,
+                        default=Lu.get_or_default(item, self.conf_item_unit, 0),
+                    ): cv.positive_int,
                     vol.Required(
                         self.conf_item_refresh_interval,
-                        default=Lu.get_or_default(item, self.conf_item_refresh_interval, 10)
+                        default=Lu.get_or_default(
+                            item, self.conf_item_refresh_interval, 10
+                        ),
                     ): cv.positive_int,
                     vol.Required(
                         self.conf_item_price_change_interval_hour,
-                        default=Lu.get_or_default(item, self.conf_item_price_change_interval_hour, 24)
+                        default=Lu.get_or_default(
+                            item, self.conf_item_price_change_interval_hour, 24
+                        ),
                     ): cv.positive_int,
                 }
 
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **Lang(self._option_flow.hass).f(key='title', items={
-                    'en': "Item",
-                    'ja': "エンティティ",
-                    'ko': "엔티티"
-                }),
-                **Lang(self._option_flow.hass).f(key='description', items={
-                    'en': "Add or modify a new item to track the price.",
-                    'ja': "エンティティ プロパティを定義します。 一部の値は必須であり、item_urlを通じて商品固有の値を抽出します。",
-                    'ko': "엔티티 속성을 정의합니다. 일부 값은 필수이며 item_url을 통해 상품 고유의 값을 추출합니다."
-                })
+                **Lang(self._option_flow.hass).f(
+                    key="title",
+                    items={"en": "Item", "ja": "エンティティ", "ko": "엔티티"},
+                ),
+                **Lang(self._option_flow.hass).f(
+                    key="description",
+                    items={
+                        "en": "Add or modify a new item to track the price.",
+                        "ja": "エンティティ プロパティを定義します。 一部の値は必須であり、item_urlを通じて商品固有の値を抽出します。",
+                        "ko": "엔티티 속성을 정의합니다. 일부 값은 필수이며 item_url을 통해 상품 고유의 값을 추출합니다.",
+                    },
+                ),
             },
             data_schema=vol.Schema(
                 {
@@ -304,7 +328,7 @@ class PriceTrackerSetup:
         device_entities = []
 
         for d in dr.async_entries_for_config_entry(
-                dr.async_get(self._option_flow.hass), self._config_entry.entry_id
+            dr.async_get(self._option_flow.hass), self._config_entry.entry_id
         ):
             device_entities.append(d.serial_number)
 
@@ -314,16 +338,22 @@ class PriceTrackerSetup:
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **Lang(self._option_flow.hass).f(key='title', items={
-                    'en': "Select Device",
-                    'ja': "デバイスを選択",
-                    'ko': "기기를 선택"
-                }),
-                **Lang(self._option_flow.hass).f(key='description', items={
-                    'en': "Select the device to include or be included in the entity.",
-                    'ja': "エンティティを含む、または含まれている機器を選択します。",
-                    'ko': "엔티티를 생성, 수정할 기기를 선택합니다."
-                })
+                **Lang(self._option_flow.hass).f(
+                    key="title",
+                    items={
+                        "en": "Select Device",
+                        "ja": "デバイスを選択",
+                        "ko": "기기를 선택",
+                    },
+                ),
+                **Lang(self._option_flow.hass).f(
+                    key="description",
+                    items={
+                        "en": "Select the device to include or be included in the entity.",
+                        "ja": "エンティティを含む、または含まれている機器を選択します。",
+                        "ko": "엔티티를 생성, 수정할 기기를 선택합니다.",
+                    },
+                ),
             },
             data_schema=vol.Schema(
                 {
@@ -377,16 +407,22 @@ class PriceTrackerSetup:
         return self._option_flow.async_show_form(
             step_id=self._step_setup,
             description_placeholders={
-                **Lang(self._option_flow.hass).f(key='title', items={
-                    'en': "Select Entity",
-                    'ja': "エンティティを選択",
-                    'ko': "엔티티를 선택"
-                }),
-                **Lang(self._option_flow.hass).f(key='description', items={
-                    'en': "Select the entity to manage.",
-                    'ja': "管理するエンティティを選択します。",
-                    'ko': "관리할 엔티티를 선택합니다."
-                })
+                **Lang(self._option_flow.hass).f(
+                    key="title",
+                    items={
+                        "en": "Select Entity",
+                        "ja": "エンティティを選択",
+                        "ko": "엔티티를 선택",
+                    },
+                ),
+                **Lang(self._option_flow.hass).f(
+                    key="description",
+                    items={
+                        "en": "Select the entity to manage.",
+                        "ja": "管理するエンティティを選択します。",
+                        "ko": "관리할 엔티티를 선택합니다.",
+                    },
+                ),
             },
             data_schema=vol.Schema(
                 {**self._schema_user_input_option_select(user_input), **schema}
@@ -426,9 +462,9 @@ class PriceTrackerSetup:
 
     def _schema_user_input_option_service_device(self, user_input: dict = None):
         if (
-                user_input is None
-                or self.const_option_select_device not in user_input
-                or user_input[self.const_option_select_device] is None
+            user_input is None
+            or self.const_option_select_device not in user_input
+            or user_input[self.const_option_select_device] is None
         ):
             return {}
         return {

@@ -59,10 +59,12 @@ _KIND = {
 
 
 def price_tracker_setup_init(hass):
-    return vol.Schema({
-        vol.Required(_SERVICE_TYPE, default=None): vol.In(_KIND),
-        **Lang(hass).selector(),
-    })
+    return vol.Schema(
+        {
+            vol.Required(_SERVICE_TYPE, default=None): vol.In(_KIND),
+            **Lang(hass).selector(),
+        }
+    )
 
 
 def price_tracker_setup_service(

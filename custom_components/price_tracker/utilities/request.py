@@ -38,13 +38,14 @@ def default_request_headers():
 
 
 async def http_request(
-        method: str,
-        url: str,
-        headers=None,
-        auth: str = None,
-        timeout: int | None = None,
-        proxy: bool = False,
-        is_retry: bool = False,
+    method: str,
+    url: str,
+    headers=None,
+    auth: str = None,
+    timeout: int | None = None,
+    json: dict = None,
+    proxy: bool = False,
+    is_retry: bool = False,
 ):
     if headers is None:
         headers = {}
@@ -53,7 +54,9 @@ async def http_request(
         headers["authorization"] = "Bearer {}".format(auth)
 
     session = aiohttp.ClientSession(
-        connector=aiohttp.TCPConnector(verify_ssl=False, use_dns_cache=False, limit=10240)
+        connector=aiohttp.TCPConnector(
+            verify_ssl=False, use_dns_cache=False, limit=10240
+        )
     )
 
     try:
@@ -62,19 +65,26 @@ async def http_request(
             url=url,
             headers={**_REQUEST_DEFAULT_HEADERS, **headers},
             timeout=timeout,
+            json=json,
             proxy=proxy_server() if proxy else None,
         )
         if response.status == 401 or response.status == 403:
-            raise ApiAuthError('API authentication error {} {}'.format(response.request_info.headers, response.text))
+            raise ApiAuthError(
+                "API authentication error {} {}".format(
+                    response.request_info.headers, response.text
+                )
+            )
         if response.status > 299:
             raise ApiError(
                 "Error while fetching data from the API (status code: {}, {}, {}, {})".format(
                     response.status, url, headers, await response.text()
                 )
             )
+
+        data = {"status_code": response.status, "data": await response.text()}
         await session.close()
 
-        return response
+        return data
     except aiohttp.ServerConnectionError as e:
         raise ApiError(
             "Error while fetching data from the API - ServerConnectionError (url: {}, headers: {}) {}".format(
@@ -89,10 +99,12 @@ async def http_request(
                 )
             ) from e
         else:
-            return await http_request(method, url, headers, auth, timeout, proxy, True)
+            return await http_request(
+                method, url, headers, auth, timeout, json, proxy, True
+            )
     except asyncio.TimeoutError as e:
         if proxy:
-            return await http_request(method, url, headers, auth, timeout, False)
+            return await http_request(method, url, headers, auth, timeout, json, False)
         else:
             raise ApiError(
                 "Timeout while fetching data from the API (url: {}, headers: {})".format(
@@ -104,17 +116,17 @@ async def http_request(
 
 
 async def http_request_async(
-        method: str,
-        url: str,
-        headers=None,
-        auth: str = None,
-        timeout: int = 5,
-        proxy: bool = False,
+    method: str,
+    url: str,
+    headers=None,
+    auth: str = None,
+    timeout: int = 5,
+    proxy: bool = False,
 ):
     if headers is None:
         headers = {}
 
-    if auth is not None and auth != '':
+    if auth is not None and auth != "":
         headers["authorization"] = "Bearer {}".format(auth)
 
     req = requests.get if method == "get" else requests.post
@@ -123,7 +135,9 @@ async def http_request_async(
     )
     if response is not None:
         if response.status_code == 401 or response.status_code == 403:
-            raise ApiAuthError('API authentication error {} {}'.format(headers, response.text))
+            raise ApiAuthError(
+                "API authentication error {} {}".format(headers, response.text)
+            )
 
         if response.status_code > 299:
             raise ApiError(

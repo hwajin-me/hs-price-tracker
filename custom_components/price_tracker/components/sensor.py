@@ -12,8 +12,11 @@ from custom_components.price_tracker.components.error import DataFetchErrorCause
 from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.consts.defaults import DATA_UPDATED
 from custom_components.price_tracker.datas.item import ItemData
-from custom_components.price_tracker.datas.price import ItemPriceChangeData, ItemPriceChangeStatus
-from custom_components.price_tracker.datas.unit import ItemUnitData
+from custom_components.price_tracker.datas.price import (
+    ItemPriceChangeData,
+    create_item_price_change,
+)
+from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,33 +26,49 @@ class PriceTrackerSensor(RestoreEntity):
     _item_data: ItemData | None = None
     _item_data_previous: ItemData | None = None
     _management_category: str | None = None
-    _unit: ItemUnitData = ItemUnitData(price=0.0)
-    _price_change: ItemPriceChangeData = ItemPriceChangeData(status=ItemPriceChangeStatus.NO_CHANGE)
+    _price_change: ItemPriceChangeData | None = None
     _updated_at: datetime | None = None
     _refresh_period: int = 30  # minutes
 
-    def __init__(self, engine: PriceEngine, device: PriceTrackerDevice | None = None):
+    def __init__(
+        self,
+        engine: PriceEngine,
+        device: PriceTrackerDevice | None = None,
+        unit_type: ItemUnitType = ItemUnitType.PIECE,
+        unit_value: int = 1,
+        refresh_period: int = None,
+        management_category: str = None,
+    ):
         """Initialize the sensor."""
         self._engine = engine
-        self._attr_unique_id = IdGenerator.generate_entity_id(self._engine.engine_code(), self._engine.entity_id,
-                                                              device.device_id if device is not None else None)
+        self._attr_unique_id = IdGenerator.generate_entity_id(
+            self._engine.engine_code(),
+            self._engine.entity_id,
+            device.device_id if device is not None else None,
+        )
         self.entity_id = self._attr_unique_id
         self._attr_entity_picture = None
         self._attr_name = self._attr_unique_id
-        self._attr_unit_of_measurement = ''
+        self._attr_unit_of_measurement = ""
         self._attr_state = STATE_UNKNOWN
         self._attr_available = False
-        self._attr_icon = 'mdi:cart'
-        self._attr_device_class = 'price'
+        self._attr_icon = "mdi:cart"
+        self._attr_device_class = "price"
         self._attr_device_info = device.device_info if device is not None else None
         self._attr_should_poll = True
+
+        # Custom
+        self._unit_type = unit_type
+        self._unit_value = unit_value
+        self._refresh_period = refresh_period if refresh_period is not None else 30
         self._updated_at = None
+        self._management_category = management_category
 
     async def async_update(self):
         # Check last updated at
         if self._updated_at is not None:
             if (
-                    self._updated_at + timedelta(minutes=self._refresh_period)
+                self._updated_at + timedelta(minutes=self._refresh_period)
             ) > datetime.now():
                 _LOGGER.debug(
                     "Skip update cause refresh period. {} -({} / {}).".format(
@@ -62,23 +81,41 @@ class PriceTrackerSensor(RestoreEntity):
             data = await self._engine.load()
 
             if data is None:
-                raise DataFetchErrorCauseEmpty('Data is empty')
+                raise DataFetchErrorCauseEmpty("Data is empty")
 
             self._item_data_previous = self._item_data
             self._item_data = data
-            self._price_change = ItemPriceChangeData(
-                status=ItemPriceChangeStatus.NO_CHANGE if self._item_data_previous is None else ItemPriceChangeStatus.INCREMENT_PRICE if self._item_data.price.price > self._item_data_previous.price.price else ItemPriceChangeStatus.DECREMENT_PRICE,
-                before_price=self._item_data_previous.price if self._item_data_previous is not None else 0.0,
-                after_price=self._item_data.price.price,
-            ) if self._item_data is not None and self._item_data_previous else ItemPriceChangeData(
-                status=ItemPriceChangeStatus.NO_CHANGE)
             self._updated_at = datetime.now()
+            self._price_change = create_item_price_change(
+                updated_at=self._updated_at,
+                period_hour=self._refresh_period,
+                after_price=self._item_data.price.price,
+                before_change_data=self._price_change,
+                before_price=self._item_data_previous.price.price
+                if self._item_data_previous is not None
+                else None,
+            )
+
+            # Calculate unit
+            unit = (
+                ItemUnitData(
+                    price=self._item_data.price.price,
+                    unit_type=self._unit_type,
+                    unit=self._unit_value,
+                )
+                if self._item_data.unit.is_basic
+                else self._item_data.unit
+            )
+
             self._attr_extra_state_attributes = {
                 **self._item_data.dict,
-                'management_category': self._management_category,
-                'updated_at': self._updated_at,
-                'price_change': self._price_change.dict,
-                'refresh_period': self._refresh_period,
+                **unit.dict,
+                "price_change_status": self._price_change.status.name,
+                "price_change_before_price": self._price_change.before_price,
+                "price_change_after_price": self._price_change.after_price,
+                "management_category": self._management_category,
+                "updated_at": self._updated_at,
+                "refresh_period": self._refresh_period,
             }
             self._attr_name = self._item_data.name
             self._attr_state = self._item_data.price.price
@@ -96,24 +133,24 @@ class PriceTrackerSensor(RestoreEntity):
             """Handle entity which will be added."""
             await super().async_added_to_hass()
             state = await self.async_get_last_state()
+
             if not state:
                 return
 
-            _LOGGER.debug('Restoring state from previous version, {}'.format(state.attributes))
+            if (
+                "price_change_status" in state.attributes
+                and "price_change_before_price" in state.attributes
+                and "price_change_after_price" in state.attributes
+            ):
+                self._price_change = create_item_price_change(
+                    updated_at=state.last_updated,
+                    period_hour=self._refresh_period,
+                    after_price=state.attributes["price_change_after_price"],
+                    before_change_data=None,
+                    before_price=state.attributes["price_change_before_price"],
+                )
 
-            if 'product_id' in state.attributes \
-                    and 'price' in state.attributes \
-                    and 'name' in state.attributes:
-                # self._item_data = ItemData(
-                #     id=state.attributes['product_id'],
-                #     name=state.attributes['name'],
-                #     price=state.attributes['price'],
-                #     image=state.attributes['image'] if 'image' in state.attributes else None,
-                #     url=state.attributes['url'] if 'url' in state.attributes else None,
-                # )
-                # self._attr_state = self._item_data.price.price
-                # self._attr_name = self._item_data.name
-                self._attr_available = True
+            self._attr_available = True
 
             await self.async_update()
 

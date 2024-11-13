@@ -10,7 +10,10 @@ from custom_components.price_tracker.components.device import PriceTrackerDevice
 from custom_components.price_tracker.components.error import ApiError, ApiAuthError
 from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.utilities.list import Lu
-from custom_components.price_tracker.utilities.request import http_request, default_request_headers
+from custom_components.price_tracker.utilities.request import (
+    http_request,
+    default_request_headers,
+)
 
 _UA = "Dart/3.5 (dart:io)"
 _REQUEST_HEADERS = {
@@ -36,35 +39,34 @@ class GsTheFreshLogin:
 
     async def naver_login(self, code: str, device_id: str) -> dict[str, Any]:
         async with aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(verify_ssl=False)
+            connector=aiohttp.TCPConnector(verify_ssl=False)
         ) as session:
             async with session.get(
-                    url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(code),
-                    headers={
-                        **default_request_headers(),
-                        **_REQUEST_HEADERS
-                    },
+                url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(code),
+                headers={**default_request_headers(), **_REQUEST_HEADERS},
             ) as response:
                 if response.status != 200:
                     raise ApiError("GS THE FRESH - NAVER Response Error")
                 naver_response = await response.read()
 
-                if 'access_token' not in json.loads(naver_response):
-                    raise ApiError("GS THE FRESH - NAVER Response Error (No access token.)")
+                if "access_token" not in json.loads(naver_response):
+                    raise ApiError(
+                        "GS THE FRESH - NAVER Response Error (No access token.)"
+                    )
 
                 temp_access_token = json.loads(naver_response)["access_token"]
 
                 async with session.post(
-                        url=CONF_GS_NAVER_LOGIN_FLOW_3_URL,
-                        headers={
-                            **default_request_headers(),
-                            **_REQUEST_HEADERS,
-                            "device_id": device_id,
-                            "appinfo_device_id": device_id,
-                            "Authorization": "Bearer {}".format(temp_access_token),
-                            "content-type": "application/json",
-                        },
-                        json={"socialType": "naver"},
+                    url=CONF_GS_NAVER_LOGIN_FLOW_3_URL,
+                    headers={
+                        **default_request_headers(),
+                        **_REQUEST_HEADERS,
+                        "device_id": device_id,
+                        "appinfo_device_id": device_id,
+                        "Authorization": "Bearer {}".format(temp_access_token),
+                        "content-type": "application/json",
+                    },
+                    json={"socialType": "naver"},
                 ) as login:
                     if login.status != 200:
                         raise ApiError(
@@ -73,13 +75,17 @@ class GsTheFreshLogin:
 
                     j = json.loads(await login.read())
 
-                    if "data" not in j \
-                            or "accessToken" not in j["data"] \
-                            or "refreshToken" not in j["data"] \
-                            or "customer" not in j["data"] \
-                            or "customerName" not in j["data"]["customer"] \
-                            or "customerNumber" not in j["data"]["customer"]:
-                        raise ApiError("GS THE FRESH Login API Parse Error - {}".format(j))
+                    if (
+                        "data" not in j
+                        or "accessToken" not in j["data"]
+                        or "refreshToken" not in j["data"]
+                        or "customer" not in j["data"]
+                        or "customerName" not in j["data"]["customer"]
+                        or "customerNumber" not in j["data"]["customer"]
+                    ):
+                        raise ApiError(
+                            "GS THE FRESH Login API Parse Error - {}".format(j)
+                        )
 
                     return {
                         "access_token": j["data"]["accessToken"],
@@ -93,17 +99,17 @@ class GsTheFreshLogin:
         sha256.update(password.encode())
         hash_password = sha256.hexdigest()
         async with aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(verify_ssl=False)
+            connector=aiohttp.TCPConnector(verify_ssl=False)
         ) as session:
             async with session.post(
-                    url=_LOGIN_URL,
-                    json={"id": username, "password": hash_password},
-                    headers={
-                        **default_request_headers(),
-                        **_REQUEST_HEADERS,
-                        "device_id": device_id,
-                        "appinfo_device_id": device_id,
-                    },
+                url=_LOGIN_URL,
+                json={"id": username, "password": hash_password},
+                headers={
+                    **default_request_headers(),
+                    **_REQUEST_HEADERS,
+                    "device_id": device_id,
+                    "appinfo_device_id": device_id,
+                },
             ) as response:
                 if response.status != 200:
                     raise Exception("")
@@ -127,13 +133,13 @@ class GsTheFreshLogin:
                 "appinfo_device_id": device_id,
                 "device_id": device_id,
             },
-            auth=refresh_token
+            auth=refresh_token,
         )
-        text = await http_result.text()
+        text = http_result["data"]
         response = json.loads(text)
 
         if "data" in response:
-            j = response['data']
+            j = response["data"]
 
             return {
                 "access_token": j["accessToken"],
@@ -144,19 +150,22 @@ class GsTheFreshLogin:
 
 
 class GsTheFreshDevice(PriceTrackerDevice):
-
     def __init__(
-            self,
-            entry_id: str,
-            gs_device_id: str,
-            access_token: str,
-            refresh_token: str,
-            name: str,
-            number: str,
-            store: str,
-            store_name: str,
+        self,
+        entry_id: str,
+        gs_device_id: str,
+        access_token: str,
+        refresh_token: str,
+        name: str,
+        number: str,
+        store: str,
+        store_name: str,
     ):
-        super().__init__(entry_id, GsTheFreshDevice.device_code(), GsTheFreshDevice.create_device_id(number, store))
+        super().__init__(
+            entry_id,
+            GsTheFreshDevice.device_code(),
+            GsTheFreshDevice.create_device_id(number, store),
+        )
         self._gs_device_id = gs_device_id
         self._access_token = access_token
         self._refresh_token = refresh_token
@@ -222,19 +231,30 @@ class GsTheFreshDevice(PriceTrackerDevice):
 
             entry = self.hass.config_entries.async_get_entry(self._entry_id)
             entry_data = entry.data
-            new_entry_data = {'device': []} if entry_data is None else {'device': [], **entry_data}
-            if entry_data is not None and 'device' in new_entry_data:
+            new_entry_data = (
+                {"device": []} if entry_data is None else {"device": [], **entry_data}
+            )
+            if entry_data is not None and "device" in new_entry_data:
                 actual = {
-                    **Lu.get_item_or_default(new_entry_data['device'], 'item_device_id', self._generate_device_id, {})
+                    **Lu.get_item_or_default(
+                        new_entry_data["device"],
+                        "item_device_id",
+                        self._generate_device_id,
+                        {},
+                    )
                 }
-                new_entry_data['device'] = Lu.remove_item(new_entry_data['device'], 'item_device_id', self._generate_device_id)
-                new_entry_data['device'].append({
-                    **actual,
-                    **{
-                        'access_token': data["access_token"],
-                        'refresh_token': data["refresh_token"],
+                new_entry_data["device"] = Lu.remove_item(
+                    new_entry_data["device"], "item_device_id", self._generate_device_id
+                )
+                new_entry_data["device"].append(
+                    {
+                        **actual,
+                        **{
+                            "access_token": data["access_token"],
+                            "refresh_token": data["refresh_token"],
+                        },
                     }
-                })
+                )
 
             if new_entry_data != {}:
                 self.hass.config_entries.async_update_entry(
@@ -248,26 +268,35 @@ class GsTheFreshDevice(PriceTrackerDevice):
             self._attr_available = True
             self._updated_at = datetime.now()
             _LOGGER.debug(
-                "GS THE FRESH - Device Update Success {}, {} / {}".format(self._generate_device_id, self._access_token,
-                                                                          self._refresh_token)
+                "GS THE FRESH - Device Update Success {}, {} / {}".format(
+                    self._generate_device_id, self._access_token, self._refresh_token
+                )
             )
         except ApiAuthError as e:
-            _LOGGER.error("GS THE FRESH - Device Update Error Auth: {}".format(self._generate_device_id, e))
+            _LOGGER.error(
+                "GS THE FRESH - Device Update Error Auth: {} / {}".format(
+                    self._generate_device_id, e
+                )
+            )
             self._state = False
             self._attr_available = False
             self._updated_at = datetime.now() - timedelta(minutes=1)
         except Exception as e:
-            _LOGGER.exception("GS THE FRESH - Device Update Error: {}, {}".format(self._generate_device_id, e))
+            _LOGGER.exception(
+                "GS THE FRESH - Device Update Error: {}, {}".format(
+                    self._generate_device_id, e
+                )
+            )
             self._state = False
             self._attr_available = False
             self._updated_at = datetime.now() - timedelta(minutes=1)
 
         self._attr_extra_state_attributes = {
-            'store_name': self._store_name,
-            'store': self._store,
-            'name': self._name,
-            'number': self._number,
-            'updated_at': self._updated_at,
+            "store_name": self._store_name,
+            "store": self._store,
+            "name": self._name,
+            "number": self._number,
+            "updated_at": self._updated_at,
         }
 
     def invalid(self):
@@ -276,9 +305,11 @@ class GsTheFreshDevice(PriceTrackerDevice):
         self._updated_at = datetime.now()
 
     async def async_update(self):
-        if self._updated_at is None or (datetime.now() - self._updated_at).seconds > (
-                10  # * 60
-        ) or self._attr_available is False:
+        if (
+            self._updated_at is None
+            or (datetime.now() - self._updated_at).seconds > (60 * 60 * 3)
+            or self._attr_available is False
+        ):
             await self.reauth()
         else:
-            _LOGGER.debug('GS THE FRESH - Device Update Skipped')
+            _LOGGER.debug("GS THE FRESH - Device Update Skipped")

@@ -1,21 +1,15 @@
-import asyncio
-import json
 import logging
 import re
-from datetime import datetime
-
-import requests
-from bs4 import BeautifulSoup
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
-from custom_components.price_tracker.datas.category import ItemCategoryData
-from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
-from custom_components.price_tracker.datas.inventory import InventoryStatus
-from custom_components.price_tracker.datas.item import ItemData, ItemOptionData
+from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.smartstore.const import NAME, CODE
 from custom_components.price_tracker.services.smartstore.parser import SmartstoreParser
-from custom_components.price_tracker.utilities.request import default_request_headers
+from custom_components.price_tracker.utilities.logs import logging_for_response
+from custom_components.price_tracker.utilities.request import (
+    http_request_async,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,78 +30,28 @@ class SmartstoreEngine(PriceEngine):
         self.product_id = self.id["product_id"]
 
     async def load(self) -> ItemData:
-        response = await asyncio.to_thread(
-            requests.get,
-            _URL.format(self.store, self.product_id),
-            headers={**default_request_headers(), **_REQUEST_HEADER},
+        response = await http_request_async(
+            method="get",
+            url=_URL.format(self.store, self.product_id),
+            headers={**_REQUEST_HEADER},
         )
-        if response is not None:
-            if response.status_code == 200:
-                naver_parser = SmartstoreParser(data=response.text)
-                soup = BeautifulSoup(response.text, "html.parser")
-                scripts = soup.find_all("script")
-                for script in scripts:
-                    if "window.__PRELOADED_STATE__" in script.text:
-                        data = re.search(
-                            r"window.__PRELOADED_STATE__=(?P<json>.*)", script.text
-                        )
-                        json_data = json.loads(data["json"])
-                        _LOGGER.debug("NAVER SmartStore Loaded at %s", datetime.now())
-                        # Quantity(stock)
-                        stock = (
-                            InventoryStatus.IN_STOCK
-                            if json_data["product"]["A"]["stockQuantity"] > 10
-                            else InventoryStatus.ALMOST_SOLD_OUT
-                            if json_data["product"]["A"]["stockQuantity"] > 0
-                            else InventoryStatus.OUT_OF_STOCK
-                        )
+        text = response.text
+        logging_for_response(response=text, name=__name__)
+        naver_parser = SmartstoreParser(data=text)
+        return ItemData(
+            id=self.id_str(),
+            price=naver_parser.price,
+            name=naver_parser.name,
+            description=naver_parser.description,
+            category=naver_parser.category,
+            image=naver_parser.image,
+            url=naver_parser.url,
+            inventory=naver_parser.inventory_status,
+            delivery=naver_parser.delivery,
+            options=naver_parser.options,
+        )
 
-                        options = []
-                        if "optionCombinations" in json_data["product"]["A"]:
-                            for option in json_data["product"]["A"][
-                                "optionCombinations"
-                            ]:
-                                options.append(
-                                    ItemOptionData(
-                                        id=option["id"],
-                                        name=option["optionName1"],
-                                        price=option["price"],
-                                        inventory=option["stockQuantity"],
-                                    )
-                                )
-
-                        return ItemData(
-                            id="{}_{}".format(
-                                self.store, json_data["product"]["A"]["id"]
-                            ),
-                            price=naver_parser.price,
-                            name=json_data["product"]["A"]["name"],
-                            description=json_data["product"]["A"]["detailContents"][
-                                "detailContentText"
-                            ],
-                            category=ItemCategoryData(json_data["product"]["A"]["category"][
-                                "wholeCategoryName"
-                            ]),
-                            image=json_data["product"]["A"]["representImage"]["url"],
-                            url=json_data["product"]["A"]["productUrl"],
-                            inventory=stock,
-                            delivery=DeliveryData(
-                                price=json_data["product"]["A"]["productDeliveryInfo"][
-                                    "baseFee"
-                                ],
-                                pay_type=DeliveryPayType.FREE
-                                if json_data["product"]["A"]["productDeliveryInfo"][
-                                       "deliveryFeeType"
-                                   ]
-                                   == "FREE"
-                                else DeliveryPayType.PAID,
-                            ),
-                            options=options if options else None,
-                        )
-                else:
-                    _LOGGER.error("NAVER Smartstore Response Parse Error %s", response)
-
-    def id(self) -> str:
+    def id_str(self) -> str:
         return "{}_{}".format(self.store, self.product_id)
 
     @staticmethod

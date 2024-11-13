@@ -1,16 +1,12 @@
 import logging
 import re
 
-from bs4 import BeautifulSoup
-
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
-from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
-from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.item import ItemData
-from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.services.oasis.const import NAME, CODE
 from custom_components.price_tracker.services.oasis.parser import OasisParser
+from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.request import http_request_async
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,59 +22,22 @@ class OasisEngine(PriceEngine):
     async def load(self) -> ItemData:
         http_result = await http_request_async("get", _URL.format(self.product_id))
         response = http_result.text
-        oasis_parser = OasisParser(text=http_result.text)
-        soup = BeautifulSoup(response, "html.parser")
-        name = soup.find("div", class_="oDetail_info_group_title").find("h1").get_text().replace("\n", "").replace("\t",
-                                                                                                                   "")
-        price = soup.find("div", class_="discountPrice").get_text().replace("원", "")
-        delivery_price = (
-            soup.find("dd", class_="deliverySave")
-            .get_text()
-            .replace("\n", "")
-            .replace("\t", "")
-            if soup.find("dd", class_="deliverySave") is not None
-            else None
-        )
-        delivery = None
-        if delivery_price is not None:
-            delivery = DeliveryData(
-                price=float(delivery_price.replace(",", "").split("원")[0]),
-                pay_type=DeliveryPayType.PAID
-                if "이상" in delivery_price
-                else DeliveryPayType.FREE
-                if float(delivery_price.replace(",", "")) == 0
-                else DeliveryPayType.PAID,
-            )
-        else:
-            DeliveryData(price=0, pay_type=DeliveryPayType.FREE_OR_PAID)
-
-        unit = None
-        for detail_data in soup.find_all("div", class_="oDetail_info_group2"):
-            for dd in detail_data.find_all("dd"):
-                target_for_unit = dd.get_text().replace("\n", "").replace("\t", "")
-                target_unit_regex = re.search(
-                    r"(?P<unit>[\d,]+)(?P<type>g|ml|mL|l|L|kg|Kg)당(?: |)(?P<price>[\d,]+)원",
-                    target_for_unit,
-                )
-                if target_unit_regex is not None:
-                    g = target_unit_regex.groupdict()
-                    unit = ItemUnitData(
-                        price=float(g["price"].replace(",", "")),
-                        unit_type=ItemUnitType.of(g["type"]),
-                        unit=float(g["unit"].replace(",", "")),
-                    )
-
-        image = soup.find("li", class_="swiper-slide").find("img")["src"]
+        oasis_parser = OasisParser(text=response)
+        logging_for_response(response, __name__)
 
         return ItemData(
             id=self.product_id,
-            name=name,
+            brand=oasis_parser.brand,
+            name=oasis_parser.name,
+            description=oasis_parser.description,
+            category=oasis_parser.category,
             price=oasis_parser.price,
-            delivery=delivery,
-            image=image,
+            delivery=oasis_parser.delivery,
+            image=oasis_parser.image,
             url=self.item_url,
-            inventory=InventoryStatus.IN_STOCK,
-            unit=unit,
+            inventory=oasis_parser.inventory,
+            unit=oasis_parser.unit,
+            options=oasis_parser.options,
         )
 
     def id(self) -> str:

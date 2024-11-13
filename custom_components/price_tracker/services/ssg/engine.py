@@ -1,22 +1,14 @@
-import json
-import logging
 import re
 
-import aiohttp
-
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidItemUrlError, ApiError
-from custom_components.price_tracker.datas.category import ItemCategoryData
-from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.components.error import (
+    InvalidItemUrlError,
+)
 from custom_components.price_tracker.datas.item import ItemData
-from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.services.ssg.const import CODE, NAME
 from custom_components.price_tracker.services.ssg.parser import SsgParser
-from custom_components.price_tracker.utilities.list import Lu
-from custom_components.price_tracker.utilities.parser import parse_number, parse_bool
-from custom_components.price_tracker.utilities.request import default_request_headers
-
-_LOGGER = logging.getLogger(__name__)
+from custom_components.price_tracker.utilities.logs import logging_for_response
+from custom_components.price_tracker.utilities.request import http_request
 
 _URL = "https://m.apps.ssg.com/appApi/itemView.ssg"
 _ITEM_LINK = "https://emart.ssg.com/item/itemView.ssg?itemId={}&siteNo={}"
@@ -30,71 +22,34 @@ class SsgEngine(PriceEngine):
         self.site_no = self.id["site_no"]
 
     async def load(self) -> ItemData:
-        try:
-            async with aiohttp.ClientSession(
-                    connector=aiohttp.TCPConnector(verify_ssl=False)
-            ) as session:
-                async with session.post(
-                        url=_URL,
-                        json={
-                            "params": {
-                                "dispSiteNo": str(self.site_no),
-                                "itemId": str(self.product_id),
-                            }
-                        },
-                        headers={
-                            **default_request_headers(),
-                            "Content-Type": "application/json",
-                        },
-                ) as response:
-                    result = await response.text()
-                    ssg_parser = SsgParser(result)
+        response = await http_request(
+            method="post",
+            json={
+                "params": {
+                    "dispSiteNo": str(self.site_no),
+                    "itemId": str(self.product_id),
+                }
+            },
+            url=_URL,
+        )
 
-                    if response.status == 200:
-                        j = json.loads(result)
+        text = response["data"]
+        logging_for_response(text, __name__)
+        ssg_parser = SsgParser(text)
 
-                        _LOGGER.debug("SSG Response", j)
-
-                        d = j["data"]["item"]
-
-                        if "sellUnitPrc" in d["price"]:
-                            unit_data = re.search(
-                                r"^(?P<unit>[\d,]+)(?P<type>\w+) 당 : (?P<price>[\d,]+)원$",
-                                d["price"]["sellUnitPrc"],
-                            )
-
-                            if unit_data is not None:
-                                unitParse = unit_data.groupdict()
-                                unit = ItemUnitData(
-                                    price=parse_number(unitParse["price"]),
-                                    unit_type=ItemUnitType.of(unitParse["type"]),
-                                    unit=parse_number(unitParse["unit"]),
-                                )
-                            else:
-                                unit = ItemUnitData(float(d["price"]["sellprc"]))
-                        else:
-                            unit = ItemUnitData(float(d["price"]["sellprc"]))
-
-                        return ItemData(
-                            id=self.product_id,
-                            brand=d['brand']['brandNm'] if 'brand' in d else None,
-                            name=d["itemNm"],
-                            price=ssg_parser.price,
-                            description="",
-                            url=_ITEM_LINK.format(self.product_id, self.site_no),
-                            image=d["uitemImgList"][0]["imgUrl"]
-                            if len(d["uitemImgList"]) > 0
-                            else None,
-                            category=ItemCategoryData(d["ctgNm"]),
-                            inventory=ssg_parser.inventory_status,
-                            unit=unit,
-                        )
-                    else:
-                        _LOGGER.error("SSG Response Error", response)
-        except ApiError as e:
-            _LOGGER.exception("SSG Error %s", e)
-        except Exception as e:
-            _LOGGER.exception("SSG Unknown Error %s", e)
+        return ItemData(
+            id=self.product_id,
+            brand=ssg_parser.brand,
+            name=ssg_parser.name,
+            price=ssg_parser.price,
+            description=ssg_parser.description,
+            url=ssg_parser.url,
+            image=ssg_parser.image,
+            category=ssg_parser.category,
+            inventory=ssg_parser.inventory_status,
+            delivery=ssg_parser.delivery,
+            unit=ssg_parser.unit,
+        )
 
     def id(self) -> str:
         return "{}_{}".format(self.product_id, self.site_no)

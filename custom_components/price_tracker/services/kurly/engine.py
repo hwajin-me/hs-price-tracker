@@ -2,16 +2,15 @@ import json
 import logging
 import re
 
-import aiohttp
-
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidError, InvalidItemUrlError
-from custom_components.price_tracker.datas.delivery import DeliveryData, DeliveryPayType
-from custom_components.price_tracker.datas.inventory import InventoryStatus
+from custom_components.price_tracker.components.error import (
+    InvalidItemUrlError,
+)
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.kurly.const import NAME, CODE
 from custom_components.price_tracker.services.kurly.parser import KurlyParser
-from custom_components.price_tracker.utilities.request import default_request_headers
+from custom_components.price_tracker.utilities.logs import logging_for_response
+from custom_components.price_tracker.utilities.request import http_request
 
 _LOGGER = logging.getLogger(__name__)
 _AUTH_URL = "https://www.kurly.com/nx/api/session"
@@ -25,62 +24,30 @@ class KurlyEngine(PriceEngine):
         self.id = KurlyEngine.parse_id(item_url)
 
     async def load(self) -> ItemData:
-        try:
-            async with aiohttp.ClientSession(
-                    connector=aiohttp.TCPConnector(verify_ssl=False)
-            ) as session:
-                async with session.get(
-                        url=_AUTH_URL, headers={**default_request_headers()}
-                ) as auth:
-                    auth_result = await auth.read()
+        auth_response = await http_request("get", _AUTH_URL)
+        auth_data = json.loads(auth_response["data"])
+        response = await http_request(
+            method="get", url=_URL.format(self.id), auth=auth_data["accessToken"]
+        )
+        data = response["data"]
+        kurly_parser = KurlyParser(text=data)
+        logging_for_response(data, __name__)
 
-                    if auth.status == 200:
-                        auth_data = json.loads(auth_result)
-                        async with session.get(
-                                url=_URL.format(self.id),
-                                headers={
-                                    **default_request_headers(),
-                                    "Authorization": "Bearer {}".format(
-                                        auth_data["accessToken"]
-                                    ),
-                                },
-                        ) as response:
-                            result = await response.text()
+        return ItemData(
+            id=self.id_str(),
+            name=kurly_parser.name,
+            brand=kurly_parser.brand,
+            description=kurly_parser.description,
+            image=kurly_parser.image,
+            category=kurly_parser.category,
+            delivery=kurly_parser.delivery,
+            unit=kurly_parser.unit,
+            price=kurly_parser.price,
+            inventory=kurly_parser.inventory,
+            options=kurly_parser.options,
+        )
 
-                            if response.status == 200:
-                                j = json.loads(result)
-                                kurly_parser = KurlyParser(text=result)
-                                d = j["data"]
-
-                                _LOGGER.debug("Kurly Response", d)
-
-                                return ItemData(
-                                    id=d["no"],
-                                    name=d["name"],
-                                    price=kurly_parser.price,
-                                    image=d["main_image_url"],
-                                    description=d["short_description"],
-                                    category=d["category_ids"].join(">"),
-                                    delivery=DeliveryData(
-                                        price=0.0,
-                                        pay_type=DeliveryPayType.FREE
-                                        if d["is_direct_order"]
-                                        else DeliveryPayType.PAID,
-                                    ),
-                                    url=_ITEM_LINK.format(d["no"]),
-                                    inventory=InventoryStatus.IN_STOCK
-                                    if not d["is_sold_out"]
-                                    else InventoryStatus.OUT_OF_STOCK,
-                                )
-                            else:
-                                _LOGGER.error("Kurly Fetch Request Error", response)
-                    else:
-                        _LOGGER.error("Kurly Authentication Request Error")
-
-        except Exception:
-            _LOGGER.exception("Kurly Request Error")
-
-    def id(self) -> str:
+    def id_str(self) -> str:
         return self.id
 
     @staticmethod
