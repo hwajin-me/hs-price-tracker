@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "setup": {
+        "title": "{title}",
+        "description": "{description}"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "setup": {
+        "title": "{title}",
+        "description": "{description}"
+      }
+    }
+  }
+}
