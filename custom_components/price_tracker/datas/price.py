@@ -81,7 +81,7 @@ def create_item_price_change(
     before_price: float = None,
 ) -> ItemPriceChangeData:
     """INC or DEC Only works in updated_at in period_hour"""
-    if datetime.now() - updated_at > timedelta(hours=period_hour):
+    if datetime.now().replace(tzinfo=None) - updated_at.replace(tzinfo=None) > timedelta(hours=period_hour):
         return ItemPriceChangeData(
             ItemPriceChangeStatus.NO_CHANGE, updated_at, before_price, after_price
         )

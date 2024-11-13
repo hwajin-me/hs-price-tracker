@@ -99,16 +99,16 @@ class SmartstoreParser:
         # Payback
         benefits = self._data["product"]["A"]["benefitsView"]
         photo_review = (
-            benefits["managerPhotoVideoReviewPoint"] + benefits["photoVideoReviewPoint"]
+                benefits["managerPhotoVideoReviewPoint"] + benefits["photoVideoReviewPoint"]
         )
         text_review = benefits["managerTextReviewPoint"] + benefits["textReviewPoint"]
         after_use_photo_review = (
-            benefits["managerAfterUsePhotoVideoReviewPoint"]
-            + benefits["afterUsePhotoVideoReviewPoint"]
+                benefits["managerAfterUsePhotoVideoReviewPoint"]
+                + benefits["afterUsePhotoVideoReviewPoint"]
         )
         after_use_text_review = (
-            benefits["managerAfterUseTextReviewPoint"]
-            + benefits["afterUseTextReviewPoint"]
+                benefits["managerAfterUseTextReviewPoint"]
+                + benefits["afterUseTextReviewPoint"]
         )
         membership = benefits["managerPurchasePoint"] * 2
 
@@ -116,10 +116,10 @@ class SmartstoreParser:
             price=sale_price,
             original_price=original_price,
             payback_price=photo_review
-            + text_review
-            + after_use_photo_review
-            + after_use_text_review
-            + membership,
+                          + text_review
+                          + after_use_photo_review
+                          + after_use_text_review
+                          + membership,
             currency="KRW",
         )
 
@@ -130,8 +130,8 @@ class SmartstoreParser:
         pay_type = delivery_info["deliveryFeeType"]
         free_price = Lu.get(delivery_info, "freeConditionalAmount")
         lead_time = Lu.get_or_default(
-            self._data["product"]["A"]["productDailyDeliveryLeadTimes"],
-            "leadTimeViewType",
+            self._data,
+            "product.A.productDailyDeliveryLeadTimes.leadTimeViewType",
             "NORMAL_DELIVERY",
         )
 

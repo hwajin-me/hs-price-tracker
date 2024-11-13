@@ -79,7 +79,7 @@ class ItemUnitData:
     @property
     def dict(self):
         return {
-            "unit_type": self.unit_type.value,
+            "unit_type": self.unit_type.name,
             "unit_value": self.unit,
             "unit_price": self.price,
         }

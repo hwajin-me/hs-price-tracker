@@ -46,13 +46,11 @@ class NcncParser:
 
     @property
     def category(self):
-        return (
-            ItemCategoryData(
-                "{}>{}".format(
-                    self._item["conCategory2"]["conCategory1"]["name"],
-                    self._item["conCategory2"]["name"],
-                )
-            ),
+        return ItemCategoryData(
+            "{}>{}".format(
+                self._item["conCategory2"]["conCategory1"]["name"],
+                self._item["conCategory2"]["name"],
+            )
         )
 
     @property

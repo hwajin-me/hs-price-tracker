@@ -66,7 +66,7 @@ class ItemData:
 
     @property
     def dict(self):
-        return {
+        data = {
             "product_id": self.id,
             "brand": self.brand,
             "name": self.name,
@@ -87,6 +87,8 @@ class ItemData:
             "delivery_pay_type": self.delivery.pay_type.name,
             "delivery_price": self.delivery.price,
             "delivery_free_threshold_price": self.delivery.threshold_price,
+            'delivery_minimum_price': self.delivery.minimum_price,
+            'delivery_arrive_date': self.delivery.arrive_date,
             "url": self.url,
             "image": self.image,
             "inventory_status": self.inventory.name,
@@ -97,3 +99,13 @@ class ItemData:
             if self.options is not None
             else [],
         }
+
+        # For fast-access options
+        if self.options is not None:
+            for idx, option in enumerate(self.options):
+                data[f'product_option_{idx}_id'] = option.id
+                data[f'product_option_{idx}_name'] = option.name
+                data[f'product_option_{idx}_price'] = option.price
+                data[f'product_option_{idx}_quantity'] = option.inventory
+
+        return data
