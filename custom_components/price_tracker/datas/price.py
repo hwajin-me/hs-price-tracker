@@ -17,7 +17,9 @@ class ItemPriceData:
         self.price = parse_float(price)
         self.currency = currency
         self.original_price = parse_float(original_price if original_price else price)
-        self.discount_amount = parse_float(original_price - price if original_price else 0)
+        self.discount_amount = parse_float(
+            original_price - price if original_price else 0
+        )
         self.discount_rate = parse_float(
             self.discount_amount / original_price * 100 if original_price else 0
         )
@@ -92,7 +94,6 @@ def create_item_price_change(
     after_price: float | None = None,
     before_price: float | None = None,
 ) -> ItemPriceChangeData:
-
     if after_price is None:
         return ItemPriceChangeData(
             ItemPriceChangeStatus.NO_CHANGE, updated_at, before_price, after_price

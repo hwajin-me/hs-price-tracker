@@ -30,12 +30,12 @@ class KurlyEngine(PriceEngine):
             method="get", url=_URL.format(self.id), auth=auth_data["accessToken"]
         )
 
-        if response['status_code'] == 404:
+        if response["status_code"] == 404:
             return None
 
         data = response["data"]
         kurly_parser = KurlyParser(text=data)
-        logging_for_response(data, __name__, 'kurly')
+        logging_for_response(data, __name__, "kurly")
 
         return ItemData(
             id=self.id_str(),

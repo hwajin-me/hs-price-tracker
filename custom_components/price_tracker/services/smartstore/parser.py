@@ -126,7 +126,7 @@ class SmartstoreParser:
             + after_use_photo_review
             + after_use_text_review
             + membership,
-            currency="KRW"
+            currency="KRW",
         )
 
     @property

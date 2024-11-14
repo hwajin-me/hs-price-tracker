@@ -43,7 +43,7 @@ class SmartstoreEngine(PriceEngine):
             },
         )
         text = response.text
-        logging_for_response(response=text, name=__name__, domain='naver')
+        logging_for_response(response=text, name=__name__, domain="naver")
         naver_parser = SmartstoreParser(data=text)
         return ItemData(
             id=self.id_str(),

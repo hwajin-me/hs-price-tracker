@@ -14,7 +14,9 @@ from custom_components.price_tracker.consts.defaults import DATA_UPDATED
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.datas.price import (
     ItemPriceChangeData,
-    create_item_price_change, ItemPriceChangeStatus, ItemPriceData,
+    create_item_price_change,
+    ItemPriceChangeStatus,
+    ItemPriceData,
 )
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.utilities.list import Lu
@@ -25,8 +27,8 @@ _THREAD_LIMIT = asyncio.Semaphore(12)
 
 class PriceTrackerSensor(RestoreEntity):
     # STATIC
-    _attr_icon = 'mdi:cart'
-    _attr_device_class = 'price'
+    _attr_icon = "mdi:cart"
+    _attr_device_class = "price"
     _attr_should_poll = True
 
     # Require
@@ -89,23 +91,32 @@ class PriceTrackerSensor(RestoreEntity):
                     )
                 )
                 return None
-        else:
-            self._updated_at = datetime.now()
-            await _THREAD_LIMIT.acquire()
-            _LOGGER.debug('Update sensor: %s (%s) - %s', self._attr_unique_id, self._updated_at, self._attr_available)
+
+        _LOGGER.debug(
+            "Update sensor: %s (%s) - %s",
+            self._attr_unique_id,
+            self._updated_at,
+            self._attr_available,
+        )
+        self._update_updated_at()
+        await _THREAD_LIMIT.acquire()
 
         try:
             data = await self._engine.load()
+
             if data is None:
                 self._attr_available = True
                 self._attr_state = STATE_UNKNOWN
+                self._update_updated_at()
                 return None
 
             self._price_change = create_item_price_change(
-                updated_at=self._updated_at,
+                updated_at=datetime.now(),
                 period_hour=self._refresh_period,
                 after_price=data.price.price,
-                before_price=self._item_data.price.price if self._item_data is not None else None
+                before_price=self._item_data.price.price
+                if self._item_data is not None
+                else None,
             )
             self._item_data = data
 
@@ -139,6 +150,7 @@ class PriceTrackerSensor(RestoreEntity):
             self._attr_state = STATE_UNKNOWN
             _LOGGER.exception("Error while updating the sensor: %s", e)
         finally:
+            self._update_updated_at()
             _THREAD_LIMIT.release()
 
     async def async_added_to_hass(self) -> None:
@@ -147,22 +159,26 @@ class PriceTrackerSensor(RestoreEntity):
             await super().async_added_to_hass()
             state = await self.async_get_last_state()
 
-            if not state:
+            if not state or self._item_data is not None:
                 return
 
-            if 'updated_at' in state.attributes:
-                self._updated_at = datetime.fromisoformat(state.attributes["updated_at"])
+            if "updated_at" in state.attributes:
+                self._updated_at = datetime.fromisoformat(
+                    state.attributes["updated_at"]
+                )
             self._attr_name = Lu.get(state.attributes, "name")
             self._attr_state = Lu.get(state.attributes, "price")
             self._attr_entity_picture = Lu.get(state.attributes, "entity_picture")
-            self._attr_unit_of_measurement = Lu.get(state.attributes, "unit_of_measurement")
+            self._attr_unit_of_measurement = Lu.get(
+                state.attributes, "unit_of_measurement"
+            )
             self._attr_available = True
             self._attr_extra_state_attributes = {
                 **state.attributes,
                 "management_category": self._management_category,
             }
 
-            if 'product_id' in state.attributes:
+            if "product_id" in state.attributes:
                 self._item_data = ItemData(
                     id=state.attributes["product_id"],
                     brand=Lu.get(state.attributes, "brand"),
@@ -174,7 +190,9 @@ class PriceTrackerSensor(RestoreEntity):
                         payback_price=state.attributes["payback_price"],
                     ),
                     unit=ItemUnitData(
-                        unit_type=Lu.get(state.attributes, "unit_type", ItemUnitType.PIECE.name),
+                        unit_type=Lu.get(
+                            state.attributes, "unit_type", ItemUnitType.PIECE.name
+                        ),
                         unit=Lu.get(state.attributes, "unit_value", 1),
                         price=Lu.get(state.attributes, "unit_price"),
                     ),
@@ -192,7 +210,9 @@ class PriceTrackerSensor(RestoreEntity):
                     and "price_change_after_price" in state.attributes
             ):
                 self._price_change = ItemPriceChangeData(
-                    status=ItemPriceChangeStatus.of(Lu.get(state.attributes, "price_change_status", "no_change")),
+                    status=ItemPriceChangeStatus.of(
+                        Lu.get(state.attributes, "price_change_status", "no_change")
+                    ),
                     before_price=Lu.get(state.attributes, "price_change_before_price"),
                     after_price=Lu.get(state.attributes, "price_change_after_price"),
                     updated_at=self._updated_at,
@@ -215,3 +235,10 @@ class PriceTrackerSensor(RestoreEntity):
     @callback
     def _schedule_immediate_update(self):
         self.async_schedule_update_ha_state(True)
+
+    def _update_updated_at(self):
+        self._updated_at = datetime.now()
+        self._attr_extra_state_attributes = {
+            **self._attr_extra_state_attributes,
+            "updated_at": self._updated_at,
+        }
