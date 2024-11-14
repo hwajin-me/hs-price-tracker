@@ -27,6 +27,9 @@ def parse_bool(value: any) -> bool:
 
 
 def parse_float(value: any) -> float:
+    if isinstance(value, float):
+        return value
+
     try:
         return float(
             str(value)

@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 
+from custom_components.price_tracker.utilities.parser import parse_float
+
 
 @dataclass
 class ItemPriceData:
@@ -12,14 +14,14 @@ class ItemPriceData:
         original_price: float = None,
         payback_price: float = 0.0,
     ):
-        self.price = price
+        self.price = parse_float(price)
         self.currency = currency
-        self.original_price = original_price if original_price else price
-        self.discount_amount = original_price - price if original_price else 0
-        self.discount_rate = (
+        self.original_price = parse_float(original_price if original_price else price)
+        self.discount_amount = parse_float(original_price - price if original_price else 0)
+        self.discount_rate = parse_float(
             self.discount_amount / original_price * 100 if original_price else 0
         )
-        self.payback_price = payback_price
+        self.payback_price = parse_float(payback_price)
 
     @property
     def dict(self):
@@ -37,6 +39,17 @@ class ItemPriceChangeStatus(Enum):
     INCREMENT_PRICE = ("increment_price",)
     DECREMENT_PRICE = ("decrement_price",)
     NO_CHANGE = "no_change"
+
+    @staticmethod
+    def of(value: str):
+        if value.lower() == "increment_price":
+            return ItemPriceChangeStatus.INCREMENT_PRICE
+        elif value.lower() == "decrement_price":
+            return ItemPriceChangeStatus.DECREMENT_PRICE
+        elif value.lower() == "no_change":
+            return ItemPriceChangeStatus.NO_CHANGE
+        else:
+            raise ValueError(f"Unknown ItemPriceChangeStatus: {value}")
 
 
 @dataclass
@@ -76,10 +89,15 @@ class ItemPriceChangeData:
 def create_item_price_change(
     updated_at: datetime,
     period_hour: int,
-    after_price: float,
-    before_change_data: ItemPriceChangeData = None,
-    before_price: float = None,
+    after_price: float | None = None,
+    before_price: float | None = None,
 ) -> ItemPriceChangeData:
+
+    if after_price is None:
+        return ItemPriceChangeData(
+            ItemPriceChangeStatus.NO_CHANGE, updated_at, before_price, after_price
+        )
+
     """INC or DEC Only works in updated_at in period_hour"""
     if datetime.now().replace(tzinfo=None) - updated_at.replace(
         tzinfo=None
@@ -88,42 +106,6 @@ def create_item_price_change(
             ItemPriceChangeStatus.NO_CHANGE, updated_at, before_price, after_price
         )
 
-    if (
-        before_change_data is not None
-        and before_change_data.status == ItemPriceChangeStatus.INCREMENT_PRICE
-    ):
-        if before_change_data.after_price < after_price:
-            return ItemPriceChangeData(
-                ItemPriceChangeStatus.INCREMENT_PRICE,
-                updated_at,
-                before_change_data.before_price,
-                after_price,
-            )
-        else:
-            return ItemPriceChangeData(
-                ItemPriceChangeStatus.NO_CHANGE,
-                updated_at,
-                before_change_data.before_price,
-                after_price,
-            )
-    elif (
-        before_change_data is not None
-        and before_change_data.status == ItemPriceChangeStatus.DECREMENT_PRICE
-    ):
-        if before_change_data.after_price > after_price:
-            return ItemPriceChangeData(
-                ItemPriceChangeStatus.DECREMENT_PRICE,
-                updated_at,
-                before_change_data.before_price,
-                after_price,
-            )
-        else:
-            return ItemPriceChangeData(
-                ItemPriceChangeStatus.NO_CHANGE,
-                updated_at,
-                before_change_data.before_price,
-                after_price,
-            )
     else:
         if before_price is None:
             return ItemPriceChangeData(

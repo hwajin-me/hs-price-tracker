@@ -74,12 +74,6 @@ async def http_request(
                     response.request_info.headers, response.text
                 )
             )
-        if response.status > 299:
-            raise ApiError(
-                "Error while fetching data from the API (status code: {}, {}, {}, {})".format(
-                    response.status, url, headers, await response.text()
-                )
-            )
 
         data = {"status_code": response.status, "data": await response.text()}
         await session.close()

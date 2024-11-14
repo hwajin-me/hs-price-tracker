@@ -23,15 +23,19 @@ class KurlyEngine(PriceEngine):
         self.item_url = item_url
         self.id = KurlyEngine.parse_id(item_url)
 
-    async def load(self) -> ItemData:
+    async def load(self) -> ItemData | None:
         auth_response = await http_request("get", _AUTH_URL)
         auth_data = json.loads(auth_response["data"])
         response = await http_request(
             method="get", url=_URL.format(self.id), auth=auth_data["accessToken"]
         )
+
+        if response['status_code'] == 404:
+            return None
+
         data = response["data"]
         kurly_parser = KurlyParser(text=data)
-        logging_for_response(data, __name__)
+        logging_for_response(data, __name__, 'kurly')
 
         return ItemData(
             id=self.id_str(),

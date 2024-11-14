@@ -11,7 +11,7 @@ class PriceEngine:
     id: any
 
     @abstractmethod
-    async def load(self) -> ItemData:
+    async def load(self) -> ItemData | None:
         """Load"""
         pass
 

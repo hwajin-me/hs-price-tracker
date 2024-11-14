@@ -226,7 +226,7 @@ class PriceTrackerSetup:
                 ["auto"] + ItemUnitType.list()
             ),
             vol.Optional(self.conf_item_unit, default=0): cv.positive_int,
-            vol.Required(self.conf_item_refresh_interval, default=10): cv.positive_int,
+            vol.Required(self.conf_item_refresh_interval, default=30): cv.positive_int,
             vol.Required(
                 self.conf_item_price_change_interval_hour, default=24
             ): cv.positive_int,
@@ -284,7 +284,7 @@ class PriceTrackerSetup:
                     vol.Required(
                         self.conf_item_refresh_interval,
                         default=Lu.get_or_default(
-                            item, self.conf_item_refresh_interval, 10
+                            item, self.conf_item_refresh_interval, 30
                         ),
                     ): cv.positive_int,
                     vol.Required(
