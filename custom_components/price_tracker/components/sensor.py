@@ -69,6 +69,7 @@ class PriceTrackerSensor(RestoreEntity):
         self._attr_state = STATE_UNKNOWN
         self._attr_available = True
         self._attr_device_info = device.device_info if device is not None else None
+        self._attr_extra_state_attributes = {}
 
         # Custom
         self._unit_type = unit_type
@@ -159,20 +160,28 @@ class PriceTrackerSensor(RestoreEntity):
             await super().async_added_to_hass()
             state = await self.async_get_last_state()
 
-            if not state or self._item_data is not None:
+            if self._item_data is not None:
+                return
+
+            if not state:
+                self._attr_available = False
+                await self.async_update()
                 return
 
             if "updated_at" in state.attributes:
                 self._updated_at = datetime.fromisoformat(
                     state.attributes["updated_at"]
                 )
+                self._attr_available = True
+            else:
+                self._attr_available = False
+
             self._attr_name = Lu.get(state.attributes, "name")
             self._attr_state = Lu.get(state.attributes, "price")
             self._attr_entity_picture = Lu.get(state.attributes, "entity_picture")
             self._attr_unit_of_measurement = Lu.get(
                 state.attributes, "unit_of_measurement"
             )
-            self._attr_available = True
             self._attr_extra_state_attributes = {
                 **state.attributes,
                 "management_category": self._management_category,
