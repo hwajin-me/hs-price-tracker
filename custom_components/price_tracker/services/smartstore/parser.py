@@ -38,6 +38,12 @@ class SmartstoreParser:
                 raise DataParseError(
                     "NAVER Response Error - Data not found (PRELOADED_STATE)"
                 )
+
+            # For NAVER Shopping
+            if Lu.has(self._data, "product.A") is False:
+                self._data["product"] = {
+                    "A": self._data["productDetail"]["A"]["contents"]
+                }
         except Exception as e:
             raise DataParseError("NAVER Response Parse Error - Unknown") from e
 
@@ -146,7 +152,6 @@ class SmartstoreParser:
         else:
             delivery_type = DeliveryType.STANDARD
 
-        # 도착보장상품
         if "todayDispatch" in self._data["product"]["A"]:
             today_dispatch = self._data["product"]["A"]["todayDispatch"]
             possible_dispatch = Lu.get_or_default(
@@ -156,7 +161,7 @@ class SmartstoreParser:
                 date = datetime.datetime.strptime(possible_dispatch[0], "%Y%m%d")
             else:
                 date = None
-            delivery_type = DeliveryType.EXPRESS_NEXT_DAY
+            delivery_type = DeliveryType.STANDARD
         else:
             date = None
 

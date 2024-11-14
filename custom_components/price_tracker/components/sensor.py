@@ -66,16 +66,20 @@ class PriceTrackerSensor(RestoreEntity):
 
     async def async_update(self):
         # Check last updated at
-        if self._updated_at is not None:
+        if self._updated_at is not None or self._attr_available is False:
             if (
-                self._updated_at + timedelta(minutes=self._refresh_period)
-            ) > datetime.now():
+                self._updated_at is not None
+                and (self._updated_at + timedelta(minutes=self._refresh_period))
+                > datetime.now()
+            ):
                 _LOGGER.debug(
                     "Skip update cause refresh period. {} -({} / {}).".format(
                         self._attr_unique_id, self._updated_at, self._refresh_period
                     )
                 )
                 return None
+        else:
+            self._updated_at = datetime.now()
 
         try:
             data = await self._engine.load()
@@ -85,7 +89,6 @@ class PriceTrackerSensor(RestoreEntity):
 
             self._item_data_previous = self._item_data
             self._item_data = data
-            self._updated_at = datetime.now()
             self._price_change = create_item_price_change(
                 updated_at=self._updated_at,
                 period_hour=self._refresh_period,

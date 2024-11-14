@@ -13,12 +13,12 @@ from custom_components.price_tracker.utilities.request import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_URL = "https://m.smartstore.naver.com/{}/products/{}"
+_URL = "https://m.{}.naver.com/{}/{}/{}"
 _REQUEST_HEADER = {
     "host": "m.smartstore.naver.com",
     "accept": "text/html",
     "accept-encoding": "gzip, zlib, deflate, zstd, br",
-    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/605.1 NAVER(inapp; search; 2000; 12.8.52; 14PRO)",
+    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/605.1 NAVER(inapp; search; 2001; 12.8.52; 14PRO)",
 }
 
 
@@ -26,14 +26,21 @@ class SmartstoreEngine(PriceEngine):
     def __init__(self, item_url: str):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
+        self.store_type = self.id["store_type"]
+        self.detail_type = self.id["detail_type"]
         self.store = self.id["store"]
         self.product_id = self.id["product_id"]
 
     async def load(self) -> ItemData:
         response = await http_request_async(
             method="get",
-            url=_URL.format(self.store, self.product_id),
-            headers={**_REQUEST_HEADER},
+            url=_URL.format(
+                self.store_type, self.store, self.detail_type, self.product_id
+            ),
+            headers={
+                **_REQUEST_HEADER,
+                **{"host": "m.{}.naver.com".format(self.store_type)},
+            },
         )
         text = response.text
         logging_for_response(response=text, name=__name__)
@@ -57,7 +64,7 @@ class SmartstoreEngine(PriceEngine):
     @staticmethod
     def parse_id(item_url: str):
         u = re.search(
-            r"smartstore\.naver\.com\/(?P<store>[a-zA-Z\d\-_]+)\/products\/(?P<product_id>[\d]+)",
+            r"(?P<store_type>smartstore|shopping)\.naver\.com\/(?P<store>[a-zA-Z\d\-_]+)\/(?P<detail_type>products|[\w]+)\/(?P<product_id>[\d]+)",
             item_url,
         )
 
@@ -65,6 +72,8 @@ class SmartstoreEngine(PriceEngine):
             raise InvalidItemUrlError("Bad item_url " + item_url)
         data = {}
         g = u.groupdict()
+        data["store_type"] = g["store_type"]
+        data["detail_type"] = g["detail_type"]
         data["store"] = g["store"]
         data["product_id"] = g["product_id"]
 
