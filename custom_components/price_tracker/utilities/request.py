@@ -174,17 +174,24 @@ async def http_request_async(
         headers["authorization"] = "Bearer {}".format(auth)
 
     req = requests.get if method == "get" else requests.post
-    response = await asyncio.to_thread(
-        req,
-        url,
-        headers={
-            **{k.lower(): v for k, v in _REQUEST_DEFAULT_HEADERS.items()},
-            **{k.lower(): v for k, v in headers.items()},
-        },
-        timeout=timeout,
-        verify=False,
-    )
+    try:
+        response = await asyncio.to_thread(
+            req,
+            url,
+            headers={
+                **{k.lower(): v for k, v in _REQUEST_DEFAULT_HEADERS.items()},
+                **{k.lower(): v for k, v in _REQUEST_DEFAULT_HEADERS.items()},
+                **{k.lower(): v for k, v in headers.items()},
+            },
+            timeout=timeout,
+            verify=False,
+        )
+    except Exception:
+        data = await http_request(
+            method, url, headers, auth, timeout, proxy=proxy, **kwargs
+        )
 
+        return ResponseData(data["data"], data["status_code"])
     if response is not None:
         if response.status_code > 399:
             data = await http_request(
