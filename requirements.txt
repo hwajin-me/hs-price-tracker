@@ -12,3 +12,6 @@ pytest-socket==0.7.0
 pytest~=8.3.3
 selenium>=4.17.0
 webdriver-manager>=4.0.0
+cloudscraper>=1.2.71
+httpx>=0.21.0
+undetected-chromedriver>=3.5.5

@@ -18,7 +18,10 @@
     "requests~=2.32.3",
     "voluptuous~=0.15.2",
     "selenium>=4.17.0",
-    "webdriver-manager>=4.0.0"
+    "webdriver-manager>=4.0.0",
+    "cloudscraper>=1.2.71",
+    "httpx>=0.21.0",
+    "undetected-chromedriver>=3.5.5"
   ],
   "version": "1.0.9"
 }

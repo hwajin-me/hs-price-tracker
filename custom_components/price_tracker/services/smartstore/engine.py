@@ -10,9 +10,9 @@ from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.smartstore.const import NAME, CODE
 from custom_components.price_tracker.services.smartstore.parser import SmartstoreParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
-from custom_components.price_tracker.utilities.request import (
-    http_request_async,
-    http_request_selenium,
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,38 +42,9 @@ class SmartstoreEngine(PriceEngine):
         url = _URL.format(
             self.store_type, self.store, self.detail_type, self.product_id
         )
-        response = await http_request_async(
-            method="get",
-            url=_URL.format(
-                self.store_type, self.store, self.detail_type, self.product_id
-            ),
-            headers={
-                **_REQUEST_HEADER,
-                **{
-                    "host": "m.{}.naver.com".format(self.store_type),
-                    "content-type": "application/x-www-form-urlencoded",
-                    "content-length": "0",
-                    "Connection": "close",
-                },
-            },
-            auto_decompress=True,
-            max_line_size=99999999,
-            read_bufsize=99999999,
-            compress=False,
-            read_until_eof=True,
-            expect100=True,
-            chunked=False,
-            ssl=False,
-        )
+        response = await SafeRequest().request(method=SafeRequestMethod.GET, url=url)
 
-        if response.status_code == 404:
-            return None
-
-        if response.status_code == 429:
-            text = await http_request_selenium(url=url)
-            _LOGGER.error("429 Too Many Requests (NAVER) - %s", self.item_url)
-        else:
-            text = response.text
+        text = response.text
 
         logging_for_response(response=text, name=__name__, domain="naver")
         naver_parser = SmartstoreParser(data=text)
