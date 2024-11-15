@@ -78,6 +78,7 @@ class GsTheFreshEngine(PriceEngine):
             options=[],
             category=gs_parser.category,
             price=gs_parser.price,
+            inventory=gs_parser.inventory_status,
         )
 
     def id_str(self) -> str:

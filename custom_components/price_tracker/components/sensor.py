@@ -101,6 +101,7 @@ class PriceTrackerSensor(RestoreEntity):
         )
         self._update_updated_at()
         await _THREAD_LIMIT.acquire()
+        await asyncio.sleep(0.1)
 
         try:
             data = await self._engine.load()

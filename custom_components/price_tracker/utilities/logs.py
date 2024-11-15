@@ -9,6 +9,6 @@ def logging_for_response(response, name: str, domain: str = None):
             f"API Response {response}"
         )
     else:
-        logging.getLogger(f"custom_components.price_tracker_response").debug(
+        logging.getLogger("custom_components.price_tracker_response").debug(
             f"API Response {response}"
         )

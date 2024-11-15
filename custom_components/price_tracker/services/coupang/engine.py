@@ -38,7 +38,7 @@ class CoupangEngine(PriceEngine):
         )
         data = response["data"]
         coupang_parser = CoupangParser(text=data)
-        logging_for_response(data, __name__)
+        logging_for_response(data, __name__, "coupang")
 
         return ItemData(
             id=self.id_str(),

@@ -16,7 +16,9 @@
     "aiohttp~=3.10.8",
     "fake-useragent==1.5.1",
     "requests~=2.32.3",
-    "voluptuous~=0.15.2"
+    "voluptuous~=0.15.2",
+    "selenium>=4.17.0",
+    "webdriver-manager>=4.0.0"
   ],
-  "version": "1.0.7"
+  "version": "1.0.8"
 }

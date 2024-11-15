@@ -1,18 +1,30 @@
 import asyncio
 import random
+from typing import Unpack
 
 import aiohttp
 import requests
+from aiohttp.client import _RequestOptions
+from fake_useragent import UserAgent
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 from custom_components.price_tracker.components.error import ApiError, ApiAuthError
 
 _REQUEST_DEFAULT_HEADERS = {
     "Accept": "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
     "Accept-Encoding": "gzip, deflate, br, zstd",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
     "Cache-Control": "max-age=0",
+    "Content-Type": "application/json",
+    "Connection": "close",
 }
+
+
+def mobile_ua() -> str:
+    return UserAgent(platforms=["mobile"], os="android").random
 
 
 def proxy_server() -> str:
@@ -42,10 +54,12 @@ async def http_request(
     url: str,
     headers=None,
     auth: str = None,
-    timeout: int | None = None,
+    timeout: int | None = 5,
     json: dict = None,
     proxy: bool = False,
     is_retry: bool = False,
+    skip_auto_headers: list[str] = None,
+    **kwargs: Unpack[_RequestOptions],
 ):
     if headers is None:
         headers = {}
@@ -63,10 +77,19 @@ async def http_request(
         response = await session.request(
             method=method,
             url=url,
-            headers={**_REQUEST_DEFAULT_HEADERS, **headers},
+            headers={
+                **{k.lower(): v for k, v in _REQUEST_DEFAULT_HEADERS.items()},
+                **{k.lower(): v for k, v in headers.items()},
+            },
             timeout=timeout,
             json=json,
+            allow_redirects=True,
+            max_redirects=99,
             proxy=proxy_server() if proxy else None,
+            skip_auto_headers=skip_auto_headers
+            if skip_auto_headers
+            else ["User-Agent", "Content-Type", "Accept", "Content-Length"],
+            **kwargs,
         )
         if response.status == 401 or response.status == 403:
             raise ApiAuthError(
@@ -109,6 +132,32 @@ async def http_request(
         await session.close()
 
 
+class ResponseData:
+    text: str
+    status_code: int
+
+    def __init__(self, data: str, status_code: int):
+        self.text = data
+        self.status_code = status_code
+
+
+async def http_request_selenium(url: str):
+    manager = ChromeDriverManager()
+    manager_install = await asyncio.to_thread(manager.install)
+    options = webdriver.ChromeOptions()
+
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--window-size=1420,1080")
+    options.add_argument("--headless=new")
+    driver = await asyncio.to_thread(
+        webdriver.Chrome, service=ChromeService(manager_install), options=options
+    )
+    driver.get(url)
+
+    return driver.page_source
+
+
 async def http_request_async(
     method: str,
     url: str,
@@ -116,6 +165,7 @@ async def http_request_async(
     auth: str = None,
     timeout: int = 5,
     proxy: bool = False,
+    **kwargs: Unpack[_RequestOptions],
 ):
     if headers is None:
         headers = {}
@@ -125,19 +175,28 @@ async def http_request_async(
 
     req = requests.get if method == "get" else requests.post
     response = await asyncio.to_thread(
-        req, url, headers={**_REQUEST_DEFAULT_HEADERS, **headers}
+        req,
+        url,
+        headers={
+            **{k.lower(): v for k, v in _REQUEST_DEFAULT_HEADERS.items()},
+            **{k.lower(): v for k, v in headers.items()},
+        },
+        timeout=timeout,
+        verify=False,
     )
+
     if response is not None:
-        if response.status_code == 401 or response.status_code == 403:
-            raise ApiAuthError(
-                "API authentication error {} {}".format(headers, response.text)
+        if response.status_code > 399:
+            data = await http_request(
+                method, url, headers, auth, timeout, proxy=proxy, **kwargs
             )
 
-        if response.status_code > 299:
-            raise ApiError(
-                "Error while fetching data from the API (status code: {}, {}, {}, {})".format(
-                    response.status_code, url, headers, response.text
-                )
-            )
+            return ResponseData(data["data"], data["status_code"])
 
         return response
+    else:
+        data = await http_request(
+            method, url, headers, auth, timeout, proxy=proxy, **kwargs
+        )
+
+        return ResponseData(data["data"], data["status_code"])

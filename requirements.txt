@@ -10,3 +10,5 @@ voluptuous~=0.15.2
 pytest-homeassistant-custom-component==0.13.181
 pytest-socket==0.7.0
 pytest~=8.3.3
+selenium>=4.17.0
+webdriver-manager>=4.0.0

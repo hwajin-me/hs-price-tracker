@@ -102,6 +102,10 @@ class KurlyParser:
         parse = re.search(
             r"(?P<unit>[\d,.]+).*?(?P<type>개입|kg|g|KG|Kg|ml|ML|mL|L|l)", data
         )
+
+        if parse is None:
+            return ItemUnitData(price=self.price.price)
+
         group = parse.groupdict()
         if group is None or "unit" not in group or "type" not in group:
             return ItemUnitData(price=self.price.price)

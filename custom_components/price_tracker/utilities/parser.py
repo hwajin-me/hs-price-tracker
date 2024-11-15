@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 def parse_bool(value: any) -> bool:
     if isinstance(value, bool):
         return value
-    if isinstance(value, str):
+    elif isinstance(value, str):
         return value.lower() in [
             "true",
             "yes",

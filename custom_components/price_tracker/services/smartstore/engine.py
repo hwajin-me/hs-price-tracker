@@ -1,25 +1,30 @@
+import asyncio
 import logging
 import re
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidItemUrlError
+from custom_components.price_tracker.components.error import (
+    InvalidItemUrlError,
+)
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.smartstore.const import NAME, CODE
 from custom_components.price_tracker.services.smartstore.parser import SmartstoreParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.request import (
     http_request_async,
+    http_request_selenium,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 _URL = "https://m.{}.naver.com/{}/{}/{}"
 _REQUEST_HEADER = {
-    "host": "m.smartstore.naver.com",
     "accept": "text/html",
+    "accept-language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
     "accept-encoding": "gzip, zlib, deflate, zstd, br",
-    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/605.1 NAVER(inapp; search; 2001; 12.8.52; 14PRO)",
+    "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
 }
+_THREAD_LIMIT = asyncio.Semaphore(4)
 
 
 class SmartstoreEngine(PriceEngine):
@@ -31,7 +36,12 @@ class SmartstoreEngine(PriceEngine):
         self.store = self.id["store"]
         self.product_id = self.id["product_id"]
 
-    async def load(self) -> ItemData:
+    async def load(self) -> ItemData | None:
+        await asyncio.sleep(0.3)
+
+        url = _URL.format(
+            self.store_type, self.store, self.detail_type, self.product_id
+        )
         response = await http_request_async(
             method="get",
             url=_URL.format(
@@ -39,10 +49,32 @@ class SmartstoreEngine(PriceEngine):
             ),
             headers={
                 **_REQUEST_HEADER,
-                **{"host": "m.{}.naver.com".format(self.store_type)},
+                **{
+                    "host": "m.{}.naver.com".format(self.store_type),
+                    "content-type": "application/x-www-form-urlencoded",
+                    "content-length": "0",
+                    "Connection": "close",
+                },
             },
+            auto_decompress=True,
+            max_line_size=99999999,
+            read_bufsize=99999999,
+            compress=False,
+            read_until_eof=True,
+            expect100=True,
+            chunked=False,
+            ssl=False,
         )
-        text = response.text
+
+        if response.status_code == 404:
+            return None
+
+        if response.status_code == 429:
+            text = await http_request_selenium(url=url)
+            _LOGGER.error("429 Too Many Requests (NAVER) - %s", self.item_url)
+        else:
+            text = response.text
+
         logging_for_response(response=text, name=__name__, domain="naver")
         naver_parser = SmartstoreParser(data=text)
         return ItemData(
@@ -64,7 +96,7 @@ class SmartstoreEngine(PriceEngine):
     @staticmethod
     def parse_id(item_url: str):
         u = re.search(
-            r"(?P<store_type>smartstore|shopping)\.naver\.com\/(?P<store>[a-zA-Z\d\-_]+)\/(?P<detail_type>products|[\w]+)\/(?P<product_id>[\d]+)",
+            r"(?P<store_type>smartstore|shopping|brand)\.naver\.com\/(?P<store>[a-zA-Z\d\-_]+)\/(?P<detail_type>products|[\w]+)\/(?P<product_id>[\d]+)",
             item_url,
         )
 

@@ -31,10 +31,11 @@ class SsgEngine(PriceEngine):
                 }
             },
             url=_URL,
+            skip_auto_headers=[],
         )
 
         text = response["data"]
-        logging_for_response(text, __name__)
+        logging_for_response(text, __name__, "ssg")
         ssg_parser = SsgParser(text)
 
         return ItemData(
