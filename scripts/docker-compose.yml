@@ -1,7 +1,6 @@
 services:
   homeassistant:
     container_name: homeassistant
-    platform: linux/x86_64
     image: "ghcr.io/home-assistant/home-assistant:stable"
     volumes:
       - ../config/configuration.yaml:/config/configuration.yaml

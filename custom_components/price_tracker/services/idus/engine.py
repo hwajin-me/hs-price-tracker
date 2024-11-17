@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
@@ -14,10 +15,12 @@ _ITEM_LINK = "https://www.idus.com/v2/product/{}"
 
 
 class IdusEngine(PriceEngine):
-    def __init__(self, item_url: str):
+    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
         self.item_url = item_url
         self.id = IdusEngine.parse_id(item_url)
         self.product_id = self.id
+        self._proxy = proxy
+        self._device = device
 
     async def load(self) -> ItemData:
         response = await http_request(method="get", url=_URL.format(self.product_id))

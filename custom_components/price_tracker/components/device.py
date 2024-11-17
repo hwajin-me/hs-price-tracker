@@ -9,15 +9,21 @@ from custom_components.price_tracker.consts.defaults import DOMAIN, VERSION
 
 class PriceTrackerDevice(Entity):
     _name: str | None = None
+    _proxy: str | None = None
 
-    def __init__(self, entry_id: str, device_type: str, device_id: str):
+    def __init__(self, entry_id: str, device_type: str, device_id: str, proxy: str | None = None):
         self._entry_id = entry_id
         self._device_id = str(device_id)
         self._device_type = device_type
         self._generate_device_id = IdGenerator.generate_device_id(self._device_id)
-        self.entity_id = self._generate_device_id
         self._attr_available = True
         self._updated_at: datetime | None = None
+        self._proxy = proxy
+        self.entity_id = self._generate_device_id
+
+    @property
+    def proxy(self):
+        return self._proxy
 
     @property
     def device_id(self):

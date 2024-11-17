@@ -1,9 +1,11 @@
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
 
 from custom_components.price_tracker.components.error import UnsupportedError
 from custom_components.price_tracker.components.lang import Lang
 from custom_components.price_tracker.components.setup import PriceTrackerSetup
+from custom_components.price_tracker.consts.confs import CONF_PROXY
 from custom_components.price_tracker.services.coupang.setup import CoupangSetup
 from custom_components.price_tracker.services.gsthefresh.setup import GsthefreshSetup
 from custom_components.price_tracker.services.idus.setup import IdusSetup
@@ -62,13 +64,14 @@ def price_tracker_setup_init(hass):
     return vol.Schema(
         {
             vol.Required(_SERVICE_TYPE, default=None): vol.In(_KIND),
+            vol.Optional(CONF_PROXY, default=''): cv.string,
             **Lang(hass).selector(),
         }
     )
 
 
 def price_tracker_setup_service(
-    service_type: str = None, config_flow: config_entries.ConfigFlow = None
+        service_type: str = None, config_flow: config_entries.ConfigFlow = None
 ) -> PriceTrackerSetup | None:
     if service_type is None or config_flow is None:
         """Do nothing"""
@@ -81,9 +84,9 @@ def price_tracker_setup_service(
 
 
 def price_tracker_setup_option_service(
-    service_type: str = None,
-    option_flow: config_entries.OptionsFlow = None,
-    config_entry: any = None,
+        service_type: str = None,
+        option_flow: config_entries.OptionsFlow = None,
+        config_entry: any = None,
 ) -> PriceTrackerSetup | None:
     if service_type is None or option_flow is None:
         """Do nothing"""

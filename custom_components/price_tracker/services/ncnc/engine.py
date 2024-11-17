@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.datas.item import ItemData
@@ -17,10 +18,12 @@ _X_API = "D3aDpWlEkz7dAp5o2Ew8zZbc4N9mnyK9JFCHgy30"
 
 
 class NcncEngine(PriceEngine):
-    def __init__(self, item_url: str):
+    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
         self.item_url = item_url
         id = NcncEngine.parse_id(item_url)
         self.id = id["product_id"]
+        self._proxy = proxy
+        self._device = device
 
     async def load(self) -> ItemData:
         response = await http_request(

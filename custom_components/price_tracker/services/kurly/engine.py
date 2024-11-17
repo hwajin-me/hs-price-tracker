@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
@@ -19,9 +20,11 @@ _ITEM_LINK = "https://www.kurly.com/goods/{}"
 
 
 class KurlyEngine(PriceEngine):
-    def __init__(self, item_url: str):
+    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
         self.item_url = item_url
         self.id = KurlyEngine.parse_id(item_url)
+        self._proxy = proxy
+        self._device = device
 
     async def load(self) -> ItemData | None:
         auth_response = await http_request("get", _AUTH_URL)

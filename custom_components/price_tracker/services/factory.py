@@ -8,6 +8,7 @@ from custom_components.price_tracker.services.oasis.engine import OasisEngine
 from custom_components.price_tracker.services.oliveyoung.engine import OliveyoungEngine
 from custom_components.price_tracker.services.smartstore.engine import SmartstoreEngine
 from custom_components.price_tracker.services.ssg.engine import SsgEngine
+from custom_components.price_tracker.utilities.list import Lu
 
 _SERVICE_ITEM_URL_PARSER = {
     CoupangEngine.engine_code(): lambda cfg: CoupangEngine.parse_id(cfg),
@@ -34,17 +35,15 @@ _SERVICE_ITEM_TARGET_PARSER = {
 }
 
 _SERVICE_ITEM_ENGINE = {
-    CoupangEngine.engine_code(): lambda cfg: CoupangEngine(cfg),
-    GsTheFreshEngine.engine_code(): lambda cfg: GsTheFreshEngine(
-        item_url=cfg["item_url"], device=cfg["device"]
-    ),
-    IdusEngine.engine_code(): lambda cfg: IdusEngine(cfg),
-    KurlyEngine.engine_code(): lambda cfg: KurlyEngine(cfg),
-    NcncEngine.engine_code(): lambda cfg: NcncEngine(cfg),
-    OasisEngine.engine_code(): lambda cfg: OasisEngine(cfg),
-    OliveyoungEngine.engine_code(): lambda cfg: OliveyoungEngine(cfg),
-    SmartstoreEngine.engine_code(): lambda cfg: SmartstoreEngine(cfg),
-    SsgEngine.engine_code(): lambda cfg: SsgEngine(cfg),
+    CoupangEngine.engine_code(): lambda **cfg: CoupangEngine(**cfg),
+    GsTheFreshEngine.engine_code(): lambda **cfg: GsTheFreshEngine(**cfg),
+    IdusEngine.engine_code(): lambda **cfg: IdusEngine(**cfg),
+    KurlyEngine.engine_code(): lambda **cfg: KurlyEngine(**cfg),
+    NcncEngine.engine_code(): lambda **cfg: NcncEngine(**cfg),
+    OasisEngine.engine_code(): lambda **cfg: OasisEngine(**cfg),
+    OliveyoungEngine.engine_code(): lambda **cfg: OliveyoungEngine(**cfg),
+    SmartstoreEngine.engine_code(): lambda **cfg: SmartstoreEngine(**cfg),
+    SsgEngine.engine_code(): lambda **cfg: SsgEngine(**cfg),
 }
 
 _SERVICE_DEVICE_PARSER = {

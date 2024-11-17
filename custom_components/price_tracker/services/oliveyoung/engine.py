@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
@@ -14,10 +15,12 @@ _THUMB = "https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbn
 
 
 class OliveyoungEngine(PriceEngine):
-    def __init__(self, item_url: str):
+    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
         self.item_url = item_url
         self.id = OliveyoungEngine.parse_id(item_url)
         self.goods_number = self.id
+        self._proxy = proxy
+        self._device = device
 
     async def load(self) -> ItemData:
         response = await http_request_async(

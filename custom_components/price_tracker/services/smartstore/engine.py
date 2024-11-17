@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
@@ -28,21 +29,26 @@ _THREAD_LIMIT = asyncio.Semaphore(4)
 
 
 class SmartstoreEngine(PriceEngine):
-    def __init__(self, item_url: str):
+    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
         self.store_type = self.id["store_type"]
         self.detail_type = self.id["detail_type"]
         self.store = self.id["store"]
         self.product_id = self.id["product_id"]
+        self._proxy = proxy
+        self._device = device
 
     async def load(self) -> ItemData | None:
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.224)
 
         url = _URL.format(
             self.store_type, self.store, self.detail_type, self.product_id
         )
-        response = await SafeRequest().request(method=SafeRequestMethod.GET, url=url)
+        request = SafeRequest()
+        request.proxy(self._proxy)
+        await request.user_agent(mobile_random=True)
+        response = await request.request(method=SafeRequestMethod.GET, url=url)
 
         text = response.text
 
