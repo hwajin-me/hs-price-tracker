@@ -346,7 +346,7 @@ class SafeRequest:
             "Sec-Fetch-Dest": "document",
             "Priority": "u=0, i",
         }
-        self._timeout = 30
+        self._timeout = 60
         self._proxies: list[str] = []
         self._cookies: dict = {}
         self._proxy_opensource = False
@@ -505,7 +505,7 @@ class SafeRequest:
         method: SafeRequestMethod = SafeRequestMethod.GET,
         data: dict = None,
         proxy: str = None,
-        timeout: int = 30,
+        timeout: int = 60,
         fn: Optional[
             Callable[[SafeRequestResponseData], SafeRequestResponseData]
         ] = None,
@@ -542,7 +542,7 @@ class SafeRequest:
                         else proxy
                     )
 
-                _LOGGER.debug("Using proxy %s", proxy)
+                _LOGGER.debug("Using proxy %s for request [%s] %s", proxy, method.name, url)
             else:
                 _LOGGER.debug("Not using proxy")
 
@@ -595,6 +595,8 @@ class SafeRequest:
                     f"Failed to request {url} with {chain.__class__.__name__}: {e}"
                 )
                 errors.append(e)
+                if proxy is not None:
+                    SafeRequestProxyFacade.remove_proxy(proxy)
                 pass
             finally:
                 tries += 1

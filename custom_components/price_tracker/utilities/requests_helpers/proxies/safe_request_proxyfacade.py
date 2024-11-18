@@ -39,7 +39,7 @@ class SafeRequestProxyFacade:
     async def get_proxy(cls) -> str:
         if cls._updated_at is None or (
             datetime.now() - cls._updated_at
-        ).min > timedelta(minutes=60):
+        ).min > timedelta(minutes=30):
             cls._updated_at = datetime.now()
             for proxy in cls._proxy_engines:
                 try:
@@ -52,3 +52,8 @@ class SafeRequestProxyFacade:
                     )
 
         return random.choice(cls._proxies)
+
+    @classmethod
+    def remove_proxy(cls, proxy: str) -> None:
+        if proxy in cls._proxies:
+            cls._proxies.remove(proxy)

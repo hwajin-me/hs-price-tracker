@@ -54,8 +54,9 @@ class SmartstoreEngine(PriceEngine):
         )
         request = SafeRequest()
         request.cookie("NAPP", "web")
-        request.proxy_opensource(self._proxy_opensource)
+        request.proxy_opensource(False)
         await request.user_agent(mobile_random=True)
+        request.proxy_opensource(self._proxy_opensource)
 
         await request.request(
             method=SafeRequestMethod.GET, url="https://wcs.naver.com/b", max_tries=1
@@ -73,6 +74,7 @@ class SmartstoreEngine(PriceEngine):
             )
 
         request.proxy(self._proxy)
+
         await request.request(
             method=SafeRequestMethod.GET,
             url=f"https://m.{self.store_type}.naver.com/{self.store}",
