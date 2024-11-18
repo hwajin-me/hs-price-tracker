@@ -14,6 +14,7 @@ from .consts.confs import (
     CONF_ITEM_REFRESH_INTERVAL,
     CONF_ITEM_MANAGEMENT_CATEGORY,
     CONF_PROXY,
+    CONF_PROXY_OPENSOURCE,
 )
 from .consts.defaults import DOMAIN
 from .datas.unit import ItemUnitType
@@ -37,6 +38,7 @@ async def async_setup_entry(
     devices = {}
     sensors = []
     proxy = Lu.get_or_default(config, CONF_PROXY, None)
+    proxy_opensource = Lu.get_or_default(config, CONF_PROXY_OPENSOURCE, False)
 
     if CONF_DEVICE in config:
         for device in config[CONF_DEVICE]:
@@ -59,9 +61,20 @@ async def async_setup_entry(
             else:
                 device = None
 
+            _LOGGER.debug(
+                "Registering sensor for device: %s, configuration is %s, %s - %s",
+                device,
+                target,
+                proxy,
+                proxy_opensource,
+            )
+
             sensor = PriceTrackerSensor(
                 engine=create_service_engine(type)(
-                    item_url=target[CONF_ITEM_URL], proxy=proxy, device=device
+                    item_url=target[CONF_ITEM_URL],
+                    proxy=proxy,
+                    device=device,
+                    proxy_opensource=proxy_opensource,
                 ),
                 device=device,
                 unit_type=ItemUnitType.of(target[CONF_ITEM_UNIT_TYPE])

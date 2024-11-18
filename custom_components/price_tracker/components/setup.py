@@ -18,7 +18,6 @@ from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.components.lang import Lang
 from custom_components.price_tracker.consts.confs import (
     CONF_TYPE,
-    CONF_PROXY,
     CONF_TARGET,
 )
 from custom_components.price_tracker.datas.unit import ItemUnitType
@@ -36,6 +35,7 @@ class PriceTrackerSetup:
     _config_flow: config_entries.ConfigFlow
     _option_flow: config_entries.OptionsFlow
     const_option_setup_select: str = "option_setup_select"
+    const_option_proxy_select: str = "option_proxy_select"
     const_option_modify_select: str = "option_modify_select"
     const_option_add_select: str = "option_add_select"
     const_option_entity_select: str = "option_entity_select"
@@ -46,6 +46,8 @@ class PriceTrackerSetup:
 
     conf_target: str = "target"
     conf_proxy = "proxy"
+    conf_proxy_opensource_use = "proxy_opensource"
+    conf_proxy_list = "proxy_list"
     # (private) conf for select
     conf_item_unique_id: str = "item_unique_id"
     conf_item_device_id: str = "item_device_id"
@@ -79,7 +81,6 @@ class PriceTrackerSetup:
         self._config_flow._abort_if_unique_id_configured(
             updates={
                 CONF_TARGET: user_input["service_type"],
-                CONF_PROXY: Lu.get(user_input, CONF_PROXY),
             }
         )  # Ignore the warning
 
@@ -108,6 +109,9 @@ class PriceTrackerSetup:
             },
             data_schema=vol.Schema(
                 {
+                    vol.Optional(self.const_option_proxy_select): vol.In(
+                        {self.const_option_proxy_select: self.const_option_proxy_select}
+                    ),
                     vol.Optional(
                         self.const_option_setup_select
                     ): selector.SelectSelector(
@@ -124,6 +128,110 @@ class PriceTrackerSetup:
                 **self._schema_user_input_option_service_device(user_input),
             ),
             errors={},
+        )
+
+    async def option_proxy(self, user_input: dict = None):
+        # Get items if the user_input is None
+        if user_input is None or self.conf_proxy_opensource_use not in user_input:
+            # Fetch original items
+            proxies = dict(self._config_entry.data).get(self.conf_proxy, [])
+            proxy_list = dict(self._config_entry.data).get(self.conf_proxy_list, [])
+            proxy_opensource_use = dict(self._config_entry.data).get(
+                self.conf_proxy_opensource_use, False
+            )
+
+            return self._option_flow.async_show_form(
+                step_id=self._step_setup,
+                description_placeholders={
+                    **Lang(self._option_flow.hass).f(
+                        key="title",
+                        items={
+                            "en": "Proxy configuration",
+                            "ja": "プロキシ設定",
+                            "ko": "프록시 설정",
+                        },
+                    ),
+                    **Lang(self._option_flow.hass).f(
+                        key="description",
+                        items={
+                            "en": "Set the proxy server to use when connecting to the site.",
+                            "ja": "サイトへの接続時に使用するプロキシ サーバーを設定します。",
+                            "ko": "사이트에 연결할 때 사용할 프록시 서버를 설정합니다.",
+                        },
+                    ),
+                },
+                data_schema=vol.Schema(
+                    {
+                        vol.Optional(
+                            self.const_option_proxy_select,
+                            default=self.const_option_proxy_select,
+                        ): vol.In(
+                            {
+                                self.const_option_proxy_select: self.const_option_proxy_select
+                            }
+                        ),
+                        vol.Optional(
+                            self.conf_proxy,
+                            description={"suggested_value": ",".join(proxies)},
+                        ): cv.string,
+                        vol.Optional(
+                            self.conf_proxy_list,
+                            description={"suggested_value": ",".join(proxy_list)},
+                        ): cv.string,
+                        vol.Optional(
+                            self.conf_proxy_opensource_use, default=proxy_opensource_use
+                        ): cv.boolean,
+                    }
+                ),
+            )
+
+        config = dict(self._config_entry.data)
+        options = dict(self._config_entry.options)
+        proxies = (
+            user_input[self.conf_proxy] if self.conf_proxy in user_input else ""
+        ).strip()
+        proxy_list = (
+            user_input[self.conf_proxy_list]
+            if self.conf_proxy_list in user_input
+            else ""
+        ).strip()
+        proxy_opensource_use = (
+            user_input[self.conf_proxy_opensource_use]
+            if self.conf_proxy_opensource_use in user_input
+            else False
+        )
+        config[self.conf_proxy] = (
+            Lu.map(str(proxies).split(","), lambda x: x.strip())
+            if proxies != ""
+            else []
+        )
+        config[self.conf_proxy_list] = (
+            Lu.map(str(proxy_list).split(","), lambda x: x.strip())
+            if proxy_list != ""
+            else []
+        )
+        config[self.conf_proxy_opensource_use] = proxy_opensource_use
+
+        # Filtering
+        config[self.conf_proxy] = list(
+            filter(lambda x: x != "", config[self.conf_proxy])
+        )
+        config[self.conf_proxy_list] = list(
+            filter(lambda x: x != "", config[self.conf_proxy_list])
+        )
+
+        _LOGGER.debug("Proxy configuration with %s (original: %s)", config, user_input)
+
+        flag = self._option_flow.hass.config_entries.async_update_entry(
+            entry=self._config_entry,
+            data={
+                **config,
+            },
+            options=options if options is not None else {},
+        )
+
+        return self._option_flow.async_abort(
+            reason="proxy_updated" if flag else "proxy_not_updated"
         )
 
     async def option_modify(self, device, entity, user_input: dict = None):
@@ -443,7 +551,6 @@ class PriceTrackerSetup:
     def setup_config_data(self, user_input: dict = None) -> dict:
         return {
             CONF_TYPE: user_input["service_type"],
-            CONF_PROXY: Lu.get(user_input, CONF_PROXY),
         }
 
     @staticmethod

@@ -9,6 +9,9 @@ class DawnMarketEngine(PriceEngine):
     def parse_id(item_url: str) -> any:
         match = re.search(r"goods-info/(?P<id>\w+)", item_url)
 
+        if match:
+            return match.group("id")
+
     @staticmethod
     def engine_name() -> str:
         return NAME

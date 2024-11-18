@@ -90,6 +90,13 @@ class GsthefreshSetup(PriceTrackerSetup):
                     self._config_flow._abort_if_unique_id_configured(
                         updates={
                             **entry.data,
+                            self.conf_proxy: Lu.get(entry.data, self.conf_proxy, []),
+                            self.conf_proxy_list: Lu.get(
+                                entry.data, self.conf_proxy_list, []
+                            ),
+                            self.conf_proxy_opensource_use: Lu.get(
+                                entry.data, self.conf_proxy_opensource_use, False
+                            ),
                             "device": Lu.remove_item(
                                 entry.data["device"], "item_device_id", unique_id
                             )
@@ -101,7 +108,17 @@ class GsthefreshSetup(PriceTrackerSetup):
 
                 return self._config_flow.async_create_entry(
                     title=self.setup_name(),
-                    data={"type": CODE, "device": [devices]},
+                    data={
+                        "type": CODE,
+                        "device": [devices],
+                        self.conf_proxy: Lu.get(user_input, self.conf_proxy, []),
+                        self.conf_proxy_list: Lu.get(
+                            user_input, self.conf_proxy_list, []
+                        ),
+                        self.conf_proxy_opensource_use: Lu.get(
+                            entry.data, self.conf_proxy_opensource_use, False
+                        ),
+                    },
                     options=dict(entry.options if entry is not None else {}),
                 )
         except AbortFlow as e:

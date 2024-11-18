@@ -12,10 +12,6 @@ from custom_components.price_tracker.services.kurly.const import NAME, CODE
 from custom_components.price_tracker.services.kurly.parser import KurlyParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.request import http_request
-from custom_components.price_tracker.utilities.safe_request import (
-    SafeRequest,
-    SafeRequestMethod,
-)
 
 _LOGGER = logging.getLogger(__name__)
 _AUTH_URL = "https://www.kurly.com/nx/api/session"

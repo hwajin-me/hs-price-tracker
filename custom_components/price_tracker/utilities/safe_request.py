@@ -4,20 +4,24 @@ import logging
 import random
 import ssl
 from enum import Enum
-from typing import Optional, Callable, Awaitable
+from typing import Optional, Callable
 
 import aiohttp
 import cloudscraper
 import fake_useragent
 import httpx
-import requests
 import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from voluptuous import default_factory
 from webdriver_manager.chrome import ChromeDriverManager
 
+import requests
 from custom_components.price_tracker.utilities.list import Lu
+from custom_components.price_tracker.utilities.requests_helpers.proxies.safe_request_proxyfacade import (
+    SafeRequestProxyFacade,
+)
+from custom_components.price_tracker.utilities.utils import random_bool
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
@@ -69,9 +73,9 @@ class SafeRequestEngine:
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict = None,
-        proxy: str = None,
-        timeout: int = 30,
+        data: dict,
+        proxy: str,
+        timeout: int,
     ) -> SafeRequestResponseData:
         pass
 
@@ -82,9 +86,9 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict = None,
-        proxy: str = None,
-        timeout: int = 30,
+        data: dict,
+        proxy: str,
+        timeout: int,
     ) -> SafeRequestResponseData:
         async with aiohttp.ClientSession() as session:
             async with session.request(
@@ -132,9 +136,9 @@ class SafeRequestEngineRequests(SafeRequestEngine):
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict = None,
-        proxy: str = None,
-        timeout: int = 30,
+        data: dict,
+        proxy: str,
+        timeout: int,
     ) -> SafeRequestResponseData:
         response = await asyncio.to_thread(
             requests.request,
@@ -173,9 +177,9 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict = None,
-        proxy: str = None,
-        timeout: int = 30,
+        data: dict,
+        proxy: str,
+        timeout: int,
     ) -> SafeRequestResponseData:
         manager = ChromeDriverManager()
         manager_install = await asyncio.to_thread(manager.install)
@@ -211,9 +215,9 @@ class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict = None,
-        proxy: str = None,
-        timeout: int = 30,
+        data: dict,
+        proxy: str,
+        timeout: int,
     ) -> SafeRequestResponseData:
         options = uc.ChromeOptions()
         options.add_argument("--disable-gpu")
@@ -245,9 +249,9 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict = None,
-        proxy: str = None,
-        timeout: int = 30,
+        data: dict,
+        proxy: str,
+        timeout: int,
     ) -> SafeRequestResponseData:
         scraper = await asyncio.to_thread(cloudscraper.create_scraper)
         scraper.ssl_context = ctx
@@ -287,9 +291,9 @@ class SafeRequestEngineHttpx(SafeRequestEngine):
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict = None,
-        proxy: str = None,
-        timeout: int = 30,
+        data: dict,
+        proxy: str,
+        timeout: int,
     ) -> SafeRequestResponseData:
         async with httpx.AsyncClient(verify=False, http2=True, proxy=proxy) as client:
             response = await client.request(
@@ -318,12 +322,6 @@ class SafeRequestEngineHttpx(SafeRequestEngine):
 
 
 class SafeRequest:
-    _headers: dict
-    _timeout: int = 30
-    _proxies: list = []
-    _cookies = {}
-    _chains: list[SafeRequestEngine] = []
-
     def __init__(self, chains: list[SafeRequestEngine] = None):
         self._chains = (
             [
@@ -348,12 +346,39 @@ class SafeRequest:
             "Sec-Fetch-Dest": "document",
             "Priority": "u=0, i",
         }
+        self._timeout = 30
+        self._proxies: list[str] = []
+        self._cookies: dict = {}
+        self._proxy_opensource = False
 
     def accept_text_html(self):
         """"""
         self._headers["Accept"] = (
             "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
         )
+
+        return self
+
+    def accept_language(self, language: str, is_random: bool = False):
+        """"""
+        if is_random:
+            languages = [
+                "en-US",
+                "en-US,en;q=0.9",
+                "en-US,en;q=0.9,ko;q=0.8",
+                "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7",
+                "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6",
+                "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
+                "en",
+                "ko",
+                "ko-KR",
+                "ja",
+                "zh-CN",
+                "zh",
+            ]
+            self._headers["Accept-Language"] = random.choice(languages)
+        else:
+            self._headers["Accept-Language"] = language
 
         return self
 
@@ -384,14 +409,6 @@ class SafeRequest:
 
         return self
 
-    def user_agent_nexus(self):
-        """"""
-        self._headers["User-Agent"] = (
-            "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36"
-        )
-
-        return self
-
     def chains(self, chains: list[SafeRequestEngine]):
         """"""
         self._chains = chains
@@ -402,6 +419,8 @@ class SafeRequest:
         """"""
         if token is not None:
             self._headers["Authorization"] = f"Bearer {token}"
+        else:
+            self._headers.pop("Authorization", None)
 
         return self
 
@@ -455,28 +474,28 @@ class SafeRequest:
 
         return self
 
-    def cookie(
-        self, key: str = None, value: str = None, str: str = None, dict: dict = None
-    ):
+    def proxy_opensource(self, is_use: bool = False):
         """"""
-        if key is not None and value is not None and str is None and dict is None:
-            return self
-
-        if str is not None:
-            self._cookies = {
-                **self._cookies,
-                **Lu.map(str.split(";"), lambda x: x.split("=")).to_dict(),
-            }
-        elif dict is not None:
-            self._cookies = {**self._cookies, **dict}
-        else:
-            self._cookies[key] = value
+        self._proxy_opensource = is_use
 
         return self
 
-    def before(self, fn: Callable[[], Awaitable[SafeRequestResponseData]]):
+    def cookie(
+        self, key: str = None, value: str = None, data: str = None, item: dict = None
+    ):
         """"""
-        self._before = fn
+        if key is not None and value is not None and data is None and item is None:
+            return self
+
+        if data is not None:
+            self._cookies = {
+                **self._cookies,
+                **Lu.map(data.split(";"), lambda x: x.split("=")).to_dict(),
+            }
+        elif item is not None:
+            self._cookies = {**self._cookies, **item}
+        else:
+            self._cookies[key] = value
 
         return self
 
@@ -504,10 +523,28 @@ class SafeRequest:
                 return return_data
 
             proxy = (
-                random.choice(self._proxies + [None])
-                if proxy is None and len(self._proxies) > 0
-                else None
+                (
+                    random.choice(self._proxies + [None])
+                    if proxy is None and len(self._proxies) > 0
+                    else None
+                )
+                if not self._proxy_opensource
+                else await SafeRequestProxyFacade.get_proxy()
             )
+
+            if self._proxy_opensource:
+                if proxy is None:
+                    proxy = await SafeRequestProxyFacade.get_proxy()
+                else:
+                    proxy = (
+                        await SafeRequestProxyFacade.get_proxy()
+                        if random_bool()
+                        else proxy
+                    )
+
+                _LOGGER.debug("Using proxy %s", proxy)
+            else:
+                _LOGGER.debug("Not using proxy")
 
             try:
                 return_data = await chain.request(
@@ -521,8 +558,8 @@ class SafeRequest:
                             "Origin": url.split("/")[0] + "//" + url.split("/")[2]
                             if url.startswith("http")
                             else url.split("/")[0],
-                        }
-                        ** {
+                        },
+                        **{
                             "Cookie": "; ".join(
                                 [f"{k}={v}" for k, v in self._cookies.items()]
                             ),
@@ -536,7 +573,7 @@ class SafeRequest:
                 )
 
                 if return_data.status_code <= 399:
-                    self.cookie(dict=return_data.cookies)
+                    self.cookie(item=return_data.cookies)
 
                 if fn is not None:
                     return_data = fn(return_data)

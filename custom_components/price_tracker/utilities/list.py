@@ -92,3 +92,7 @@ class Lu:
     @staticmethod
     def map(target: [any], lambda_function):
         return list(map(lambda_function, target))
+
+    @staticmethod
+    def filter(target: [any], lambda_function):
+        return list(filter(lambda_function, target))

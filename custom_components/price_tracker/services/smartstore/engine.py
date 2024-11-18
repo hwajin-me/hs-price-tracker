@@ -29,7 +29,13 @@ _REQUEST_HEADER = {
 
 
 class SmartstoreEngine(PriceEngine):
-    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
+    def __init__(
+        self,
+        item_url: str,
+        device: None = None,
+        proxy: Optional[str] = None,
+        proxy_opensource: bool = False,
+    ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
         self.store_type = self.id["store_type"]
@@ -37,6 +43,7 @@ class SmartstoreEngine(PriceEngine):
         self.store = self.id["store"]
         self.product_id = self.id["product_id"]
         self._proxy = proxy
+        self._proxy_opensource = proxy_opensource
         self._device = device
 
     async def load(self) -> ItemData | None:
@@ -47,6 +54,7 @@ class SmartstoreEngine(PriceEngine):
         )
         request = SafeRequest()
         request.cookie("NAPP", "web")
+        request.proxy_opensource(self._proxy_opensource)
         await request.user_agent(mobile_random=True)
 
         await request.request(

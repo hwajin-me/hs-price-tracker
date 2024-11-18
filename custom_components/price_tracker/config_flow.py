@@ -91,6 +91,14 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is None:
             return await self.setup.option_setup(user_input)
 
+        # Proxy configuration
+        if (
+            self.setup.const_option_proxy_select in user_input
+            and user_input[self.setup.const_option_proxy_select]
+            == self.setup.const_option_proxy_select
+        ):
+            return await self.setup.option_proxy(user_input)
+
         # 1
         if self.setup.const_option_setup_select in user_input:
             if self.setup.const_option_select_device not in user_input:
