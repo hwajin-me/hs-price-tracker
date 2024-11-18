@@ -4,10 +4,17 @@ from typing import Optional
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
 from custom_components.price_tracker.datas.item import ItemData
-from custom_components.price_tracker.services.oliveyoung.const import CODE, NAME
+from custom_components.price_tracker.services.oliveyoung.const import (
+    CODE,
+    NAME,
+    OLIVEYOUNG_USER_AGENT,
+)
 from custom_components.price_tracker.services.oliveyoung.parser import OliveyoungParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
-from custom_components.price_tracker.utilities.request import http_request_async
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
+)
 
 _URL = "https://m.oliveyoung.co.kr/m/goods/getGoodsDetail.do?goodsNo={}"
 _UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 appVer/3.18.1 osType/10 osVer/18.0"
@@ -23,13 +30,13 @@ class OliveyoungEngine(PriceEngine):
         self._device = device
 
     async def load(self) -> ItemData:
-        response = await http_request_async(
-            method="get",
-            url=_URL.format(self.goods_number),
-            headers={"User-Agent": _UA},
+        request = SafeRequest()
+        await request.user_agent(user_agent=OLIVEYOUNG_USER_AGENT)
+        response = await request.request(
+            method=SafeRequestMethod.GET, url=_URL.format(self.goods_number)
         )
-        logging_for_response(response, __name__)
-        oliveyoung_parser = OliveyoungParser(text=response.text)
+        logging_for_response(response, __name__, "oliveyoung")
+        oliveyoung_parser = OliveyoungParser(text=response.data)
 
         return ItemData(
             id=self.id_str(),

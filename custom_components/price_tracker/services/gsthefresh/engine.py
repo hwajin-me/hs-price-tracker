@@ -33,7 +33,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class GsTheFreshEngine(PriceEngine):
-    def __init__(self, item_url: str, device: GsTheFreshDevice, proxy: str | None = None):
+    def __init__(
+        self, item_url: str, device: GsTheFreshDevice, proxy: str | None = None
+    ):
         self.item_url = item_url
         self.id = GsTheFreshEngine.parse_id(item_url)
         self.device: GsTheFreshDevice = device

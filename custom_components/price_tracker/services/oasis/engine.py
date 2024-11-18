@@ -8,7 +8,10 @@ from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.oasis.const import NAME, CODE
 from custom_components.price_tracker.services.oasis.parser import OasisParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
-from custom_components.price_tracker.utilities.request import http_request_async, proxy_server
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
+)
 
 _LOGGER = logging.getLogger(__name__)
 _URL = "https://m.oasis.co.kr/product/detail/{}"
@@ -23,9 +26,11 @@ class OasisEngine(PriceEngine):
         self._device = device
 
     async def load(self) -> ItemData:
-        http_result = await http_request_async("get", _URL.format(self.product_id))
-        response = http_result.text
-        oasis_parser = OasisParser(text=response)
+        request = SafeRequest()
+        response = await request.request(
+            method=SafeRequestMethod.GET, url=_URL.format(self.product_id)
+        )
+        oasis_parser = OasisParser(text=response.data)
         logging_for_response(response, __name__)
 
         return ItemData(

@@ -16,7 +16,11 @@ from custom_components.price_tracker.components.error import (
 )
 from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.components.lang import Lang
-from custom_components.price_tracker.consts.confs import CONF_TYPE, CONF_PROXY, CONF_TARGET
+from custom_components.price_tracker.consts.confs import (
+    CONF_TYPE,
+    CONF_PROXY,
+    CONF_TARGET,
+)
 from custom_components.price_tracker.datas.unit import ItemUnitType
 from custom_components.price_tracker.services.factory import (
     create_service_item_url_parser,
@@ -41,6 +45,7 @@ class PriceTrackerSetup:
     const_option_select_entity: str = "service_entity"
 
     conf_target: str = "target"
+    conf_proxy = "proxy"
     # (private) conf for select
     conf_item_unique_id: str = "item_unique_id"
     conf_item_device_id: str = "item_device_id"
@@ -71,10 +76,12 @@ class PriceTrackerSetup:
             self._async_set_unique_id(user_input)
         )
         # @ignore
-        self._config_flow._abort_if_unique_id_configured(updates={
-            CONF_TARGET: user_input['service_type'],
-            CONF_PROXY: Lu.get(user_input, CONF_PROXY)
-        })  # Ignore the warning
+        self._config_flow._abort_if_unique_id_configured(
+            updates={
+                CONF_TARGET: user_input["service_type"],
+                CONF_PROXY: Lu.get(user_input, CONF_PROXY),
+            }
+        )  # Ignore the warning
 
         return self._config_flow.async_create_entry(
             title=self.setup_name(), data={**self.setup_config_data(user_input)}
@@ -434,7 +441,10 @@ class PriceTrackerSetup:
         )
 
     def setup_config_data(self, user_input: dict = None) -> dict:
-        return {CONF_TYPE: user_input["service_type"], CONF_PROXY: Lu.get(user_input, CONF_PROXY)}
+        return {
+            CONF_TYPE: user_input["service_type"],
+            CONF_PROXY: Lu.get(user_input, CONF_PROXY),
+        }
 
     @staticmethod
     def setup_code() -> str:

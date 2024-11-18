@@ -8,7 +8,6 @@ from custom_components.price_tracker.services.oasis.engine import OasisEngine
 from custom_components.price_tracker.services.oliveyoung.engine import OliveyoungEngine
 from custom_components.price_tracker.services.smartstore.engine import SmartstoreEngine
 from custom_components.price_tracker.services.ssg.engine import SsgEngine
-from custom_components.price_tracker.utilities.list import Lu
 
 _SERVICE_ITEM_URL_PARSER = {
     CoupangEngine.engine_code(): lambda cfg: CoupangEngine.parse_id(cfg),

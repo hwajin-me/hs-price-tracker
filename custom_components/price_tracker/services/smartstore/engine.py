@@ -15,6 +15,7 @@ from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
 )
+from custom_components.price_tracker.utilities.utils import random_bool
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +26,6 @@ _REQUEST_HEADER = {
     "accept-encoding": "gzip, zlib, deflate, zstd, br",
     "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
 }
-_THREAD_LIMIT = asyncio.Semaphore(4)
 
 
 class SmartstoreEngine(PriceEngine):
@@ -46,8 +46,30 @@ class SmartstoreEngine(PriceEngine):
             self.store_type, self.store, self.detail_type, self.product_id
         )
         request = SafeRequest()
-        request.proxy(self._proxy)
+        request.cookie("NAPP", "web")
         await request.user_agent(mobile_random=True)
+
+        await request.request(
+            method=SafeRequestMethod.GET, url="https://wcs.naver.com/b", max_tries=1
+        )
+        await request.request(
+            method=SafeRequestMethod.GET,
+            url="https://slc.commerce.naver.com/m",
+            max_tries=1,
+        )
+        if random_bool():
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://nam.veta.naver.com/nac/1",
+                max_tries=1,
+            )
+
+        request.proxy(self._proxy)
+        await request.request(
+            method=SafeRequestMethod.GET,
+            url=f"https://m.{self.store_type}.naver.com/{self.store}",
+            max_tries=1,
+        )
         response = await request.request(method=SafeRequestMethod.GET, url=url)
 
         text = response.text

@@ -6,9 +6,9 @@ from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.ncnc.const import CODE, NAME
 from custom_components.price_tracker.services.ncnc.parser import NcncParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
-from custom_components.price_tracker.utilities.request import (
-    default_request_headers,
-    http_request,
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,16 +26,12 @@ class NcncEngine(PriceEngine):
         self._device = device
 
     async def load(self) -> ItemData:
-        response = await http_request(
-            "get",
-            _URL.format(self.id),
-            headers={
-                **default_request_headers(),
-                "User-Agent": _UA,
-                "x-api-key": _X_API,
-            },
+        request = SafeRequest()
+        request.header(key="x-api-key", value=_X_API)
+        response = await request.request(
+            method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
-        data = response["data"]
+        data = response.data
         ncnc_parser = NcncParser(text=data)
         logging_for_response(data, __name__)
 

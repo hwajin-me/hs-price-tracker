@@ -64,14 +64,14 @@ def price_tracker_setup_init(hass):
     return vol.Schema(
         {
             vol.Required(_SERVICE_TYPE, default=None): vol.In(_KIND),
-            vol.Optional(CONF_PROXY, default=''): cv.string,
+            vol.Optional(CONF_PROXY, default=""): cv.string,
             **Lang(hass).selector(),
         }
     )
 
 
 def price_tracker_setup_service(
-        service_type: str = None, config_flow: config_entries.ConfigFlow = None
+    service_type: str = None, config_flow: config_entries.ConfigFlow = None
 ) -> PriceTrackerSetup | None:
     if service_type is None or config_flow is None:
         """Do nothing"""
@@ -84,9 +84,9 @@ def price_tracker_setup_service(
 
 
 def price_tracker_setup_option_service(
-        service_type: str = None,
-        option_flow: config_entries.OptionsFlow = None,
-        config_entry: any = None,
+    service_type: str = None,
+    option_flow: config_entries.OptionsFlow = None,
+    config_entry: any = None,
 ) -> PriceTrackerSetup | None:
     if service_type is None or option_flow is None:
         """Do nothing"""

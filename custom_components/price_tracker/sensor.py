@@ -12,7 +12,8 @@ from .consts.confs import (
     CONF_ITEM_UNIT_TYPE,
     CONF_ITEM_UNIT,
     CONF_ITEM_REFRESH_INTERVAL,
-    CONF_ITEM_MANAGEMENT_CATEGORY, CONF_PROXY,
+    CONF_ITEM_MANAGEMENT_CATEGORY,
+    CONF_PROXY,
 )
 from .consts.defaults import DOMAIN
 from .datas.unit import ItemUnitType
@@ -23,9 +24,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-        hass: core.HomeAssistant,
-        config_entry: config_entries.ConfigEntry,
-        async_add_entities,
+    hass: core.HomeAssistant,
+    config_entry: config_entries.ConfigEntry,
+    async_add_entities,
 ):
     config = hass.data[DOMAIN][config_entry.entry_id]
     type = config[CONF_TYPE]
@@ -65,11 +66,11 @@ async def async_setup_entry(
                 device=device,
                 unit_type=ItemUnitType.of(target[CONF_ITEM_UNIT_TYPE])
                 if CONF_ITEM_UNIT_TYPE in target
-                   and target[CONF_ITEM_UNIT_TYPE] != "auto"
+                and target[CONF_ITEM_UNIT_TYPE] != "auto"
                 else ItemUnitType.PIECE,
                 unit_value=Lu.get(target, CONF_ITEM_UNIT, 1)
                 if CONF_ITEM_UNIT_TYPE in target
-                   and target[CONF_ITEM_UNIT_TYPE] != "auto"
+                and target[CONF_ITEM_UNIT_TYPE] != "auto"
                 else 1,
                 refresh_period=Lu.get(target, CONF_ITEM_REFRESH_INTERVAL, 30),
                 management_category=Lu.get(target, CONF_ITEM_MANAGEMENT_CATEGORY, None),
@@ -84,7 +85,7 @@ async def async_setup_entry(
 
 
 async def update_listener(
-        hass: core.HomeAssistant, entry: config_entries.ConfigEntry
+    hass: core.HomeAssistant, entry: config_entries.ConfigEntry
 ) -> None:
     """Update listener."""
     await hass.config_entries.async_reload(entry.entry_id)
