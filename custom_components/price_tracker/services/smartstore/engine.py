@@ -47,54 +47,21 @@ class SmartstoreEngine(PriceEngine):
         url = _URL.format(
             self.store_type, self.store, self.detail_type, self.product_id
         )
-        request = SafeRequest()
-        await request.user_agent(mobile_random=True, pc_random=True)
-        if random_bool():
-            await request.request(
-                method=SafeRequestMethod.GET, url="https://wcs.naver.com/b", max_tries=1
-            )
-        if random_bool():
-            await request.request(
-                method=SafeRequestMethod.GET,
-                url="https://slc.commerce.naver.com/m",
-                max_tries=1,
-            )
-        request.proxies(self._proxies)
+        request = SafeRequest(
+            proxies=self._proxies,
+        )
         request.accept_text_html().accept_language(
             language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
         ).accept_encoding("gzip, zlib, deflate, zstd, br")
         await request.user_agent(
-            user_agent="Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36"
+            user_agent="Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
         )
-        request.headers(
-            {
-                "host": "m.{}.naver.com".format(self.store_type),
-                "content-type": "application/x-www-form-urlencoded",
-                "Connection": "close",
-            }
-        )
-
-        await request.request(
-            method=SafeRequestMethod.GET,
-            url=f"https://m.{self.store_type}.naver.com/{self.store}",
-            max_tries=1,
-        )
-        if self.store_type == "brand":
-            request.accept_language(is_random=True)
-            await request.user_agent(mobile_random=True, pc_random=True)
+        request.content_type()
 
         response = await request.request(
             method=SafeRequestMethod.GET,
             url=url,
         )
-
-        if not response.has:
-            request.accept_language(is_random=True)
-            await request.user_agent(mobile_random=True, pc_random=True)
-            response = await request.request(
-                method=SafeRequestMethod.GET,
-                url=url,
-            )
 
         if not response.has:
             return None
