@@ -41,6 +41,10 @@
           "service_entity": "Service entity",
           "option_setup_select": "Select an option",
           "option_entity_delete": "Delete entity",
+          "proxy": "Proxy",
+          "proxy_list": "Proxy list",
+          "proxy_opensource": "Use open source proxy",
+          "option_proxy_select": "Proxy",
           "option_add_select": "Add entity",
           "item_url": "Product URL (e.g. https://www.amazon.com/dp/B07VGRJDFY)",
           "item_management_category": "Category (e.g. Electronics, Clothing, etc.)",
@@ -60,6 +64,7 @@
   "selector": {
     "option_setup_select": {
       "options": {
+        "option_proxy_select": "Proxy",
         "option_modify_select": "Modify entity",
         "option_add_select": "Add entity"
       }

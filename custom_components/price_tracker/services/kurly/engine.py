@@ -1,4 +1,3 @@
-import json
 import logging
 import re
 from typing import Optional
@@ -11,7 +10,10 @@ from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.kurly.const import NAME, CODE
 from custom_components.price_tracker.services.kurly.parser import KurlyParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
-from custom_components.price_tracker.utilities.request import http_request
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
+)
 
 _LOGGER = logging.getLogger(__name__)
 _AUTH_URL = "https://www.kurly.com/nx/api/session"
@@ -20,23 +22,30 @@ _ITEM_LINK = "https://www.kurly.com/goods/{}"
 
 
 class KurlyEngine(PriceEngine):
-    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
+    def __init__(
+        self, item_url: str, device: None = None, proxies: Optional[list] = None
+    ):
         self.item_url = item_url
         self.id = KurlyEngine.parse_id(item_url)
-        self._proxy = proxy
+        self._proxies = proxies
         self._device = device
 
     async def load(self) -> ItemData | None:
-        auth_response = await http_request("get", _AUTH_URL)
-        auth_data = json.loads(auth_response["data"])
-        response = await http_request(
-            method="get", url=_URL.format(self.id), auth=auth_data["accessToken"]
+        request = SafeRequest()
+        request.proxies(self._proxies)
+        auth_response = await request.request(
+            method=SafeRequestMethod.GET, url=_AUTH_URL
+        )
+        auth_data = auth_response.json
+        request.auth(auth_data["accessToken"])
+        response = await request.request(
+            method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
 
-        if response["status_code"] == 404:
+        if response.status_code == 404:
             return None
 
-        data = response["data"]
+        data = response.data
         kurly_parser = KurlyParser(text=data)
         logging_for_response(data, __name__, "kurly")
 

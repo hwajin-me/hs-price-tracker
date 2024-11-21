@@ -22,7 +22,7 @@ from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitTyp
 from custom_components.price_tracker.utilities.list import Lu
 
 _LOGGER = logging.getLogger(__name__)
-_THREAD_LIMIT = asyncio.Semaphore(12)
+_THREAD_LIMIT = asyncio.Semaphore(10)
 
 
 class PriceTrackerSensor(RestoreEntity):
@@ -99,17 +99,21 @@ class PriceTrackerSensor(RestoreEntity):
             self._updated_at,
             self._attr_available,
         )
-        self._update_updated_at()
         await _THREAD_LIMIT.acquire()
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.15)
 
         try:
             data = await self._engine.load()
 
             if data is None:
-                self._attr_available = True
-                self._attr_state = STATE_UNKNOWN
-                self._update_updated_at()
+                if (
+                    self._updated_at is None
+                    or self._updated_at + timedelta(days=1) < datetime.now()
+                ):
+                    self._attr_available = False
+                else:
+                    self._attr_available = True
+                _THREAD_LIMIT.release()
                 return None
 
             self._price_change = create_item_price_change(

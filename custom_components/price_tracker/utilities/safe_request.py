@@ -1,31 +1,33 @@
 import asyncio
 import dataclasses
+import json
 import logging
 import random
 import ssl
 from enum import Enum
-from typing import Optional, Callable
+from typing import Optional, Callable, Self, Awaitable
 
 import aiohttp
 import cloudscraper
 import fake_useragent
 import httpx
+import requests
 import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from voluptuous import default_factory
 from webdriver_manager.chrome import ChromeDriverManager
 
-import requests
 from custom_components.price_tracker.utilities.list import Lu
-from custom_components.price_tracker.utilities.requests_helpers.proxies.safe_request_proxyfacade import (
-    SafeRequestProxyFacade,
-)
-from custom_components.price_tracker.utilities.utils import random_bool
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+
+async def ssl_context():
+    ctx = await asyncio.to_thread(ssl.create_default_context)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    return ctx
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,6 +60,17 @@ class SafeRequestResponseData:
     @property
     def text(self):
         return self.data
+
+    @property
+    def has(self):
+        return self.status_code <= 399 and self.data is not None
+
+    @property
+    def json(self):
+        try:
+            return json.loads(self.data)
+        except json.JSONDecodeError:
+            return None
 
 
 class SafeRequestMethod(Enum):
@@ -96,6 +109,7 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
                 url=url,
                 headers=headers,
                 json=data,
+                data=data,
                 proxy=proxy,
                 timeout=timeout,
                 allow_redirects=True,
@@ -106,8 +120,7 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
                 read_until_eof=True,
                 expect100=True,
                 chunked=False,
-                ssl=ctx,
-                verify_ssl=False,
+                ssl=False,
             ) as response:
                 data = await response.text()
                 cookies = response.cookies
@@ -249,18 +262,17 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
         headers: dict,
         method: SafeRequestMethod,
         url: str,
-        data: dict,
+        data: any,
         proxy: str,
         timeout: int,
     ) -> SafeRequestResponseData:
         scraper = await asyncio.to_thread(cloudscraper.create_scraper)
-        scraper.ssl_context = ctx
         response = await asyncio.to_thread(
             scraper.request,
             method=method.name.lower(),
             url=url,
             headers=headers,
-            data=data,
+            json=data,
             proxies={
                 "http": proxy,
                 "https": proxy,
@@ -295,7 +307,7 @@ class SafeRequestEngineHttpx(SafeRequestEngine):
         proxy: str,
         timeout: int,
     ) -> SafeRequestResponseData:
-        async with httpx.AsyncClient(verify=False, http2=True, proxy=proxy) as client:
+        async with httpx.AsyncClient(verify=False, proxy=proxy) as client:
             response = await client.request(
                 method=method.name.lower(),
                 url=url,
@@ -326,11 +338,9 @@ class SafeRequest:
         self._chains = (
             [
                 SafeRequestEngineCloudscraper(),
-                SafeRequestEngineHttpx(),
                 SafeRequestEngineAiohttp(),
                 SafeRequestEngineRequests(),
-                SafeRequestEngineSelenium(),
-                SafeRequestEngineUndetectedSelenium(),
+                SafeRequestEngineHttpx(),
             ]
             if chains is None
             else chains
@@ -349,7 +359,6 @@ class SafeRequest:
         self._timeout = 60
         self._proxies: list[str] = []
         self._cookies: dict = {}
-        self._proxy_opensource = False
 
     def accept_text_html(self):
         """"""
@@ -359,7 +368,7 @@ class SafeRequest:
 
         return self
 
-    def accept_language(self, language: str, is_random: bool = False):
+    def accept_language(self, language: str = None, is_random: bool = False):
         """"""
         if is_random:
             languages = [
@@ -377,8 +386,14 @@ class SafeRequest:
                 "zh",
             ]
             self._headers["Accept-Language"] = random.choice(languages)
-        else:
+        elif language is not None:
             self._headers["Accept-Language"] = language
+
+        return self
+
+    def accept_encoding(self, encoding: str):
+        """"""
+        self._headers["Accept-Encoding"] = encoding
 
         return self
 
@@ -389,23 +404,26 @@ class SafeRequest:
         pc_random: bool = False,
     ):
         """"""
+        if user_agent is not None:
+            self._headers["User-Agent"] = user_agent
+            return self
+
+        platforms = []
         if mobile_random:
-            ua_engine = await asyncio.to_thread(
-                fake_useragent.UserAgent, platforms=["mobile"]
-            )
-            self._headers["User-Agent"] = ua_engine.random
+            platforms.append("mobile")
+        if pc_random:
+            platforms.append("pc")
+        ua_engine = await asyncio.to_thread(
+            fake_useragent.UserAgent, platforms=platforms
+        )
+        self._headers["User-Agent"] = ua_engine.random
+
+        if mobile_random:
             self._headers["Sec-Ch-Ua-Platform"] = '"Android"'
             self._headers["Sec-Ch-Ua-Mobile"] = "?0"
             self._headers["Sec-Ch-Ua"] = (
                 '"Not A;Brand";v="99", "Chromium";v="99", "Google Chrome";v="99"'
             )
-        elif pc_random:
-            ua_engine = await asyncio.to_thread(
-                fake_useragent.UserAgent, platforms=["pc"]
-            )
-            self._headers["User-Agent"] = ua_engine
-        else:
-            self._headers["User-Agent"] = user_agent
 
         return self
 
@@ -456,6 +474,12 @@ class SafeRequest:
 
         return self
 
+    def headers(self, headers: dict):
+        """"""
+        self._headers = {**self._headers, **headers}
+
+        return self
+
     def proxy(self, proxy: str | None = None):
         """"""
         if proxy is None:
@@ -465,18 +489,14 @@ class SafeRequest:
 
         return self
 
-    def proxies(self, proxies: list[str] | str):
+    def proxies(self, proxies: list[str] | str | None):
         """"""
         if isinstance(proxies, list):
             self._proxies = proxies
-        else:
+        elif isinstance(proxies, str):
             self._proxies = Lu.map([proxies.split(",")], lambda x: x.strip())
-
-        return self
-
-    def proxy_opensource(self, is_use: bool = False):
-        """"""
-        self._proxy_opensource = is_use
+        else:
+            self._proxies = []
 
         return self
 
@@ -503,62 +523,45 @@ class SafeRequest:
         self,
         url: str,
         method: SafeRequestMethod = SafeRequestMethod.GET,
-        data: dict = None,
-        proxy: str = None,
+        data: any = None,
         timeout: int = 60,
-        fn: Optional[
-            Callable[[SafeRequestResponseData], SafeRequestResponseData]
-        ] = None,
         raise_errors: bool = False,
         max_tries: int = 10,
+        post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
     ) -> SafeRequestResponseData:
         errors = []
         tries = 0
         return_data = SafeRequestResponseData()
 
         for chain in self._chains:
-            await asyncio.sleep(random.randrange(1, 3))
+            await asyncio.sleep(random.randrange(1, 2))
 
             if tries >= max_tries:
                 return return_data
 
+            if tries > 0 and post_try_callables is not None:
+                for callable_ in post_try_callables:
+                    await callable_(self)
+
             proxy = (
-                (
-                    random.choice(self._proxies + [None])
-                    if proxy is None and len(self._proxies) > 0
-                    else None
-                )
-                if not self._proxy_opensource
-                else await SafeRequestProxyFacade.get_proxy()
+                random.choice(self._proxies + [None])
+                if len(self._proxies) > 0
+                else None
             )
 
-            if self._proxy_opensource:
-                if proxy is None:
-                    proxy = await SafeRequestProxyFacade.get_proxy()
-                else:
-                    proxy = (
-                        await SafeRequestProxyFacade.get_proxy()
-                        if random_bool()
-                        else proxy
-                    )
-
-                _LOGGER.debug("Using proxy %s for request [%s] %s", proxy, method.name, url)
+            if proxy is not None:
+                _LOGGER.debug(
+                    "Using proxy %s for request [%s] %s", proxy, method.name, url
+                )
             else:
-                _LOGGER.debug("Not using proxy")
+                _LOGGER.debug(
+                    "No proxy %s for request [%s] %s", proxy, method.name, url
+                )
 
             try:
                 return_data = await chain.request(
                     headers={
                         **self._headers,
-                        **{
-                            "Host": url.split("/")[2]
-                            if url.startswith("http")
-                            else url.split("/")[0],
-                            "Referer": url,
-                            "Origin": url.split("/")[0] + "//" + url.split("/")[2]
-                            if url.startswith("http")
-                            else url.split("/")[0],
-                        },
                         **{
                             "Cookie": "; ".join(
                                 [f"{k}={v}" for k, v in self._cookies.items()]
@@ -575,11 +578,6 @@ class SafeRequest:
                 if return_data.status_code <= 399:
                     self.cookie(item=return_data.cookies)
 
-                if fn is not None:
-                    return_data = fn(return_data)
-                    if return_data is not None and return_data.access_token is not None:
-                        self.auth(return_data.access_token)
-
                 _LOGGER.debug(
                     "Safe request success with %s [%s] (%s) [Proxy: %s] <%s>",
                     chain.__class__.__name__,
@@ -595,8 +593,6 @@ class SafeRequest:
                     f"Failed to request {url} with {chain.__class__.__name__}: {e}"
                 )
                 errors.append(e)
-                if proxy is not None:
-                    SafeRequestProxyFacade.remove_proxy(proxy)
                 pass
             finally:
                 tries += 1

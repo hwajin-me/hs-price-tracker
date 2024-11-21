@@ -18,15 +18,18 @@ _URL = "https://m.oasis.co.kr/product/detail/{}"
 
 
 class OasisEngine(PriceEngine):
-    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
+    def __init__(
+        self, item_url: str, device: None = None, proxies: Optional[list] = None
+    ):
         self.item_url = item_url
         self.id = OasisEngine.parse_id(item_url)
         self.product_id = self.id
-        self._proxy = proxy
+        self._proxies = proxies
         self._device = device
 
     async def load(self) -> ItemData:
         request = SafeRequest()
+        await request.proxies(self._proxies)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.product_id)
         )

@@ -1,19 +1,20 @@
 import logging
 import re
+from typing import Optional
 from urllib.parse import unquote
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
-    ApiAuthError,
 )
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.services.gsthefresh.device import GsTheFreshDevice
 from custom_components.price_tracker.services.gsthefresh.parser import GsthefreshParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
-from custom_components.price_tracker.utilities.request import (
-    http_request,
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
 )
 
 _UA = "Dart/3.5 (dart:io)"
@@ -34,38 +35,24 @@ _LOGGER = logging.getLogger(__name__)
 
 class GsTheFreshEngine(PriceEngine):
     def __init__(
-        self, item_url: str, device: GsTheFreshDevice, proxy: str | None = None
+        self, item_url: str, device: GsTheFreshDevice, proxies: Optional[list] = None
     ):
         self.item_url = item_url
         self.id = GsTheFreshEngine.parse_id(item_url)
         self.device: GsTheFreshDevice = device
         self._last_failed = False
-        self._proxy = proxy
+        self._proxies = proxies
 
     async def load(self) -> ItemData:
-        try:
-            http_result = await http_request(
-                "get",
-                _PRODUCT_URL.format(self.id, self.device.store),
-                headers={**_REQUEST_HEADERS, **self.device.headers},
-                auth=self.device.access_token,
-                timeout=5,
-            )
-        except ApiAuthError as e:
-            self.device.invalid()
-            if self._last_failed is False:
-                self._last_failed = True
-            else:
-                raise e
-            http_result = await http_request(
-                "get",
-                _PRODUCT_URL.format(self.id, self.device.store),
-                headers={**_REQUEST_HEADERS, **self.device.headers},
-                auth=self.device.access_token,
-                timeout=5,
-            )
+        request = SafeRequest()
+        request.headers({**_REQUEST_HEADERS, **self.device.headers})
+        request.auth(self.device.access_token)
+        http_result = await request.request(
+            method=SafeRequestMethod.GET,
+            url=_PRODUCT_URL.format(self.id, self.device.store),
+        )
 
-        result = http_result["data"]
+        result = http_result.data
         gs_parser = GsthefreshParser(text=result)
         logging_for_response(result, __name__)
 

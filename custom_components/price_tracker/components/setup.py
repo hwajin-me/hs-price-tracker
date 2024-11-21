@@ -132,13 +132,9 @@ class PriceTrackerSetup:
 
     async def option_proxy(self, user_input: dict = None):
         # Get items if the user_input is None
-        if user_input is None or self.conf_proxy_opensource_use not in user_input:
+        if user_input is None or self.conf_proxy not in user_input:
             # Fetch original items
             proxies = dict(self._config_entry.data).get(self.conf_proxy, [])
-            proxy_list = dict(self._config_entry.data).get(self.conf_proxy_list, [])
-            proxy_opensource_use = dict(self._config_entry.data).get(
-                self.conf_proxy_opensource_use, False
-            )
 
             return self._option_flow.async_show_form(
                 step_id=self._step_setup,
@@ -174,13 +170,6 @@ class PriceTrackerSetup:
                             self.conf_proxy,
                             description={"suggested_value": ",".join(proxies)},
                         ): cv.string,
-                        vol.Optional(
-                            self.conf_proxy_list,
-                            description={"suggested_value": ",".join(proxy_list)},
-                        ): cv.string,
-                        vol.Optional(
-                            self.conf_proxy_opensource_use, default=proxy_opensource_use
-                        ): cv.boolean,
                     }
                 ),
             )
@@ -190,27 +179,13 @@ class PriceTrackerSetup:
         proxies = (
             user_input[self.conf_proxy] if self.conf_proxy in user_input else ""
         ).strip()
-        proxy_list = (
-            user_input[self.conf_proxy_list]
-            if self.conf_proxy_list in user_input
-            else ""
-        ).strip()
-        proxy_opensource_use = (
-            user_input[self.conf_proxy_opensource_use]
-            if self.conf_proxy_opensource_use in user_input
-            else False
-        )
         config[self.conf_proxy] = (
             Lu.map(str(proxies).split(","), lambda x: x.strip())
             if proxies != ""
             else []
         )
-        config[self.conf_proxy_list] = (
-            Lu.map(str(proxy_list).split(","), lambda x: x.strip())
-            if proxy_list != ""
-            else []
-        )
-        config[self.conf_proxy_opensource_use] = proxy_opensource_use
+        config[self.conf_proxy_list] = []
+        config[self.conf_proxy_opensource_use] = False
 
         # Filtering
         config[self.conf_proxy] = list(

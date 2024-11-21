@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import re
 from typing import Optional
@@ -33,8 +32,7 @@ class SmartstoreEngine(PriceEngine):
         self,
         item_url: str,
         device: None = None,
-        proxy: Optional[str] = None,
-        proxy_opensource: bool = False,
+        proxies: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -42,45 +40,65 @@ class SmartstoreEngine(PriceEngine):
         self.detail_type = self.id["detail_type"]
         self.store = self.id["store"]
         self.product_id = self.id["product_id"]
-        self._proxy = proxy
-        self._proxy_opensource = proxy_opensource
+        self._proxies = proxies
         self._device = device
 
     async def load(self) -> ItemData | None:
-        await asyncio.sleep(0.224)
-
         url = _URL.format(
             self.store_type, self.store, self.detail_type, self.product_id
         )
         request = SafeRequest()
-        request.cookie("NAPP", "web")
-        request.proxy_opensource(False)
-        await request.user_agent(mobile_random=True)
-        request.proxy_opensource(self._proxy_opensource)
-
-        await request.request(
-            method=SafeRequestMethod.GET, url="https://wcs.naver.com/b", max_tries=1
-        )
-        await request.request(
-            method=SafeRequestMethod.GET,
-            url="https://slc.commerce.naver.com/m",
-            max_tries=1,
-        )
+        await request.user_agent(mobile_random=True, pc_random=True)
+        if random_bool():
+            await request.request(
+                method=SafeRequestMethod.GET, url="https://wcs.naver.com/b", max_tries=1
+            )
         if random_bool():
             await request.request(
                 method=SafeRequestMethod.GET,
-                url="https://nam.veta.naver.com/nac/1",
+                url="https://slc.commerce.naver.com/m",
                 max_tries=1,
             )
-
-        request.proxy(self._proxy)
+        request.proxies(self._proxies)
+        request.accept_text_html().accept_language(
+            language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
+        ).accept_encoding("gzip, zlib, deflate, zstd, br")
+        await request.user_agent(
+            user_agent="Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36"
+        )
+        request.headers(
+            {
+                "host": "m.{}.naver.com".format(self.store_type),
+                "content-type": "application/x-www-form-urlencoded",
+                "content-length": "0",
+                "Connection": "close",
+            }
+        )
 
         await request.request(
             method=SafeRequestMethod.GET,
             url=f"https://m.{self.store_type}.naver.com/{self.store}",
             max_tries=1,
         )
-        response = await request.request(method=SafeRequestMethod.GET, url=url)
+        if self.store_type == "brand":
+            request.accept_language(is_random=True)
+            await request.user_agent(mobile_random=True, pc_random=True)
+
+        response = await request.request(
+            method=SafeRequestMethod.GET,
+            url=url,
+        )
+
+        if not response.has:
+            request.accept_language(is_random=True)
+            await request.user_agent(mobile_random=True, pc_random=True)
+            response = await request.request(
+                method=SafeRequestMethod.GET,
+                url=url,
+            )
+
+        if not response.has:
+            return None
 
         text = response.text
 

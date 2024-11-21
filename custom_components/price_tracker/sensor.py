@@ -72,9 +72,8 @@ async def async_setup_entry(
             sensor = PriceTrackerSensor(
                 engine=create_service_engine(type)(
                     item_url=target[CONF_ITEM_URL],
-                    proxy=proxy,
+                    proxies=proxy,
                     device=device,
-                    proxy_opensource=proxy_opensource,
                 ),
                 device=device,
                 unit_type=ItemUnitType.of(target[CONF_ITEM_UNIT_TYPE])

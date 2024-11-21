@@ -17,7 +17,10 @@ from custom_components.price_tracker.services.gsthefresh.device import (
 )
 from custom_components.price_tracker.utilities.hash import md5
 from custom_components.price_tracker.utilities.list import Lu
-from custom_components.price_tracker.utilities.request import http_request_async
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -188,10 +191,11 @@ class GsthefreshSetup(PriceTrackerSetup):
             if len(search) == 1:
                 errors["base"] = "invalid_search"
         else:
-            response = await http_request_async(
-                method="get", url=self._api_search_mart.format(search)
+            request = SafeRequest()
+            response = await request.request(
+                method=SafeRequestMethod.GET, url=self._api_search_mart.format(search)
             )
-            data = response.text
+            data = response.data
             if data is None or "results" not in json.loads(data):
                 errors["base"] = "invalid_search"
             else:

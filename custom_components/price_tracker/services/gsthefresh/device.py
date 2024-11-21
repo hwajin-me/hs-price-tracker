@@ -11,8 +11,11 @@ from custom_components.price_tracker.components.error import ApiError, ApiAuthEr
 from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.utilities.list import Lu
 from custom_components.price_tracker.utilities.request import (
-    http_request,
     default_request_headers,
+)
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
 )
 
 _UA = "Dart/3.5 (dart:io)"
@@ -38,61 +41,52 @@ class GsTheFreshLogin:
     """"""
 
     async def naver_login(self, code: str, device_id: str) -> dict[str, Any]:
-        async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False)
-        ) as session:
-            async with session.get(
-                url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(code),
-                headers={**default_request_headers(), **_REQUEST_HEADERS},
-            ) as response:
-                if response.status != 200:
-                    raise ApiError("GS THE FRESH - NAVER Response Error")
-                naver_response = await response.read()
+        request = SafeRequest()
+        request.headers({**default_request_headers(), **_REQUEST_HEADERS})
+        naver_response = await request.request(
+            url=CONF_GS_NAVER_LOGIN_FLOW_2_URL.format(code),
+        )
+        naver_response_json = naver_response.json
+        if "access_token" not in naver_response_json:
+            raise ApiError("GS THE FRESH - NAVER Response Error (No access token.)")
 
-                if "access_token" not in json.loads(naver_response):
-                    raise ApiError(
-                        "GS THE FRESH - NAVER Response Error (No access token.)"
-                    )
+        request.auth(naver_response_json["access_token"])
+        request.headers(
+            {
+                **default_request_headers(),
+                **_REQUEST_HEADERS,
+                "device_id": device_id,
+                "appinfo_device_id": device_id,
+                "content-type": "application/json",
+            }
+        )
+        response = await request.request(
+            method=SafeRequestMethod.POST,
+            url=CONF_GS_NAVER_LOGIN_FLOW_3_URL,
+            data={"socialType": "naver"},
+        )
 
-                temp_access_token = json.loads(naver_response)["access_token"]
+        if response.status_code != 200:
+            raise ApiError("GS THE FRESH - Authentication Error {}".format(response))
 
-                async with session.post(
-                    url=CONF_GS_NAVER_LOGIN_FLOW_3_URL,
-                    headers={
-                        **default_request_headers(),
-                        **_REQUEST_HEADERS,
-                        "device_id": device_id,
-                        "appinfo_device_id": device_id,
-                        "Authorization": "Bearer {}".format(temp_access_token),
-                        "content-type": "application/json",
-                    },
-                    json={"socialType": "naver"},
-                ) as login:
-                    if login.status != 200:
-                        raise ApiError(
-                            "GS THE FRESH - Authentication Error {}".format(login)
-                        )
+        j = response.json
 
-                    j = json.loads(await login.read())
+        if (
+            "data" not in j
+            or "accessToken" not in j["data"]
+            or "refreshToken" not in j["data"]
+            or "customer" not in j["data"]
+            or "customerName" not in j["data"]["customer"]
+            or "customerNumber" not in j["data"]["customer"]
+        ):
+            raise ApiError("GS THE FRESH Login API Parse Error - {}".format(j))
 
-                    if (
-                        "data" not in j
-                        or "accessToken" not in j["data"]
-                        or "refreshToken" not in j["data"]
-                        or "customer" not in j["data"]
-                        or "customerName" not in j["data"]["customer"]
-                        or "customerNumber" not in j["data"]["customer"]
-                    ):
-                        raise ApiError(
-                            "GS THE FRESH Login API Parse Error - {}".format(j)
-                        )
-
-                    return {
-                        "access_token": j["data"]["accessToken"],
-                        "refresh_token": j["data"]["refreshToken"],
-                        "name": j["data"]["customer"]["customerName"],
-                        "number": j["data"]["customer"]["customerNumber"],
-                    }
+        return {
+            "access_token": j["data"]["accessToken"],
+            "refresh_token": j["data"]["refreshToken"],
+            "name": j["data"]["customer"]["customerName"],
+            "number": j["data"]["customer"]["customerNumber"],
+        }
 
     async def login(self, device_id: str, username: str, password: str):
         sha256 = hashlib.sha256()
@@ -124,19 +118,21 @@ class GsTheFreshLogin:
                 }
 
     async def reauth(self, device_id: str, refresh_token: str) -> dict[str, Any]:
-        http_result = await http_request(
-            "post",
-            _REAUTH_URL,
-            headers={
+        request = SafeRequest()
+        request.headers(
+            {
                 **default_request_headers(),
                 **_REQUEST_HEADERS,
                 "appinfo_device_id": device_id,
                 "device_id": device_id,
-            },
-            auth=refresh_token,
+            }
         )
-        text = http_result["data"]
-        response = json.loads(text)
+        request.auth(refresh_token)
+        http_result = await request.request(
+            method=SafeRequestMethod.POST,
+            url=_REAUTH_URL,
+        )
+        response = http_result.json
 
         if "data" in response:
             j = response["data"]

@@ -8,23 +8,33 @@ from custom_components.price_tracker.components.error import (
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.idus.parser import IdusParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
-from custom_components.price_tracker.utilities.request import http_request
+from custom_components.price_tracker.utilities.safe_request import (
+    SafeRequest,
+    SafeRequestMethod,
+)
 
 _URL = "https://api.idus.com/v3/product/info?uuid={}"
 _ITEM_LINK = "https://www.idus.com/v2/product/{}"
 
 
 class IdusEngine(PriceEngine):
-    def __init__(self, item_url: str, device: None = None, proxy: Optional[str] = None):
+    def __init__(
+        self, item_url: str, device: None = None, proxies: Optional[list] = None
+    ):
         self.item_url = item_url
         self.id = IdusEngine.parse_id(item_url)
         self.product_id = self.id
-        self._proxy = proxy
+        self._proxy = proxies
         self._device = device
 
     async def load(self) -> ItemData:
-        response = await http_request(method="get", url=_URL.format(self.product_id))
-        data = response["data"]
+        request = SafeRequest()
+        await request.proxies(self._proxy)
+        await request.user_agent(mobile_random=True, pc_random=True)
+        response = await request.request(
+            method=SafeRequestMethod.GET, url=_URL.format(self.product_id)
+        )
+        data = response.data
         idus_parser = IdusParser(text=data)
         logging_for_response(data, __name__)
 
