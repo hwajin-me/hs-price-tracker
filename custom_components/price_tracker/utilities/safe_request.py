@@ -280,6 +280,7 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
             if proxy is not None
             else None,
             timeout=timeout,
+            verify=False,
         )
 
         if response.status_code > 399:

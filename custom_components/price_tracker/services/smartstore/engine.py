@@ -70,7 +70,6 @@ class SmartstoreEngine(PriceEngine):
             {
                 "host": "m.{}.naver.com".format(self.store_type),
                 "content-type": "application/x-www-form-urlencoded",
-                "content-length": "0",
                 "Connection": "close",
             }
         )
