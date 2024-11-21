@@ -13,6 +13,7 @@ from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
 )
+from custom_components.price_tracker.utilities.utils import random_bool
 
 _URL = "https://m.coupang.com/vm/products/{}?itemId={}&vendorItemId={}"
 _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
@@ -20,7 +21,7 @@ _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
 
 class CoupangEngine(PriceEngine):
     def __init__(
-        self, item_url: str, device: None = None, proxies: Optional[list] = None
+            self, item_url: str, device: None = None, proxies: Optional[list] = None
     ):
         self.item_url = item_url
         self.id = CoupangEngine.parse_id(item_url)
@@ -33,6 +34,17 @@ class CoupangEngine(PriceEngine):
     async def load(self) -> ItemData:
         request = SafeRequest()
         await request.user_agent(mobile_random=True)
+
+        if random_bool():
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://m.coupang.com"
+            )
+        if random_bool():
+            request.keep_alive()
+        if random_bool():
+            request.accept_text_html()
+        request.accept_language(is_random=True)
         request.proxies(self._proxy)
         response = await request.request(
             method=SafeRequestMethod.GET,
