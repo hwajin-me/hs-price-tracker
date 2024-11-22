@@ -21,8 +21,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from custom_components.price_tracker.utilities.list import Lu
 
 
-async def ssl_context():
-    ctx = await asyncio.to_thread(ssl.create_default_context)
+def ssl_context():
+    ctx = ssl.SSLContext()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
@@ -44,11 +44,11 @@ class SafeRequestResponseData:
     cookies: dict = default_factory({})
 
     def __init__(
-        self,
-        data: Optional[str] = None,
-        status_code: int = 400,
-        cookies=None,
-        access_token: Optional[str] = None,
+            self,
+            data: Optional[str] = None,
+            status_code: int = 400,
+            cookies=None,
+            access_token: Optional[str] = None,
     ):
         if cookies is None:
             cookies = {}
@@ -82,45 +82,45 @@ class SafeRequestMethod(Enum):
 
 class SafeRequestEngine:
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         pass
 
 
 class SafeRequestEngineAiohttp(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         async with aiohttp.ClientSession() as session:
             async with session.request(
-                method=method.name.lower(),
-                url=url,
-                headers=headers,
-                json=data,
-                data=data,
-                proxy=proxy,
-                timeout=timeout,
-                allow_redirects=True,
-                auto_decompress=True,
-                max_line_size=99999999,
-                read_bufsize=99999999,
-                compress=False,
-                read_until_eof=True,
-                expect100=True,
-                chunked=False,
-                ssl=False,
+                    method=method.name.lower(),
+                    url=url,
+                    headers=headers,
+                    json=data,
+                    data=data,
+                    proxy=proxy,
+                    timeout=timeout,
+                    allow_redirects=True,
+                    auto_decompress=True,
+                    max_line_size=99999999,
+                    read_bufsize=99999999,
+                    compress=False,
+                    read_until_eof=True,
+                    expect100=True,
+                    chunked=False,
+                    ssl=False,
             ) as response:
                 data = await response.text()
                 cookies = response.cookies
@@ -145,13 +145,13 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
 
 class SafeRequestEngineRequests(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         response = await asyncio.to_thread(
             requests.request,
@@ -186,13 +186,13 @@ class SafeRequestEngineRequests(SafeRequestEngine):
 
 class SafeRequestEngineSelenium(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         manager = ChromeDriverManager()
         manager_install = await asyncio.to_thread(manager.install)
@@ -224,13 +224,13 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
 
 class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         options = uc.ChromeOptions()
         options.add_argument("--disable-gpu")
@@ -258,15 +258,16 @@ class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
 
 class SafeRequestEngineCloudscraper(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: any,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: any,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
-        scraper = await asyncio.to_thread(cloudscraper.create_scraper)
+        scraper = await asyncio.to_thread(cloudscraper.create_scraper, browser='chrome', delay=1,
+                                          ssl_context=ssl_context())
         response = await asyncio.to_thread(
             scraper.request,
             method=method.name.lower(),
@@ -300,13 +301,13 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
 
 class SafeRequestEngineHttpx(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         async with httpx.AsyncClient(verify=False, proxy=proxy) as client:
             response = await client.request(
@@ -335,7 +336,12 @@ class SafeRequestEngineHttpx(SafeRequestEngine):
 
 
 class SafeRequest:
-    def __init__(self, chains: list[SafeRequestEngine] = None):
+    def __init__(self,
+                 chains: list[SafeRequestEngine] = None,
+                 proxies: list[str] = None,
+                 cookies: dict = None,
+                 headers: dict = None,
+                 ):
         self._chains = (
             [
                 SafeRequestEngineCloudscraper(),
@@ -355,11 +361,13 @@ class SafeRequest:
             "Content-Type": "application/json",
             "Connection": "close",
             "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
             "Priority": "u=0, i",
-        }
+            "Pragma": "no-cache",
+        } if headers is None else headers
         self._timeout = 60
-        self._proxies: list[str] = []
-        self._cookies: dict = {}
+        self._proxies: list[str] = proxies if proxies is not None else []
+        self._cookies: dict = cookies if cookies is not None else {}
 
     def accept_text_html(self):
         """"""
@@ -399,10 +407,10 @@ class SafeRequest:
         return self
 
     async def user_agent(
-        self,
-        user_agent: Optional[str] = None,
-        mobile_random: bool = False,
-        pc_random: bool = False,
+            self,
+            user_agent: Optional[str] = None,
+            mobile_random: bool = False,
+            pc_random: bool = False,
     ):
         """"""
         if user_agent is not None:
@@ -420,11 +428,7 @@ class SafeRequest:
         self._headers["User-Agent"] = ua_engine.random
 
         if mobile_random:
-            self._headers["Sec-Ch-Ua-Platform"] = '"Android"'
             self._headers["Sec-Ch-Ua-Mobile"] = "?0"
-            self._headers["Sec-Ch-Ua"] = (
-                '"Not A;Brand";v="99", "Chromium";v="99", "Google Chrome";v="99"'
-            )
 
         return self
 
@@ -457,9 +461,102 @@ class SafeRequest:
 
         return self
 
+    def content_type(self, content_type: str | None = None):
+        """"""
+        if content_type is None:
+            self._headers.pop("Content-Type", None)
+        else:
+            self._headers["Content-Type"] = content_type
+
+        return self
+
     def cache_control(self, cache_control: str):
         """"""
         self._headers["Cache-Control"] = cache_control
+
+        return self
+
+    def cache_control_no_cache(self):
+        """"""
+        self._headers["Cache-Control"] = "no-cache"
+
+        return self
+
+    def sec_fetch_dest(self, sec_fetch_dest: str):
+        """"""
+        self._headers["Sec-Fetch-Dest"] = sec_fetch_dest
+
+        return self
+
+    def sec_fetch_dest_document(self):
+        """"""
+        self._headers["Sec-Fetch-Dest"] = "document"
+
+        return self
+
+    def sec_fetch_mode(self, sec_fetch_mode: str):
+        """"""
+        self._headers["Sec-Fetch-Mode"] = sec_fetch_mode
+
+        return self
+
+    def sec_fetch_mode_navigate(self):
+        """"""
+        self._headers["Sec-Fetch-Mode"] = "navigate"
+
+        return self
+
+    def priority(self, priority: str):
+        """"""
+        self._headers["Priority"] = priority
+
+        return self
+
+    def priority_u(self):
+        """"""
+        self._headers["Priority"] = "u=0, i"
+
+        return self
+
+    def pragma(self, pragma: str):
+        """"""
+        self._headers["Pragma"] = pragma
+
+        return self
+
+    def pragma_no_cache(self):
+        """"""
+        self._headers["Pragma"] = "no-cache"
+
+        return self
+
+    def referer(self, referer: str):
+        """"""
+        self._headers["Referer"] = referer
+
+        return self
+
+    def referer_no_referrer(self):
+        """"""
+        self._headers["Referer"] = "no-referrer"
+
+        return self
+
+    def sec_ch_ua(self, sec_ch_ua: str):
+        """"""
+        self._headers["Sec-Ch-Ua"] = sec_ch_ua
+
+        return self
+
+    def sec_ch_ua_mobile(self):
+        """"""
+        self._headers["Sec-Ch-Ua-Mobile"] = "?0"
+
+        return self
+
+    def sec_ch_ua_platform(self, sec_ch_ua_platform: str):
+        """"""
+        self._headers["Sec-Ch-Ua-Platform"] = sec_ch_ua_platform
 
         return self
 
@@ -502,7 +599,7 @@ class SafeRequest:
         return self
 
     def cookie(
-        self, key: str = None, value: str = None, data: str = None, item: dict = None
+            self, key: str = None, value: str = None, data: str = None, item: dict = None
     ):
         """"""
         if key is not None and value is not None and data is None and item is None:
@@ -521,14 +618,14 @@ class SafeRequest:
         return self
 
     async def request(
-        self,
-        url: str,
-        method: SafeRequestMethod = SafeRequestMethod.GET,
-        data: any = None,
-        timeout: int = 60,
-        raise_errors: bool = False,
-        max_tries: int = 10,
-        post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
+            self,
+            url: str,
+            method: SafeRequestMethod = SafeRequestMethod.GET,
+            data: any = None,
+            timeout: int = 60,
+            raise_errors: bool = False,
+            max_tries: int = 10,
+            post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
     ) -> SafeRequestResponseData:
         errors = []
         tries = 0
@@ -550,25 +647,17 @@ class SafeRequest:
                 else None
             )
 
-            if proxy is not None:
-                _LOGGER.debug(
-                    "Using proxy %s for request [%s] %s", proxy, method.name, url
-                )
-            else:
-                _LOGGER.debug(
-                    "No proxy %s for request [%s] %s", proxy, method.name, url
+            headers = {
+                **self._headers,
+            }
+            if self._cookies and len(self._cookies) > 0:
+                headers["Cookie"] = "; ".join(
+                    [f"{k}={v}" for k, v in self._cookies.items()]
                 )
 
             try:
                 return_data = await chain.request(
-                    headers={
-                        **self._headers,
-                        **{
-                            "Cookie": "; ".join(
-                                [f"{k}={v}" for k, v in self._cookies.items()]
-                            ),
-                        },
-                    },
+                    headers=headers,
                     method=method,
                     url=url,
                     data=data,
@@ -591,7 +680,7 @@ class SafeRequest:
                 return return_data
             except Exception as e:
                 _LOGGER.error(
-                    f"Failed to request {url} with {chain.__class__.__name__}: {e}"
+                    f"Failed to request {url}, [Proxy: {proxy}] with {chain.__class__.__name__}: {e}"
                 )
                 errors.append(e)
                 pass

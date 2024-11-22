@@ -31,7 +31,7 @@ class CoupangEngine(PriceEngine):
         self._proxy = proxies
         self._device = device
 
-    async def load(self) -> ItemData:
+    async def load(self) -> ItemData | None:
         request = SafeRequest()
         await request.user_agent(mobile_random=True)
 
@@ -51,6 +51,10 @@ class CoupangEngine(PriceEngine):
             url=_URL.format(self.product_id, self.item_id, self.vendor_item_id),
         )
         data = response.data
+
+        if data is None or response.status_code != 200:
+            return None
+
         coupang_parser = CoupangParser(text=data)
         logging_for_response(data, __name__, "coupang")
 

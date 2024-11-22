@@ -42,8 +42,6 @@
           "option_setup_select": "Select an option",
           "option_entity_delete": "Delete entity",
           "proxy": "Proxy",
-          "proxy_list": "Proxy list",
-          "proxy_opensource": "Use open source proxy",
           "option_proxy_select": "Proxy",
           "option_add_select": "Add entity",
           "item_url": "Product URL (e.g. https://www.amazon.com/dp/B07VGRJDFY)",
@@ -59,6 +57,10 @@
       "unknown": "Unknown error occurred.",
       "no_search_results": "No search results found.",
       "invalid_item_url": "Invalid product URL."
+    },
+    "abort": {
+      "proxy_updated": "Proxy updated.",
+      "proxy_not_updated": "Proxy not updated."
     }
   },
   "selector": {
