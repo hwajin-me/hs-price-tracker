@@ -43,6 +43,9 @@
           "option_entity_delete": "Delete entity",
           "proxy": "Proxy",
           "option_proxy_select": "Proxy",
+          "selenium": "Selenium Server",
+          "selenium_proxy": "Selenium Proxy",
+          "option_selenium_select": "Selenium Configuration",
           "option_add_select": "Add entity",
           "item_url": "Product URL (e.g. https://www.amazon.com/dp/B07VGRJDFY)",
           "item_management_category": "Category (e.g. Electronics, Clothing, etc.)",
@@ -66,7 +69,8 @@
   "selector": {
     "option_setup_select": {
       "options": {
-        "option_proxy_select": "Proxy",
+        "option_proxy_select": "Proxy Configuration",
+        "option_selenium_select": "Selenium Configuration",
         "option_modify_select": "Modify entity",
         "option_add_select": "Add entity"
       }

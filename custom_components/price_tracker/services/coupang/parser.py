@@ -117,6 +117,9 @@ class CoupangParser:
                 r"^\((?P<per>[\d,]+)(?P<unit_type>g|개|ml|kg|l)당 (?P<price>[\d,]+)원\)$",
                 price_info["finalPrice"]["unitPriceDescription"],
             )
+            if u is None:
+                return ItemUnitData(price=self.price.price)
+
             g = u.groupdict()
             unit_price = ItemUnitData(
                 unit_type=ItemUnitType.of(g["unit_type"]),
