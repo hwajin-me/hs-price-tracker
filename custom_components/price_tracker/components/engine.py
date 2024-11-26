@@ -31,12 +31,13 @@ class PriceEngine:
     @staticmethod
     def target_id(value: any) -> str:
         if isinstance(value, dict):
-            items = Lu.filter(value.values(), lambda x: x is not None)
-            return "_".join(list(items))
+            items = Lu.filter(list(value.values()), lambda x: x is not None)
+            return "_".join(items)
         elif value is str:
             return value
         elif isinstance(value, list):
-            return "_".join(value)
+            items = Lu.filter(value, lambda x: x is not None)
+            return "_".join(items)
         else:
             return str(value)
 
