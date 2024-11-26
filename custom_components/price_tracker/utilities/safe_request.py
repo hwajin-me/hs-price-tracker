@@ -14,7 +14,9 @@ import httpx
 import requests
 import undetected_chromedriver as uc
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from voluptuous import default_factory
+from webdriver_manager.chrome import ChromeDriverManager
 
 from custom_components.price_tracker.utilities.list import Lu
 
@@ -183,44 +185,6 @@ class SafeRequestEngineRequests(SafeRequestEngine):
 
 
 class SafeRequestEngineSelenium(SafeRequestEngine):
-    async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
-    ) -> SafeRequestResponseData:
-        manager = ChromeDriverManager()
-        manager_install = await asyncio.to_thread(manager.install)
-        options = webdriver.ChromeOptions()
-
-        options.add_argument("--disable-gpu")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--window-size=1420,1080")
-        options.add_argument("--headless=new")
-        if proxy is not None:
-            options.add_argument(f"--proxy-server={proxy}")
-        driver = await asyncio.to_thread(
-            webdriver.Chrome, service=ChromeService(manager_install), options=options
-        )
-        driver.get(url)
-
-        all_cookies = driver.get_cookies()
-        cookies_dict = {}
-        for cookie in all_cookies:
-            cookies_dict[cookie["name"]] = cookie["value"]
-
-        return SafeRequestResponseData(
-            data=driver.page_source,
-            status_code=200,
-            cookies=cookies_dict,
-            access_token=None,
-        )
-
-
-class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
 
     def __init__(self, remote: str = None):
         self._remote = remote
@@ -234,33 +198,103 @@ class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
             proxy: str,
             timeout: int,
     ) -> SafeRequestResponseData:
-        options = uc.ChromeOptions()
-        options.add_argument("--disable-gpu")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--window-size=1420,1080")
-        options.add_argument("--headless=new")
-        if proxy is not None:
-            options.add_argument(f"--proxy-server={proxy}")
+        driver = None
+        try:
+            options = webdriver.ChromeOptions()
 
-        if self._remote is not None:
-            driver = await asyncio.to_thread(webdriver.Remote, self._remote, options=options.to_capabilities())
-        else:
+            options.add_argument("--lang=en")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--headless")
+            options.add_argument('--disable-extensions')
+            options.add_argument("--disable-session-crashed-bubble")
+            if headers.get("User-Agent") is not None:
+                options.add_argument(f"--user-agent={headers.get('User-Agent')}")
+            options.page_load_strategy = 'eager'
+
+            if proxy is not None:
+                options.add_argument(f"--proxy-server={proxy}")
+
+            if self._remote is None:
+                manager = ChromeDriverManager()
+                manager_install = await asyncio.to_thread(manager.install)
+                service = await asyncio.to_thread(Service, executable_path=manager_install)
+                driver = await asyncio.to_thread(
+                    webdriver.Chrome, service=service, options=options
+                )
+            else:
+                driver = await asyncio.to_thread(
+                    webdriver.Remote, command_executor=self._remote, options=options,
+                )
+
+            await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)
+            await asyncio.to_thread(driver.set_page_load_timeout, time_to_wait=timeout)
+
+            await asyncio.to_thread(driver.get, url=url)
+
+            all_cookies = await asyncio.to_thread(driver.get_cookies)
+            cookies_dict = {}
+            for cookie in all_cookies:
+                cookies_dict[cookie["name"]] = cookie["value"]
+
+            data = SafeRequestResponseData(
+                data=await asyncio.to_thread(driver.page_source),
+                status_code=200,
+                cookies=cookies_dict,
+                access_token=None,
+            )
+
+        finally:
+            if driver is not None:
+                await asyncio.to_thread(driver.quit)
+
+        return data
+
+
+class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
+    async def request(
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
+    ) -> SafeRequestResponseData:
+        driver = None
+        try:
+            options = uc.ChromeOptions()
+            options.add_argument("--disable-gpu")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--window-size=1420,1080")
+            options.add_argument("--headless=new")
+            if proxy is not None:
+                options.add_argument(f"--proxy-server={proxy}")
+
             driver = await asyncio.to_thread(uc.Chrome, options=options, headless=True)
 
-        # TODO: Add Post Request
-        driver.get(url)
+            await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)
+            await asyncio.to_thread(driver.set_page_load_timeout, time_to_wait=timeout)
 
-        all_cookies = driver.get_cookies()
-        cookies_dict = {}
-        for cookie in all_cookies:
-            cookies_dict[cookie["name"]] = cookie["value"]
+            # TODO: Add Post Request
+            driver.get(url)
 
-        return SafeRequestResponseData(
-            data=driver.page_source,
-            status_code=200,
-            cookies=cookies_dict,
-            access_token=None,
-        )
+            all_cookies = await asyncio.to_thread(driver.get_cookies)
+            cookies_dict = {}
+            for cookie in all_cookies:
+                cookies_dict[cookie["name"]] = cookie["value"]
+
+            data = SafeRequestResponseData(
+                data=await asyncio.to_thread(driver.page_source),
+                status_code=200,
+                cookies=cookies_dict,
+                access_token=None,
+            )
+        finally:
+            if driver is not None:
+                await asyncio.to_thread(driver.quit)
+
+        return data
 
 
 class SafeRequestEngineCloudscraper(SafeRequestEngine):
@@ -371,7 +405,7 @@ class SafeRequest:
         self._chains: list[SafeRequestEngine] = []
 
         if self._selenium is not None:
-            self._chains.append(SafeRequestEngineUndetectedSelenium(remote=self._selenium))
+            self._chains.append(SafeRequestEngineSelenium(remote=self._selenium))
         self._chains = self._chains + (
             [
                 SafeRequestEngineCloudscraper(),

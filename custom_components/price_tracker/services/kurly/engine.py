@@ -49,10 +49,12 @@ class KurlyEngine(PriceEngine):
         auth_data = auth_response.json
         request.auth(auth_data["accessToken"])
         response = await request.request(
-            method=SafeRequestMethod.GET, url=_URL.format(self.id)
+            method=SafeRequestMethod.GET,
+            url=_URL.format(self.id)
         )
 
         if response.status_code == 404:
+            _LOGGER.warning('Kurly item not found (might be deleted): %s', self.id)
             return None
 
         data = response.data
