@@ -12,8 +12,8 @@ from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
+    bot_agents,
 )
-from custom_components.price_tracker.utilities.utils import random_bool
 
 _URL = "https://m.coupang.com/vm/products/{}?itemId={}&vendorItemId={}"
 _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
@@ -21,12 +21,12 @@ _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
 
 class CoupangEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = CoupangEngine.parse_id(item_url)
@@ -42,24 +42,23 @@ class CoupangEngine(PriceEngine):
         request = SafeRequest(
             proxies=self._proxies,
             selenium=self._selenium,
-            selenium_proxy=self._selenium_proxy
+            selenium_proxy=self._selenium_proxy,
         )
-        await request.user_agent(mobile_random=True)
 
-        if random_bool():
-            await request.request(
-                method=SafeRequestMethod.GET,
-                url="https://m.coupang.com"
-            )
-        if random_bool():
-            request.keep_alive()
-        if random_bool():
-            request.accept_text_html()
+        request.keep_alive()
+        request.accept_text_html()
         request.accept_language(is_random=True)
+
+        if self._selenium and self._selenium_proxy:
+            await request.user_agent(user_agent=bot_agents())
+        else:
+            await request.user_agent(mobile_random=True)
+
         response = await request.request(
             method=SafeRequestMethod.GET,
             url=_URL.format(self.product_id, self.item_id, self.vendor_item_id),
         )
+
         data = response.data
 
         if data is None or response.status_code != 200:

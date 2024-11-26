@@ -12,7 +12,11 @@ from custom_components.price_tracker.services.smartstore.parser import Smartstor
 from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
-    SafeRequestMethod, SafeRequestEngineRequests, SafeRequestEngineCloudscraper, SafeRequestEngineAiohttp,
+    SafeRequestMethod,
+    SafeRequestEngineRequests,
+    SafeRequestEngineCloudscraper,
+    SafeRequestEngineAiohttp,
+    bot_agents,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,12 +32,12 @@ _REQUEST_HEADER = {
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -61,7 +65,9 @@ class SmartstoreEngine(PriceEngine):
             selenium_proxy=self._selenium_proxy,
         )
         request.accept_text_html()
-        request.accept_language(language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5")
+        request.accept_language(
+            language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
+        )
         request.accept_encoding("gzip, zlib, deflate, zstd, br")
         request.content_type()
 
@@ -74,6 +80,10 @@ class SmartstoreEngine(PriceEngine):
                 user_agent="Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
             )
 
+        # Random logics for selenium proxy
+        if self._selenium and self._selenium_proxy:
+            await request.user_agent(user_agent=bot_agents())
+
         response = await request.request(
             method=SafeRequestMethod.GET,
             url=url,
@@ -84,7 +94,8 @@ class SmartstoreEngine(PriceEngine):
 
         text = response.text
 
-        logging_for_response(response=text, name=__name__, domain="naver")
+        logging_for_response(response=text, name=__name__, domain="smartstore")
+
         naver_parser = SmartstoreParser(data=text)
         return ItemData(
             id=self.id_str(),

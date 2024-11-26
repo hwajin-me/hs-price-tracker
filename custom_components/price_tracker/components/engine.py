@@ -31,7 +31,7 @@ class PriceEngine:
     @staticmethod
     def target_id(value: any) -> str:
         if isinstance(value, dict):
-            items = Lu.filter(value.values(), lambda x : x is not None)
+            items = Lu.filter(value.values(), lambda x: x is not None)
             return "_".join(list(items))
         elif value is str:
             return value

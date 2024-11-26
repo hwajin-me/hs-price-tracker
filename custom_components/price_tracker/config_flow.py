@@ -102,7 +102,8 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
         # Selenium select
         if (
             self.setup.const_option_setup_select in user_input
-            and user_input[self.setup.const_option_setup_select] == self.setup.const_option_selenium_select
+            and user_input[self.setup.const_option_setup_select]
+            == self.setup.const_option_selenium_select
         ):
             return await self.setup.option_selenium(user_input)
 

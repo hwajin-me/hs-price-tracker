@@ -19,12 +19,12 @@ _URL = "https://m.oasis.co.kr/product/detail/{}"
 
 class OasisEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = OasisEngine.parse_id(item_url)
@@ -38,7 +38,7 @@ class OasisEngine(PriceEngine):
         request = SafeRequest(
             proxies=self._proxies,
             selenium=self._selenium,
-            selenium_proxy=self._selenium_proxy
+            selenium_proxy=self._selenium_proxy,
         )
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.product_id)

@@ -62,10 +62,10 @@ class PriceTrackerSetup:
     conf_item_price_change_interval_hour: str = "item_price_change_interval_hour"
 
     def __init__(
-            self,
-            config_flow: config_entries.ConfigFlow = None,
-            option_flow: config_entries.OptionsFlow = None,
-            config_entry=None,
+        self,
+        config_flow: config_entries.ConfigFlow = None,
+        option_flow: config_entries.OptionsFlow = None,
+        config_entry=None,
     ):
         self._config_flow = config_flow
         self._option_flow = option_flow
@@ -134,8 +134,7 @@ class PriceTrackerSetup:
 
     async def option_proxy(self, user_input: dict = None):
         # Get items if the user_input is None
-        if user_input is None or \
-                self.conf_proxy not in user_input:
+        if user_input is None or self.conf_proxy not in user_input:
             # Fetch original items
             proxies = dict(self._config_entry.data).get(self.conf_proxy, [])
 
@@ -172,7 +171,7 @@ class PriceTrackerSetup:
                         vol.Optional(
                             self.conf_proxy,
                             description={"suggested_value": ",".join(proxies)},
-                            default=''
+                            default="",
                         ): cv.string,
                     }
                 ),
@@ -209,10 +208,11 @@ class PriceTrackerSetup:
 
     async def option_selenium(self, user_input: dict = None):
         # Get items if the user_input is None
-        if user_input is None or \
-                self.conf_selenium not in user_input:
+        if user_input is None or self.conf_selenium not in user_input:
             selenium = dict(self._config_entry.data).get(self.conf_selenium, None)
-            selenium_proxy = dict(self._config_entry.data).get(self.conf_selenium_proxy, [])
+            selenium_proxy = dict(self._config_entry.data).get(
+                self.conf_selenium_proxy, []
+            )
 
             return self._option_flow.async_show_form(
                 step_id=self._step_setup,
@@ -246,14 +246,21 @@ class PriceTrackerSetup:
                         ),
                         vol.Optional(
                             self.conf_selenium,
-                            description={"suggested_value": selenium if selenium is not None else ""},
-                            default=''
+                            description={
+                                "suggested_value": selenium
+                                if selenium is not None
+                                else ""
+                            },
+                            default="",
                         ): cv.string,
                         vol.Optional(
                             self.conf_selenium_proxy,
                             description={
-                                "suggested_value": ",".join(selenium_proxy) if len(selenium_proxy) > 0 else ""},
-                            default=''
+                                "suggested_value": ",".join(selenium_proxy)
+                                if len(selenium_proxy) > 0
+                                else ""
+                            },
+                            default="",
                         ): cv.string,
                     }
                 ),
@@ -261,9 +268,13 @@ class PriceTrackerSetup:
 
         config = dict(self._config_entry.data)
         options = dict(self._config_entry.options)
-        selenium = user_input[self.conf_selenium] if self.conf_selenium in user_input else ""
+        selenium = (
+            user_input[self.conf_selenium] if self.conf_selenium in user_input else ""
+        )
         proxies = (
-            user_input[self.conf_selenium_proxy] if self.conf_selenium_proxy in user_input else ""
+            user_input[self.conf_selenium_proxy]
+            if self.conf_selenium_proxy in user_input
+            else ""
         ).strip()
         if selenium == "":
             selenium = None
@@ -279,7 +290,9 @@ class PriceTrackerSetup:
             filter(lambda x: x != "", config[self.conf_selenium_proxy])
         )
 
-        _LOGGER.debug("Selenoum configuration with %s (original: %s)", config, user_input)
+        _LOGGER.debug(
+            "Selenoum configuration with %s (original: %s)", config, user_input
+        )
 
         flag = self._option_flow.hass.config_entries.async_update_entry(
             entry=self._config_entry,
@@ -298,9 +311,9 @@ class PriceTrackerSetup:
         _LOGGER.debug("Setup Modify(option): %s", user_input)
 
         if (
-                user_input is not None
-                and self.const_option_entity_delete in user_input
-                and user_input[self.const_option_entity_delete] is True
+            user_input is not None
+            and self.const_option_entity_delete in user_input
+            and user_input[self.const_option_entity_delete] is True
         ):
             data = deepcopy(self._config_entry.options.get(self.conf_target, []))
             target_entity = (er.async_get(self._option_flow.hass)).async_get(
@@ -336,17 +349,17 @@ class PriceTrackerSetup:
             if user_input is not None:
                 """Add a new entry."""
                 if (
-                        self.conf_item_url in user_input
-                        and self.conf_item_management_category in user_input
-                        and self.conf_item_unit_type in user_input
-                        and self.conf_item_unit in user_input
-                        and self.conf_item_refresh_interval in user_input
-                        and self.conf_item_price_change_interval_hour in user_input
-                        and self.conf_item_url != ""
-                        and self.conf_item_unit_type != ""
-                        and self.conf_item_unit != ""
-                        and self.conf_item_refresh_interval != ""
-                        and self.conf_item_price_change_interval_hour != ""
+                    self.conf_item_url in user_input
+                    and self.conf_item_management_category in user_input
+                    and self.conf_item_unit_type in user_input
+                    and self.conf_item_unit in user_input
+                    and self.conf_item_refresh_interval in user_input
+                    and self.conf_item_price_change_interval_hour in user_input
+                    and self.conf_item_url != ""
+                    and self.conf_item_unit_type != ""
+                    and self.conf_item_unit != ""
+                    and self.conf_item_refresh_interval != ""
+                    and self.conf_item_price_change_interval_hour != ""
                 ):
                     _LOGGER.debug(
                         "Setup Upsert(option) / Creation from: %s", user_input
@@ -411,10 +424,10 @@ class PriceTrackerSetup:
 
         # If the device and entity are selected
         if (
-                user_input is not None
-                and self.const_option_select_entity in user_input
-                and Lu.get(user_input, self.const_option_select_entity) is not None
-                and errors == {}
+            user_input is not None
+            and self.const_option_select_entity in user_input
+            and Lu.get(user_input, self.const_option_select_entity) is not None
+            and errors == {}
         ):
             """Change default variables"""
             entity = (er.async_get(self._option_flow.hass)).async_get(
@@ -505,7 +518,7 @@ class PriceTrackerSetup:
         device_entities = []
 
         for d in dr.async_entries_for_config_entry(
-                dr.async_get(self._option_flow.hass), self._config_entry.entry_id
+            dr.async_get(self._option_flow.hass), self._config_entry.entry_id
         ):
             device_entities.append(d.serial_number)
 
@@ -641,9 +654,9 @@ class PriceTrackerSetup:
 
     def _schema_user_input_option_service_device(self, user_input: dict = None):
         if (
-                user_input is None
-                or self.const_option_select_device not in user_input
-                or user_input[self.const_option_select_device] is None
+            user_input is None
+            or self.const_option_select_device not in user_input
+            or user_input[self.const_option_select_device] is None
         ):
             return {}
         return {

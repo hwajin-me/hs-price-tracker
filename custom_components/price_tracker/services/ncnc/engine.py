@@ -19,12 +19,12 @@ _X_API = "D3aDpWlEkz7dAp5o2Ew8zZbc4N9mnyK9JFCHgy30"
 
 class NcncEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         id = NcncEngine.parse_id(item_url)
@@ -36,8 +36,7 @@ class NcncEngine(PriceEngine):
 
     async def load(self) -> ItemData:
         request = SafeRequest(
-            selenium=self._selenium,
-            selenium_proxy=self._selenium_proxy
+            selenium=self._selenium, selenium_proxy=self._selenium_proxy
         )
         await request.proxies(self._proxy)
         request.header(key="x-api-key", value=_X_API)

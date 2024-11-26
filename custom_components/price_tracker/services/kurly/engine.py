@@ -23,12 +23,12 @@ _ITEM_LINK = "https://www.kurly.com/goods/{}"
 
 class KurlyEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = KurlyEngine.parse_id(item_url)
@@ -41,7 +41,7 @@ class KurlyEngine(PriceEngine):
         request = SafeRequest(
             proxies=self._proxies,
             selenium=self._selenium,
-            selenium_proxy=self._selenium_proxy
+            selenium_proxy=self._selenium_proxy,
         )
         auth_response = await request.request(
             method=SafeRequestMethod.GET, url=_AUTH_URL
@@ -49,12 +49,11 @@ class KurlyEngine(PriceEngine):
         auth_data = auth_response.json
         request.auth(auth_data["accessToken"])
         response = await request.request(
-            method=SafeRequestMethod.GET,
-            url=_URL.format(self.id)
+            method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
 
         if response.status_code == 404:
-            _LOGGER.warning('Kurly item not found (might be deleted): %s', self.id)
+            _LOGGER.warning("Kurly item not found (might be deleted): %s", self.id)
             return None
 
         data = response.data

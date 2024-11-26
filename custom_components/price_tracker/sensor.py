@@ -14,7 +14,9 @@ from .consts.confs import (
     CONF_ITEM_REFRESH_INTERVAL,
     CONF_ITEM_MANAGEMENT_CATEGORY,
     CONF_PROXY,
-    CONF_PROXY_OPENSOURCE, CONF_SELENIUM, CONF_SELENIUM_PROXY,
+    CONF_PROXY_OPENSOURCE,
+    CONF_SELENIUM,
+    CONF_SELENIUM_PROXY,
 )
 from .consts.defaults import DOMAIN
 from .datas.unit import ItemUnitType
