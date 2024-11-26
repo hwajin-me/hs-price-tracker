@@ -33,6 +33,8 @@ class SmartstoreEngine(PriceEngine):
         item_url: str,
         device: None = None,
         proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -42,6 +44,8 @@ class SmartstoreEngine(PriceEngine):
         self.product_id = self.id["product_id"]
         self._proxies = proxies
         self._device = device
+        self._selenium = selenium
+        self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData | None:
         url = _URL.format(
@@ -49,6 +53,8 @@ class SmartstoreEngine(PriceEngine):
         )
         request = SafeRequest(
             proxies=self._proxies,
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy,
         )
         request.accept_text_html().accept_language(
             language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"

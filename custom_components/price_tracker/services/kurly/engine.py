@@ -23,16 +23,26 @@ _ITEM_LINK = "https://www.kurly.com/goods/{}"
 
 class KurlyEngine(PriceEngine):
     def __init__(
-        self, item_url: str, device: None = None, proxies: Optional[list] = None
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = KurlyEngine.parse_id(item_url)
         self._proxies = proxies
         self._device = device
+        self._selenium = selenium
+        self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData | None:
-        request = SafeRequest()
-        request.proxies(self._proxies)
+        request = SafeRequest(
+            proxies=self._proxies,
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy
+        )
         auth_response = await request.request(
             method=SafeRequestMethod.GET, url=_AUTH_URL
         )

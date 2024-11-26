@@ -19,17 +19,27 @@ _ITEM_LINK = "https://www.idus.com/v2/product/{}"
 
 class IdusEngine(PriceEngine):
     def __init__(
-        self, item_url: str, device: None = None, proxies: Optional[list] = None
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = IdusEngine.parse_id(item_url)
         self.product_id = self.id
-        self._proxy = proxies
+        self._proxies = proxies
         self._device = device
+        self._selenium = selenium
+        self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData:
-        request = SafeRequest()
-        await request.proxies(self._proxy)
+        request = SafeRequest(
+            proxies=self._proxies,
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy
+        )
         await request.user_agent(mobile_random=True, pc_random=True)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.product_id)

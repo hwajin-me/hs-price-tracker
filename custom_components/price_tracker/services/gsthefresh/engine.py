@@ -35,16 +35,26 @@ _LOGGER = logging.getLogger(__name__)
 
 class GsTheFreshEngine(PriceEngine):
     def __init__(
-        self, item_url: str, device: GsTheFreshDevice, proxies: Optional[list] = None
+            self,
+            item_url: str,
+            device: GsTheFreshDevice,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = GsTheFreshEngine.parse_id(item_url)
         self.device: GsTheFreshDevice = device
         self._last_failed = False
         self._proxies = proxies
+        self._selenium = selenium
+        self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData:
-        request = SafeRequest()
+        request = SafeRequest(
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy
+        )
         request.headers({**_REQUEST_HEADERS, **self.device.headers})
         request.auth(self.device.access_token)
         http_result = await request.request(

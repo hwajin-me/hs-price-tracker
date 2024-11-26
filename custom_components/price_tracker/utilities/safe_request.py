@@ -14,9 +14,7 @@ import httpx
 import requests
 import undetected_chromedriver as uc
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
 from voluptuous import default_factory
-from webdriver_manager.chrome import ChromeDriverManager
 
 from custom_components.price_tracker.utilities.list import Lu
 
@@ -169,7 +167,7 @@ class SafeRequestEngineRequests(SafeRequestEngine):
             verify=False,
         )
 
-        if response.status_code > 399:
+        if response.status_code > 399 and response.status_code != 404:
             raise SafeRequestError(
                 f"Failed to request {url} with status code {response.status_code}"
             )
@@ -223,6 +221,10 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
 
 
 class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
+
+    def __init__(self, remote: str = None):
+        self._remote = remote
+
     async def request(
             self,
             headers: dict,
@@ -240,7 +242,12 @@ class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
         if proxy is not None:
             options.add_argument(f"--proxy-server={proxy}")
 
-        driver = await asyncio.to_thread(uc.Chrome, options=options)
+        if self._remote is not None:
+            driver = await asyncio.to_thread(webdriver.Remote, self._remote, options=options.to_capabilities())
+        else:
+            driver = await asyncio.to_thread(uc.Chrome, options=options, headless=True)
+
+        # TODO: Add Post Request
         driver.get(url)
 
         all_cookies = driver.get_cookies()
@@ -283,8 +290,7 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
             timeout=timeout,
             verify=False,
         )
-
-        if response.status_code > 399:
+        if response.status_code > 399 and response.status_code != 404:
             raise SafeRequestError(
                 f"Failed to request {url} with status code {response.status_code}"
             )
@@ -318,7 +324,7 @@ class SafeRequestEngineHttpx(SafeRequestEngine):
                 timeout=timeout,
                 follow_redirects=True,
             )
-            if response.status_code > 399:
+            if response.status_code > 399 and response.status_code != 404:
                 raise SafeRequestError(
                     f"Failed to request {url} with status code {response.status_code}"
                 )
@@ -341,17 +347,9 @@ class SafeRequest:
                  proxies: list[str] = None,
                  cookies: dict = None,
                  headers: dict = None,
+                 selenium: Optional[str] = None,
+                 selenium_proxy: Optional[list[str]] = None
                  ):
-        self._chains = (
-            [
-                SafeRequestEngineCloudscraper(),
-                SafeRequestEngineAiohttp(),
-                SafeRequestEngineRequests(),
-                SafeRequestEngineHttpx(),
-            ]
-            if chains is None
-            else chains
-        )
         self._headers = {
             "Accept": "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
@@ -368,6 +366,22 @@ class SafeRequest:
         self._timeout = 60
         self._proxies: list[str] = proxies if proxies is not None else []
         self._cookies: dict = cookies if cookies is not None else {}
+        self._selenium = selenium
+        self._selenium_proxy = selenium_proxy
+        self._chains: list[SafeRequestEngine] = []
+
+        if self._selenium is not None:
+            self._chains.append(SafeRequestEngineUndetectedSelenium(remote=self._selenium))
+        self._chains = self._chains + (
+            [
+                SafeRequestEngineCloudscraper(),
+                SafeRequestEngineAiohttp(),
+                SafeRequestEngineRequests(),
+                SafeRequestEngineHttpx(),
+            ]
+            if chains is None
+            else chains
+        )
 
     def accept_text_html(self):
         """"""

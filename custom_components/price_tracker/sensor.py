@@ -14,7 +14,7 @@ from .consts.confs import (
     CONF_ITEM_REFRESH_INTERVAL,
     CONF_ITEM_MANAGEMENT_CATEGORY,
     CONF_PROXY,
-    CONF_PROXY_OPENSOURCE,
+    CONF_PROXY_OPENSOURCE, CONF_SELENIUM, CONF_SELENIUM_PROXY,
 )
 from .consts.defaults import DOMAIN
 from .datas.unit import ItemUnitType
@@ -39,6 +39,8 @@ async def async_setup_entry(
     sensors = []
     proxy = Lu.get_or_default(config, CONF_PROXY, None)
     proxy_opensource = Lu.get_or_default(config, CONF_PROXY_OPENSOURCE, False)
+    selenium = Lu.get_or_default(config, CONF_SELENIUM, None)
+    selenium_proxy = Lu.get_or_default(config, CONF_SELENIUM_PROXY, None)
 
     if CONF_DEVICE in config:
         for device in config[CONF_DEVICE]:
@@ -74,6 +76,8 @@ async def async_setup_entry(
                     item_url=target[CONF_ITEM_URL],
                     proxies=proxy,
                     device=device,
+                    selenium=selenium,
+                    selenium_proxy=selenium_proxy,
                 ),
                 device=device,
                 unit_type=ItemUnitType.of(target[CONF_ITEM_UNIT_TYPE])

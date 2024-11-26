@@ -21,7 +21,12 @@ _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
 
 class CoupangEngine(PriceEngine):
     def __init__(
-            self, item_url: str, device: None = None, proxies: Optional[list] = None
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = CoupangEngine.parse_id(item_url)
@@ -30,9 +35,14 @@ class CoupangEngine(PriceEngine):
         self.vendor_item_id = self.id["vendor_item_id"]
         self._proxy = proxies
         self._device = device
+        self._selenium = selenium
+        self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData | None:
-        request = SafeRequest()
+        request = SafeRequest(
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy
+        )
         await request.user_agent(mobile_random=True)
 
         if random_bool():

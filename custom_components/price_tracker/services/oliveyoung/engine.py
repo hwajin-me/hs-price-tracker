@@ -23,16 +23,26 @@ _THUMB = "https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbn
 
 class OliveyoungEngine(PriceEngine):
     def __init__(
-        self, item_url: str, device: None = None, proxies: Optional[list] = None
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = OliveyoungEngine.parse_id(item_url)
         self.goods_number = self.id
         self._proxies = proxies
         self._device = device
+        self._selenium = selenium
+        self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData:
-        request = SafeRequest()
+        request = SafeRequest(
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy
+        )
         request.proxies(proxies=self._proxies)
         await request.user_agent(user_agent=OLIVEYOUNG_USER_AGENT)
         response = await request.request(

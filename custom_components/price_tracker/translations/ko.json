@@ -63,7 +63,9 @@
     },
     "abort": {
       "proxy_updated": "프록시가 업데이트되었습니다.",
-      "proxy_not_updated": "프록시가 업데이트 되지 않았습니다."
+      "proxy_not_updated": "프록시가 업데이트 되지 않았습니다.",
+      "selenium_updated": "Selenium이 업데이트되었습니다.",
+      "selenium_not_updated": "Selenium이(가) 업데이트되지 않았습니다."
     }
   },
   "selector": {

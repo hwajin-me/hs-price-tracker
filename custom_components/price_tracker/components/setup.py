@@ -36,6 +36,7 @@ class PriceTrackerSetup:
     _option_flow: config_entries.OptionsFlow
     const_option_setup_select: str = "option_setup_select"
     const_option_proxy_select: str = "option_proxy_select"
+    const_option_selenium_select: str = "option_selenium_select"
     const_option_modify_select: str = "option_modify_select"
     const_option_add_select: str = "option_add_select"
     const_option_entity_select: str = "option_entity_select"
@@ -46,6 +47,8 @@ class PriceTrackerSetup:
 
     conf_target: str = "target"
     conf_proxy = "proxy"
+    conf_selenium = "selenium"
+    conf_selenium_proxy = "selenium_proxy"
     conf_proxy_opensource_use = "proxy_opensource"
     conf_proxy_list = "proxy_list"
     # (private) conf for select
@@ -115,6 +118,7 @@ class PriceTrackerSetup:
                         selector.SelectSelectorConfig(
                             options=[
                                 self.const_option_proxy_select,
+                                self.const_option_selenium_select,
                                 self.const_option_modify_select,
                                 self.const_option_add_select,
                             ],
@@ -201,6 +205,88 @@ class PriceTrackerSetup:
 
         return self._option_flow.async_abort(
             reason="proxy_updated" if flag else "proxy_not_updated"
+        )
+
+    async def option_selenium(self, user_input: dict = None):
+        # Get items if the user_input is None
+        if user_input is None or \
+                self.conf_selenium not in user_input:
+            selenium = dict(self._config_entry.data).get(self.conf_selenium, None)
+            selenium_proxy = dict(self._config_entry.data).get(self.conf_selenium_proxy, [])
+
+            return self._option_flow.async_show_form(
+                step_id=self._step_setup,
+                description_placeholders={
+                    **Lang(self._option_flow.hass).f(
+                        key="title",
+                        items={
+                            "en": "Selenium configuration",
+                            "ja": "Selenium設定",
+                            "ko": "Selenium 설정",
+                        },
+                    ),
+                    **Lang(self._option_flow.hass).f(
+                        key="description",
+                        items={
+                            "en": "Set the Selenium server to use when connecting to the site.",
+                            "ja": "サイトへの接続時に使用するSelenium サーバーを設定します。",
+                            "ko": "사이트에 연결할 때 사용할 Selenium 서버를 설정합니다.",
+                        },
+                    ),
+                },
+                data_schema=vol.Schema(
+                    {
+                        vol.Optional(
+                            self.const_option_setup_select,
+                            default=self.const_option_selenium_select,
+                        ): vol.In(
+                            {
+                                self.const_option_selenium_select: self.const_option_selenium_select
+                            }
+                        ),
+                        vol.Optional(
+                            self.conf_selenium,
+                            description={"suggested_value": selenium if selenium is not None else ""},
+                            default=''
+                        ): cv.string,
+                        vol.Optional(
+                            self.conf_selenium_proxy,
+                            description={"suggested_value": ",".join(selenium_proxy)},
+                            default=''
+                        ): cv.string,
+                    }
+                ),
+            )
+
+        config = dict(self._config_entry.data)
+        options = dict(self._config_entry.options)
+        selenium = user_input[self.conf_selenium] if self.conf_selenium in user_input else ""
+        proxies = (
+            user_input[self.conf_proxy] if self.conf_proxy in user_input else ""
+        ).strip()
+        config[self.conf_selenium] = selenium
+        config[self.conf_selenium_proxy] = (
+            Lu.map(str(proxies).split(","), lambda x: x.strip())
+            if proxies != ""
+            else []
+        )
+        # Filtering
+        config[self.conf_selenium_proxy] = list(
+            filter(lambda x: x != "", config[self.conf_selenium_proxy])
+        )
+
+        _LOGGER.debug("Selenoum configuration with %s (original: %s)", config, user_input)
+
+        flag = self._option_flow.hass.config_entries.async_update_entry(
+            entry=self._config_entry,
+            data={
+                **config,
+            },
+            options=options if options is not None else {},
+        )
+
+        return self._option_flow.async_abort(
+            reason="selenium_updated" if flag else "selenium_not_updated"
         )
 
     async def option_modify(self, device, entity, user_input: dict = None):

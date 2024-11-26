@@ -99,6 +99,13 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
         ):
             return await self.setup.option_proxy(user_input)
 
+        # Selenium select
+        if (
+            self.setup.const_option_setup_select in user_input
+            and user_input[self.setup.const_option_setup_select] == self.setup.const_option_selenium_select
+        ):
+            return await self.setup.option_selenium(user_input)
+
         # 1
         if self.setup.const_option_setup_select in user_input:
             if self.setup.const_option_select_device not in user_input:

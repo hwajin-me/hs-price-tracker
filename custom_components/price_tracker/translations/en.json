@@ -63,7 +63,9 @@
     },
     "abort": {
       "proxy_updated": "Proxy updated.",
-      "proxy_not_updated": "Proxy not updated."
+      "proxy_not_updated": "Proxy not updated.",
+      "selenium_updated": "Selenium updated.",
+      "selenium_not_updated": "Selenium not updated."
     }
   },
   "selector": {

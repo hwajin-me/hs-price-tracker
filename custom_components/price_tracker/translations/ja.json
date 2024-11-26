@@ -14,8 +14,8 @@
         "title": "{title}",
         "description": "{description}",
         "data": {
-          "service_type": "サービスタイプ (e.g. Amazon, Rakuten, etc.)",
-          "conf_gs_store_name_like": "店舗名",
+          "service_type": "サービスタイプ(e.g. Amazon, Rakuten, etc.)",
+          "conf_gs_store_name_like": "店舗名(最小2文字)",
           "conf_gs_store_code_and_name": "店舗コードと名前",
           "conf_gs_naver_login_code": "ログインコード"
         }
@@ -36,7 +36,7 @@
         "title": "{title}",
         "description": "{description}",
         "data": {
-          "service_type": "サービスタイプ (e.g. Amazon, Rakuten, etc.)",
+          "service_type": "サービスタイプ(e.g. Amazon, Rakuten, etc.)",
           "service_device": "デバイス",
           "service_entity": "エンティティ",
           "option_setup_select": "設定",
@@ -47,7 +47,7 @@
           "selenium": "Selenium",
           "selenium_proxy": "Seleniumプロキシ",
           "option_selenium_select": "Selenium設定",
-          "item_url": "Product URL (e.g. https://www.amazon.com/dp/B07VGRJDFY)",
+          "item_url": "商品URL(e.g. https://www.amazon.com/dp/B07VGRJDFY)",
           "item_management_category": "管理カテゴリ",
           "item_unit_type": "単位タイプ",
           "item_unit": "容量(e.g. unit type > ml, unit > 300)",
@@ -64,7 +64,9 @@
     },
     "abort": {
       "proxy_updated": "プロキシが更新されました。",
-      "proxy_not_updated": "プロキシが更新されませんでした。"
+      "proxy_not_updated": "プロキシが更新されませんでした。",
+      "selenium_updated": "Seleniumが更新されました。",
+      "selenium_not_updated": "Seleniumが更新されませんでした。"
     }
   },
   "selector": {
