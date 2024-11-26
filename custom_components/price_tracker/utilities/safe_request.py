@@ -16,6 +16,7 @@ import undetected_chromedriver as uc
 import urllib3
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.remote.client_config import ClientConfig
 from selenium.webdriver.remote.command import Command
 from voluptuous import default_factory
 from webdriver_manager.chrome import ChromeDriverManager
@@ -52,11 +53,11 @@ class SafeRequestResponseData:
     cookies: dict = default_factory({})
 
     def __init__(
-        self,
-        data: Optional[str] = None,
-        status_code: int = 400,
-        cookies=None,
-        access_token: Optional[str] = None,
+            self,
+            data: Optional[str] = None,
+            status_code: int = 400,
+            cookies=None,
+            access_token: Optional[str] = None,
     ):
         if cookies is None:
             cookies = {}
@@ -71,7 +72,7 @@ class SafeRequestResponseData:
 
     @property
     def has(self):
-        return self.status_code <= 399 and self.data is not None
+        return self.status_code <= 399 and self.data is not None and self.data != ''
 
     @property
     def json(self):
@@ -90,45 +91,45 @@ class SafeRequestMethod(Enum):
 
 class SafeRequestEngine:
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         pass
 
 
 class SafeRequestEngineAiohttp(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         async with aiohttp.ClientSession() as session:
             async with session.request(
-                method=method.name.lower(),
-                url=url,
-                headers=headers,
-                json=data,
-                data=data,
-                proxy=proxy,
-                timeout=timeout,
-                allow_redirects=True,
-                auto_decompress=True,
-                max_line_size=99999999,
-                read_bufsize=99999999,
-                compress=False,
-                read_until_eof=True,
-                expect100=True,
-                chunked=False,
-                ssl=False,
+                    method=method.name.lower(),
+                    url=url,
+                    headers=headers,
+                    json=data,
+                    data=data,
+                    proxy=proxy,
+                    timeout=timeout,
+                    allow_redirects=True,
+                    auto_decompress=True,
+                    max_line_size=99999999,
+                    read_bufsize=99999999,
+                    compress=False,
+                    read_until_eof=True,
+                    expect100=True,
+                    chunked=False,
+                    ssl=False,
             ) as response:
                 data = await response.text()
                 cookies = response.cookies
@@ -153,13 +154,13 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
 
 class SafeRequestEngineRequests(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         response = await asyncio.to_thread(
             requests.request,
@@ -200,13 +201,13 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
         self._proxies = proxies if proxies is not None else []
 
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         driver = None
         try:
@@ -223,6 +224,7 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
             options.add_argument("--disable-notifications")
             options.add_argument("--disable-popup-blocking")
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_experimental_option("detach", True)
             options.add_experimental_option("useAutomationExtension", False)
             if headers.get("User-Agent") is not None:
                 options.add_argument(f"--user-agent={headers.get('User-Agent')}")
@@ -250,6 +252,12 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
                     webdriver.Remote,
                     command_executor=self._remote,
                     options=options,
+                    client_config=ClientConfig(
+                        remote_server_addr=self._remote,
+                        keep_alive=False,
+                        timeout=timeout,
+                        ignore_certificates=True,
+                    )
                 )
 
             await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)
@@ -286,13 +294,13 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
 
 class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         driver = None
         try:
@@ -332,13 +340,13 @@ class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
 
 class SafeRequestEngineCloudscraper(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: any,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: any,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         scraper = await asyncio.to_thread(
             cloudscraper.create_scraper,
@@ -378,13 +386,13 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
 
 class SafeRequestEngineHttpx(SafeRequestEngine):
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         async with httpx.AsyncClient(verify=False, proxy=proxy) as client:
             response = await client.request(
@@ -414,13 +422,13 @@ class SafeRequestEngineHttpx(SafeRequestEngine):
 
 class SafeRequest:
     def __init__(
-        self,
-        chains: list[SafeRequestEngine] = None,
-        proxies: list[str] = None,
-        cookies: dict = None,
-        headers: dict = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list[str]] = None,
+            self,
+            chains: list[SafeRequestEngine] = None,
+            proxies: list[str] = None,
+            cookies: dict = None,
+            headers: dict = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list[str]] = None,
     ):
         if headers is not None:
             self._headers = headers
@@ -502,10 +510,10 @@ class SafeRequest:
         return self
 
     async def user_agent(
-        self,
-        user_agent: Optional[str] | list = None,
-        mobile_random: bool = False,
-        pc_random: bool = False,
+            self,
+            user_agent: Optional[str] | list = None,
+            mobile_random: bool = False,
+            pc_random: bool = False,
     ):
         """"""
         if user_agent is not None:
@@ -697,7 +705,7 @@ class SafeRequest:
         return self
 
     def cookie(
-        self, key: str = None, value: str = None, data: str = None, item: dict = None
+            self, key: str = None, value: str = None, data: str = None, item: dict = None
     ):
         """"""
         if key is not None and value is not None and data is None and item is None:
@@ -716,14 +724,14 @@ class SafeRequest:
         return self
 
     async def request(
-        self,
-        url: str,
-        method: SafeRequestMethod = SafeRequestMethod.GET,
-        data: any = None,
-        timeout: int = 60,
-        raise_errors: bool = False,
-        max_tries: int = 10,
-        post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
+            self,
+            url: str,
+            method: SafeRequestMethod = SafeRequestMethod.GET,
+            data: any = None,
+            timeout: int = 60,
+            raise_errors: bool = False,
+            max_tries: int = 10,
+            post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
     ) -> SafeRequestResponseData:
         errors = []
         tries = 0

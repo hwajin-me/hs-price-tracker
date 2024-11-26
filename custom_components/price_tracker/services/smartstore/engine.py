@@ -32,12 +32,12 @@ _REQUEST_HEADER = {
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -97,6 +97,7 @@ class SmartstoreEngine(PriceEngine):
         logging_for_response(response=text, name=__name__, domain="smartstore")
 
         naver_parser = SmartstoreParser(data=text)
+
         return ItemData(
             id=self.id_str(),
             price=naver_parser.price,
@@ -116,7 +117,7 @@ class SmartstoreEngine(PriceEngine):
     @staticmethod
     def parse_id(item_url: str):
         u = re.search(
-            r"(?P<store_type>smartstore|shopping|brand)\.naver\.com\/(?P<store>[a-zA-Z\d\-_]+)\/(?P<detail_type>products|[\w]+)\/(?P<product_id>[\d]+)",
+            r"(?P<store_type>smartstore|shopping|brand)\.naver\.com/(?P<store>[a-zA-Z\d\-_]+)/(?P<detail_type>products|\w+)/(?P<product_id>\d+)",
             item_url,
         )
 
