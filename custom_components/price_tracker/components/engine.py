@@ -2,6 +2,7 @@ import logging
 from abc import abstractmethod
 
 from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.utilities.list import Lu
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +31,8 @@ class PriceEngine:
     @staticmethod
     def target_id(value: any) -> str:
         if isinstance(value, dict):
-            return "_".join(list(value.values()))
+            items = Lu.filter(value.values(), lambda x : x is not None)
+            return "_".join(list(items))
         elif value is str:
             return value
         elif isinstance(value, list):

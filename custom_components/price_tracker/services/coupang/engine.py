@@ -33,13 +33,14 @@ class CoupangEngine(PriceEngine):
         self.product_id = self.id["product_id"]
         self.item_id = self.id["item_id"]
         self.vendor_item_id = self.id["vendor_item_id"]
-        self._proxy = proxies
+        self._proxies = proxies
         self._device = device
         self._selenium = selenium
         self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData | None:
         request = SafeRequest(
+            proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy
         )
@@ -55,7 +56,6 @@ class CoupangEngine(PriceEngine):
         if random_bool():
             request.accept_text_html()
         request.accept_language(is_random=True)
-        request.proxies(self._proxy)
         response = await request.request(
             method=SafeRequestMethod.GET,
             url=_URL.format(self.product_id, self.item_id, self.vendor_item_id),
@@ -89,7 +89,7 @@ class CoupangEngine(PriceEngine):
     @staticmethod
     def parse_id(item_url: str):
         u = re.search(
-            r"products\/(?P<product_id>\d+)\?itemId=(?P<item_id>[\d]+).*?(?:|vendorItemId=(?P<vendor_item_id>[\d]+).*)$",
+            r"products\/(?P<product_id>\d+)\?.*?(?:itemId=(?P<item_id>[\d]+)|).*?(?:|vendorItemId=(?P<vendor_item_id>[\d]+).*)$",
             item_url,
         )
 

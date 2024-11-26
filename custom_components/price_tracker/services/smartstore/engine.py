@@ -12,9 +12,8 @@ from custom_components.price_tracker.services.smartstore.parser import Smartstor
 from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
-    SafeRequestMethod,
+    SafeRequestMethod, SafeRequestEngineRequests, SafeRequestEngineCloudscraper, SafeRequestEngineAiohttp,
 )
-from custom_components.price_tracker.utilities.utils import random_bool
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,12 +28,12 @@ _REQUEST_HEADER = {
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -52,17 +51,28 @@ class SmartstoreEngine(PriceEngine):
             self.store_type, self.store, self.detail_type, self.product_id
         )
         request = SafeRequest(
+            chains=[
+                SafeRequestEngineRequests(),
+                SafeRequestEngineCloudscraper(),
+                SafeRequestEngineAiohttp(),
+            ],
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
         )
-        request.accept_text_html().accept_language(
-            language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
-        ).accept_encoding("gzip, zlib, deflate, zstd, br")
-        await request.user_agent(
-            user_agent="Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-        )
+        request.accept_text_html()
+        request.accept_language(language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5")
+        request.accept_encoding("gzip, zlib, deflate, zstd, br")
         request.content_type()
+
+        # If brand store type
+        if self.store_type == "brand":
+            await request.user_agent(mobile_random=True, pc_random=True)
+            request.keep_alive()
+        else:
+            await request.user_agent(
+                user_agent="Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+            )
 
         response = await request.request(
             method=SafeRequestMethod.GET,

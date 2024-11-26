@@ -13,8 +13,10 @@ import fake_useragent
 import httpx
 import requests
 import undetected_chromedriver as uc
+import urllib3
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.remote.command import Command
 from voluptuous import default_factory
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -30,6 +32,8 @@ def ssl_context():
 
 
 _LOGGER = logging.getLogger(__name__)
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class SafeRequestError(Exception):
@@ -187,7 +191,7 @@ class SafeRequestEngineRequests(SafeRequestEngine):
 class SafeRequestEngineSelenium(SafeRequestEngine):
 
     def __init__(self, remote: str = None):
-        self._remote = remote
+        self._remote = remote if remote is not None and str(remote).strip() != '' else None
 
     async def request(
             self,
@@ -200,7 +204,7 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
     ) -> SafeRequestResponseData:
         driver = None
         try:
-            options = webdriver.ChromeOptions()
+            options = await asyncio.to_thread(webdriver.ChromeOptions)
 
             options.add_argument("--lang=en")
             options.add_argument("--disable-gpu")
@@ -216,7 +220,7 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
                 options.add_argument(f"--proxy-server={proxy}")
 
             if self._remote is None:
-                manager = ChromeDriverManager()
+                manager = await asyncio.to_thread(ChromeDriverManager)
                 manager_install = await asyncio.to_thread(manager.install)
                 service = await asyncio.to_thread(Service, executable_path=manager_install)
                 driver = await asyncio.to_thread(
@@ -229,16 +233,16 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
 
             await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)
             await asyncio.to_thread(driver.set_page_load_timeout, time_to_wait=timeout)
-
             await asyncio.to_thread(driver.get, url=url)
 
             all_cookies = await asyncio.to_thread(driver.get_cookies)
             cookies_dict = {}
             for cookie in all_cookies:
                 cookies_dict[cookie["name"]] = cookie["value"]
+            page_source = (await asyncio.to_thread(driver.execute, driver_command=Command.GET_PAGE_SOURCE))['value']
 
             data = SafeRequestResponseData(
-                data=await asyncio.to_thread(driver.page_source),
+                data=page_source,
                 status_code=200,
                 cookies=cookies_dict,
                 access_token=None,
@@ -384,6 +388,10 @@ class SafeRequest:
                  selenium: Optional[str] = None,
                  selenium_proxy: Optional[list[str]] = None
                  ):
+        if headers is not None:
+            self._headers = headers
+        else:
+            self._headers = {}
         self._headers = {
             "Accept": "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
@@ -396,7 +404,8 @@ class SafeRequest:
             "Sec-Fetch-Mode": "navigate",
             "Priority": "u=0, i",
             "Pragma": "no-cache",
-        } if headers is None else headers
+            **self._headers,
+        }
         self._timeout = 60
         self._proxies: list[str] = proxies if proxies is not None else []
         self._cookies: dict = cookies if cookies is not None else {}
@@ -404,7 +413,7 @@ class SafeRequest:
         self._selenium_proxy = selenium_proxy
         self._chains: list[SafeRequestEngine] = []
 
-        if self._selenium is not None:
+        if self._selenium is not None and str(selenium).strip() != '':
             self._chains.append(SafeRequestEngineSelenium(remote=self._selenium))
         self._chains = self._chains + (
             [
