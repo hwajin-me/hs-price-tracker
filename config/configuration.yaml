@@ -15,5 +15,6 @@ logger:
   logs:
     custom_components.price_tracker: debug
     custom_components.price_tracker_response: info
-    custom_components.price_tracker_response_ssg: debug
+    custom_components.price_tracker_response_ssg: info
+    custom_components.price_tracker_response_coupang: info
 

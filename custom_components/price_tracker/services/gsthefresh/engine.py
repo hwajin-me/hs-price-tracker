@@ -63,8 +63,8 @@ class GsTheFreshEngine(PriceEngine):
         )
 
         result = http_result.data
+        logging_for_response(result, __name__, "gsthefresh")
         gs_parser = GsthefreshParser(text=result)
-        logging_for_response(result, __name__)
 
         return ItemData(
             id=self.id_str(),

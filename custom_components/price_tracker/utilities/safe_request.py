@@ -190,8 +190,9 @@ class SafeRequestEngineRequests(SafeRequestEngine):
 
 class SafeRequestEngineSelenium(SafeRequestEngine):
 
-    def __init__(self, remote: str = None):
+    def __init__(self, remote: str = None, proxies: list[str] = None):
         self._remote = remote if remote is not None and str(remote).strip() != '' else None
+        self._proxies = proxies if proxies is not None else []
 
     async def request(
             self,
@@ -212,12 +213,22 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
             options.add_argument("--headless")
             options.add_argument('--disable-extensions')
             options.add_argument("--disable-session-crashed-bubble")
+            options.add_argument('--disable-blink-features=AutomationControlled')
+            options.add_argument("--disable-notifications")
+            options.add_argument("--disable-popup-blocking")
+            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_experimental_option('useAutomationExtension', False)
             if headers.get("User-Agent") is not None:
                 options.add_argument(f"--user-agent={headers.get('User-Agent')}")
             options.page_load_strategy = 'eager'
 
             if proxy is not None:
+                _LOGGER.debug("Using proxy for selenium %s", proxy)
                 options.add_argument(f"--proxy-server={proxy}")
+
+            if self._proxies and len(self._proxies) > 0:
+                _LOGGER.debug("Using random proxy for selenium in %s", self._proxies)
+                options.add_argument(f"--proxy-server={random.choice(self._proxies)}")
 
             if self._remote is None:
                 manager = await asyncio.to_thread(ChromeDriverManager)
@@ -233,6 +244,8 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
 
             await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)
             await asyncio.to_thread(driver.set_page_load_timeout, time_to_wait=timeout)
+            await asyncio.to_thread(driver.execute_script,
+                                    script="Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             await asyncio.to_thread(driver.get, url=url)
 
             all_cookies = await asyncio.to_thread(driver.get_cookies)
@@ -414,7 +427,7 @@ class SafeRequest:
         self._chains: list[SafeRequestEngine] = []
 
         if self._selenium is not None and str(selenium).strip() != '':
-            self._chains.append(SafeRequestEngineSelenium(remote=self._selenium))
+            self._chains.append(SafeRequestEngineSelenium(remote=self._selenium, proxies=self._selenium_proxy))
         self._chains = self._chains + (
             [
                 SafeRequestEngineCloudscraper(),

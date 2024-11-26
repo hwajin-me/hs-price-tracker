@@ -251,7 +251,8 @@ class PriceTrackerSetup:
                         ): cv.string,
                         vol.Optional(
                             self.conf_selenium_proxy,
-                            description={"suggested_value": ",".join(selenium_proxy)},
+                            description={
+                                "suggested_value": ",".join(selenium_proxy) if len(selenium_proxy) > 0 else ""},
                             default=''
                         ): cv.string,
                     }
@@ -262,8 +263,11 @@ class PriceTrackerSetup:
         options = dict(self._config_entry.options)
         selenium = user_input[self.conf_selenium] if self.conf_selenium in user_input else ""
         proxies = (
-            user_input[self.conf_proxy] if self.conf_proxy in user_input else ""
+            user_input[self.conf_selenium_proxy] if self.conf_selenium_proxy in user_input else ""
         ).strip()
+        if selenium == "":
+            selenium = None
+
         config[self.conf_selenium] = selenium
         config[self.conf_selenium_proxy] = (
             Lu.map(str(proxies).split(","), lambda x: x.strip())

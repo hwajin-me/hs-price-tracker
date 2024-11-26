@@ -65,8 +65,8 @@ class CoupangEngine(PriceEngine):
         if data is None or response.status_code != 200:
             return None
 
-        coupang_parser = CoupangParser(text=data)
         logging_for_response(data, __name__, "coupang")
+        coupang_parser = CoupangParser(text=data)
 
         return ItemData(
             id=self.id_str(),
