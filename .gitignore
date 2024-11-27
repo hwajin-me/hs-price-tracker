@@ -14,8 +14,8 @@ coverage.xml
 .idea
 
 # Home Assistant configuration
-config/*
-!config/configuration.yaml
+.test/config/*
+!.test/configuration.yaml
 
 # macOS
 .DS_Store
