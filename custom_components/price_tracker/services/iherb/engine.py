@@ -60,9 +60,6 @@ class IherbEngine(PriceEngine):
         await request.user_agent(pc_random=True)
         await request.request(method=SafeRequestMethod.GET, url="https://kr.iherb.com/")
 
-        request.header(key=":authority:", value="catalog.app.iherb.com")
-        request.header(key=":scheme:", value="https")
-
         if random_bool():
             await request.user_agent(user_agent=bot_agents())
 
