@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime
 
@@ -15,6 +16,8 @@ from custom_components.price_tracker.datas.price import ItemPriceData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.utilities.list import Lu
 from custom_components.price_tracker.utilities.parser import parse_float, parse_number
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class RankingdakParser:
@@ -62,9 +65,11 @@ class RankingdakParser:
 
     @property
     def price(self):
-        origin_price = parse_float(
-            self._goods_price.find("p", class_="origin").get_text().strip()
+        origin = self._goods_price.find("p", class_="origin")
+        origin_price = (
+            parse_float(origin.get_text().strip()) if origin is not None else None
         )
+
         sale_price = parse_float(
             self._goods_price.find("p", class_="price").get_text().strip()
         )
@@ -115,9 +120,14 @@ class RankingdakParser:
                         delivery_type=DeliveryType.STANDARD,
                     )
 
-                methods = Lu.map(
-                    table.find("span", class_="title-list").get_text().split(","),
-                    lambda x: x.strip(),
+                lists = table.find("span", class_="title-list")
+                methods = (
+                    Lu.map(
+                        lists.get_text().split(","),
+                        lambda x: x.strip(),
+                    )
+                    if lists is not None
+                    else []
                 )
 
                 if "특급배송" in methods:
@@ -141,10 +151,17 @@ class RankingdakParser:
     def unit(self):
         detail = self._goods_price.find("p", class_="price-detail")
         if detail is None:
-            return ItemUnitData(price=self.price.price, unit=1)
+            detail = self._goods_price.find("div", class_="option")
+            if detail is None:
+                return ItemUnitData(price=self.price.price)
+
         parse = re.search(
-            r"(?P<q>[\d,]+)(?P<type>팩|g|kg)당 : (?P<price>[\d,]+)원", detail.get_text()
+            r"(?P<q>[\d,]+)(?P<type>팩|g|kg)당.*?:.*?(?P<price>[\d,]+)원",
+            detail.get_text().strip().replace("\t", "").replace("\n", ""),
         )
+        if parse is None:
+            return ItemUnitData(price=self.price.price)
+
         group = parse.groupdict()
         if group is None:
             return ItemUnitData(price=self.price.price, unit=1)

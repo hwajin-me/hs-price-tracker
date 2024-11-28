@@ -1,4 +1,6 @@
+import random
 import re
+import uuid
 from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
@@ -41,12 +43,26 @@ class IherbEngine(PriceEngine):
         request.accept_encoding("gzip, deflate, br")
         request.content_type("application/json")
         request.cache_control("max-age=0")
-        request.cookie(key="ih-exp-user-id", value="1985018")
+        request.keep_alive()
+        request.priority_u()
+        request.referer_no_referrer()
+        request.cookie(
+            key="ih-exp-user-id", value=random.randrange(10000000, 999999999)
+        )
+        request.cookie(key="dscid", value=str(uuid.uuid4()))
         await request.user_agent(mobile_random=True)
+        await request.request(
+            method=SafeRequestMethod.GET,
+            url="https://kr.iherb.com/pr/{}".format(self.id),
+        )
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
         logging_for_response(response, __name__, "iherb")
+
+        if not response.has:
+            return None
+
         parser = IherbParser(data=response.data)
 
         return ItemData(
