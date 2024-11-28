@@ -160,7 +160,7 @@ class OasisParser:
             if self._data.find("div", "oDetail_info_group_price").find(
                 "div", class_="cost"
             )
-               is not None
+            is not None
             else None
         )
 

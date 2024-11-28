@@ -18,12 +18,12 @@ _URL = "https://prdm.daisomall.co.kr/api/pd/pdl/pdDtl/selPdDtlInfo"
 
 class DaisoKrEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = DaisoKrEngine.parse_id(item_url)
@@ -58,7 +58,9 @@ class DaisoKrEngine(PriceEngine):
             delivery=parser.delivery,
             unit=parser.unit,
             image=parser.image,
-            url='https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo={}&recmYn=Y'.format(self.id),
+            url="https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo={}&recmYn=Y".format(
+                self.id
+            ),
             options=parser.options,
             inventory=parser.inventory_status,
         )

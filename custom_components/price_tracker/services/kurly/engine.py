@@ -23,12 +23,12 @@ _ITEM_LINK = "https://www.kurly.com/goods/{}"
 
 class KurlyEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = KurlyEngine.parse_id(item_url)

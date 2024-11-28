@@ -21,12 +21,12 @@ _DISCOUNT_URL = "https://pbf.lotteon.com/product/v1/detail/promotion/promotionQt
 
 class LotteOnEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = LotteOnEngine.parse_id(item_url)
@@ -65,7 +65,7 @@ class LotteOnEngine(PriceEngine):
             category=parser.category,
             delivery=parser.delivery,
             unit=parser.unit,
-            url='https://www.lotteon.com/p/product/{}'.format(self.id),
+            url="https://www.lotteon.com/p/product/{}".format(self.id),
             image=parser.image,
             options=parser.options,
             inventory=parser.inventory_status,

@@ -105,16 +105,16 @@ class SmartstoreParser:
         # Payback
         benefits = self._data["product"]["A"]["benefitsView"]
         photo_review = (
-                benefits["managerPhotoVideoReviewPoint"] + benefits["photoVideoReviewPoint"]
+            benefits["managerPhotoVideoReviewPoint"] + benefits["photoVideoReviewPoint"]
         )
         text_review = benefits["managerTextReviewPoint"] + benefits["textReviewPoint"]
         after_use_photo_review = (
-                benefits["managerAfterUsePhotoVideoReviewPoint"]
-                + benefits["afterUsePhotoVideoReviewPoint"]
+            benefits["managerAfterUsePhotoVideoReviewPoint"]
+            + benefits["afterUsePhotoVideoReviewPoint"]
         )
         after_use_text_review = (
-                benefits["managerAfterUseTextReviewPoint"]
-                + benefits["afterUseTextReviewPoint"]
+            benefits["managerAfterUseTextReviewPoint"]
+            + benefits["afterUseTextReviewPoint"]
         )
         membership = benefits["managerPurchasePoint"] * 2
 
@@ -122,10 +122,10 @@ class SmartstoreParser:
             price=sale_price,
             original_price=original_price,
             payback_price=photo_review
-                          + text_review
-                          + after_use_photo_review
-                          + after_use_text_review
-                          + membership,
+            + text_review
+            + after_use_photo_review
+            + after_use_text_review
+            + membership,
             currency="KRW",
         )
 

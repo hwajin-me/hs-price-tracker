@@ -20,12 +20,12 @@ _URL = "https://m.rankingdak.com/product/view?productCd={}"
 
 class RankingdakEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = RankingdakEngine.parse_id(item_url)
@@ -59,7 +59,7 @@ class RankingdakEngine(PriceEngine):
             delivery=parser.delivery,
             unit=parser.unit,
             image=parser.image,
-            url='https://www.rankingdak.com/product/view?productCd={}'.format(self.id),
+            url="https://www.rankingdak.com/product/view?productCd={}".format(self.id),
             options=parser.options,
             inventory=parser.inventory_status,
         )

@@ -22,21 +22,21 @@ class ItemUnitType(Enum):
         if str(label).lower() in ("g", "gram", "グラム", "그램", "克"):
             return ItemUnitType.G
         elif str(label).lower() in (
-                "kg",
-                "kilogram",
-                "キログラム",
-                "キロ",
-                "킬로그램",
-                "킬로",
+            "kg",
+            "kilogram",
+            "キログラム",
+            "キロ",
+            "킬로그램",
+            "킬로",
         ):
             return ItemUnitType.KG
         elif str(label).lower() in (
-                "ml",
-                "millilitre",
-                "ミリリットル",
-                "ミリ",
-                "밀리리터",
-                "밀리",
+            "ml",
+            "millilitre",
+            "ミリリットル",
+            "ミリ",
+            "밀리리터",
+            "밀리",
         ):
             return ItemUnitType.ML
         elif str(label).lower() in ("l", "litre", "リットル", "리터"):
@@ -52,11 +52,11 @@ class ItemUnitType(Enum):
 @dataclasses.dataclass
 class ItemUnitData:
     def __init__(
-            self,
-            price: float,
-            unit_type: ItemUnitType = ItemUnitType.PIECE,
-            unit: float = 1,
-            total_price: float = None,
+        self,
+        price: float,
+        unit_type: ItemUnitType = ItemUnitType.PIECE,
+        unit: float = 1,
+        total_price: float = None,
     ):
         self.unit_type = unit_type
         self.unit = unit

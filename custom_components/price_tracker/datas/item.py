@@ -34,20 +34,20 @@ class ItemStatus(Enum):
 @dataclasses.dataclass
 class ItemData:
     def __init__(
-            self,
-            id: any,
-            price: ItemPriceData,
-            name: str,
-            brand: str = None,
-            description: str = None,
-            category: ItemCategoryData = None,
-            delivery: DeliveryData = DeliveryData(),
-            url: str = None,
-            image: str = None,
-            unit: ItemUnitData = None,
-            inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
-            options: [ItemOptionData] = None,
-            status: ItemStatus = ItemStatus.ACTIVE,
+        self,
+        id: any,
+        price: ItemPriceData,
+        name: str,
+        brand: str = None,
+        description: str = None,
+        category: ItemCategoryData = None,
+        delivery: DeliveryData = DeliveryData(),
+        url: str = None,
+        image: str = None,
+        unit: ItemUnitData = None,
+        inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
+        options: [ItemOptionData] = None,
+        status: ItemStatus = ItemStatus.ACTIVE,
     ) -> None:
         self.id = id
         if unit is None:

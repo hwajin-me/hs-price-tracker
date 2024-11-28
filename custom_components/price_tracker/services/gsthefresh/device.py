@@ -72,12 +72,12 @@ class GsTheFreshLogin:
         j = response.json
 
         if (
-                "data" not in j
-                or "accessToken" not in j["data"]
-                or "refreshToken" not in j["data"]
-                or "customer" not in j["data"]
-                or "customerName" not in j["data"]["customer"]
-                or "customerNumber" not in j["data"]["customer"]
+            "data" not in j
+            or "accessToken" not in j["data"]
+            or "refreshToken" not in j["data"]
+            or "customer" not in j["data"]
+            or "customerName" not in j["data"]["customer"]
+            or "customerNumber" not in j["data"]["customer"]
         ):
             raise ApiError("GS THE FRESH Login API Parse Error - {}".format(j))
 
@@ -93,17 +93,17 @@ class GsTheFreshLogin:
         sha256.update(password.encode())
         hash_password = sha256.hexdigest()
         async with aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(verify_ssl=False)
+            connector=aiohttp.TCPConnector(verify_ssl=False)
         ) as session:
             async with session.post(
-                    url=_LOGIN_URL,
-                    json={"id": username, "password": hash_password},
-                    headers={
-                        **default_request_headers(),
-                        **_REQUEST_HEADERS,
-                        "device_id": device_id,
-                        "appinfo_device_id": device_id,
-                    },
+                url=_LOGIN_URL,
+                json={"id": username, "password": hash_password},
+                headers={
+                    **default_request_headers(),
+                    **_REQUEST_HEADERS,
+                    "device_id": device_id,
+                    "appinfo_device_id": device_id,
+                },
             ) as response:
                 if response.status != 200:
                     raise Exception("")
@@ -147,15 +147,15 @@ class GsTheFreshLogin:
 
 class GsTheFreshDevice(PriceTrackerDevice):
     def __init__(
-            self,
-            entry_id: str,
-            gs_device_id: str,
-            access_token: str,
-            refresh_token: str,
-            name: str,
-            number: str,
-            store: str,
-            store_name: str,
+        self,
+        entry_id: str,
+        gs_device_id: str,
+        access_token: str,
+        refresh_token: str,
+        name: str,
+        number: str,
+        store: str,
+        store_name: str,
     ):
         super().__init__(
             entry_id,
@@ -302,9 +302,9 @@ class GsTheFreshDevice(PriceTrackerDevice):
 
     async def async_update(self):
         if (
-                self._updated_at is None
-                or (datetime.now() - self._updated_at).seconds > (60 * 60 * 3)
-                or self._attr_available is False
+            self._updated_at is None
+            or (datetime.now() - self._updated_at).seconds > (60 * 60 * 3)
+            or self._attr_available is False
         ):
             await self.reauth()
         else:

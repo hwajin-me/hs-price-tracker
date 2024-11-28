@@ -105,8 +105,8 @@ class RankingdakParser:
             if table.find("em").get_text() == "배송방법":
                 empty_target = table.find("span", class_="blind")
                 if (
-                        empty_target is not None
-                        and empty_target.get_text().strip() == "무료배송"
+                    empty_target is not None
+                    and empty_target.get_text().strip() == "무료배송"
                 ):
                     return DeliveryData(
                         price=0,

@@ -47,10 +47,10 @@ class IherbParser:
     def description(self):
         description = self._data.get("description")
         if description is None:
-            return ''
+            return ""
 
-        remover = re.compile(r'<.*?>')
-        return str(re.sub(remover, '', description.replace("\n", " ")))
+        remover = re.compile(r"<.*?>")
+        return str(re.sub(remover, "", description.replace("\n", " ")))
 
     @property
     def inventory_status(self):
@@ -105,7 +105,7 @@ class IherbParser:
     @property
     def image(self):
         if (
-                self._data.get("campaignImages") is not None
-                and len(self._data.get("campaignImages")) > 0
+            self._data.get("campaignImages") is not None
+            and len(self._data.get("campaignImages")) > 0
         ):
             return self._data.get("campaignImages")[0]

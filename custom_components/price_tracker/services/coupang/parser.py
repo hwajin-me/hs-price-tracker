@@ -165,10 +165,10 @@ class CoupangParser:
             self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_DELIVERY_INFO"
         )
         if (
-                delivery_info_base is not None
-                and "data" in delivery_info_base
-                and "pddList" in delivery_info_base["data"]
-                and len(delivery_info_base["data"]["pddList"]) > 0
+            delivery_info_base is not None
+            and "data" in delivery_info_base
+            and "pddList" in delivery_info_base["data"]
+            and len(delivery_info_base["data"]["pddList"]) > 0
         ):
             delivery_item = delivery_info_base["data"]["pddList"][0]
             type = delivery_item[
@@ -223,7 +223,7 @@ class CoupangParser:
             if Lu.find_item(
                 self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
             )
-               is not None
+            is not None
             else None
         )
 

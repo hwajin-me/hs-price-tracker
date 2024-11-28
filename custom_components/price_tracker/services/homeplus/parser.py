@@ -93,10 +93,7 @@ class HomeplusParser:
         per = self._etc["unitQty"]
 
         return ItemUnitData(
-            price=unit_price,
-            unit_type=unit,
-            unit=per,
-            total_price=self.price.price
+            price=unit_price, unit_type=unit, unit=per, total_price=self.price.price
         )
 
     @property

@@ -25,12 +25,12 @@ _HEADERS = {
 
 class HomeplusEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = HomeplusEngine.parse_id(item_url)
@@ -64,7 +64,9 @@ class HomeplusEngine(PriceEngine):
             delivery=parser.delivery,
             unit=parser.unit,
             image=parser.image,
-            url='https://mfront.homeplus.co.kr/item?itemNo={}&storeType=HYPER'.format(self.id),
+            url="https://mfront.homeplus.co.kr/item?itemNo={}&storeType=HYPER".format(
+                self.id
+            ),
             options=parser.options,
             inventory=parser.inventory_status,
         )

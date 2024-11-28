@@ -27,11 +27,11 @@ _HEADERS = {
 
 class IdeaNutritionEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = IdeaNutritionEngine.parse_id(item_url)
