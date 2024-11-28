@@ -46,13 +46,13 @@ class PriceTrackerSensor(RestoreEntity):
     _updated_at: datetime | None = None
 
     def __init__(
-        self,
-        engine: PriceEngine,
-        device: PriceTrackerDevice | None = None,
-        unit_type: ItemUnitType = ItemUnitType.PIECE,
-        unit_value: int = 1,
-        refresh_period: int = 30,
-        management_category: str = None,
+            self,
+            engine: PriceEngine,
+            device: PriceTrackerDevice | None = None,
+            unit_type: ItemUnitType = ItemUnitType.PIECE,
+            unit_value: int = 1,
+            refresh_period: int = 30,
+            management_category: str = None,
     ):
         """Initialize the sensor."""
         self._engine = engine
@@ -77,13 +77,17 @@ class PriceTrackerSensor(RestoreEntity):
         self._updated_at = datetime.now()
         self._management_category = management_category
 
+    @property
+    def engine_id_str(self):
+        return self._engine.id_str()
+
     async def async_update(self):
         # Check last updated at
         if self._updated_at is not None and self._attr_available is True:
             if (
-                self._updated_at is not None
-                and (self._updated_at + timedelta(minutes=self._refresh_period))
-                > datetime.now()
+                    self._updated_at is not None
+                    and (self._updated_at + timedelta(minutes=self._refresh_period))
+                    > datetime.now()
             ):
                 _LOGGER.debug(
                     "Skip update cause refresh period. {} -({} / {}).".format(
@@ -105,8 +109,8 @@ class PriceTrackerSensor(RestoreEntity):
 
             if data is None:
                 if (
-                    self._updated_at is None
-                    or self._updated_at + timedelta(days=1) < datetime.now()
+                        self._updated_at is None
+                        or self._updated_at + timedelta(days=1) < datetime.now()
                 ):
                     self._attr_available = False
                 else:
@@ -215,9 +219,9 @@ class PriceTrackerSensor(RestoreEntity):
 
             # Update price change
             if (
-                "price_change_status" in state.attributes
-                and "price_change_before_price" in state.attributes
-                and "price_change_after_price" in state.attributes
+                    "price_change_status" in state.attributes
+                    and "price_change_before_price" in state.attributes
+                    and "price_change_after_price" in state.attributes
             ):
                 self._price_change = ItemPriceChangeData(
                     status=ItemPriceChangeStatus.of(

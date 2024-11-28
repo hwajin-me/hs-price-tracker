@@ -5,36 +5,28 @@ from urllib.parse import unquote
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
 from custom_components.price_tracker.datas.item import ItemData
-from custom_components.price_tracker.services.idea_nutrition.const import CODE, NAME
-from custom_components.price_tracker.services.idea_nutrition.parser import (
-    IdeaNutritionParser,
-)
+from custom_components.price_tracker.services.daiso_kr.const import CODE, NAME
+from custom_components.price_tracker.services.daiso_kr.parser import DaisoKrParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
 )
 
-_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 AU/0510ed03-e07e-41f4-9f63-90022dae21f2 HOMEPLUS/IOS/MOBILE/6.2.9"
-_URL = "https://mfront.homeplus.co.kr/item?itemNo={}&storeType=HYPER&abtp=A_H_37_PD_068804218_1_1_068804656_CS001_"
-_HEADERS = {
-    "devicemodel": "iPhone15,2",
-    "sec-fetch-site": "none",
-    "sec-fetch-mode": "navigate",
-    "sec-fetch-dest": "document",
-}
+_URL = "https://prdm.daisomall.co.kr/api/pd/pdl/pdDtl/selPdDtlInfo"
 
 
-class IdeaNutritionEngine(PriceEngine):
+class DaisoKrEngine(PriceEngine):
     def __init__(
             self,
             item_url: str,
+            device: None = None,
             proxies: Optional[list] = None,
             selenium: Optional[str] = None,
             selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
-        self.id = IdeaNutritionEngine.parse_id(item_url)
+        self.id = DaisoKrEngine.parse_id(item_url)
         self._proxies = proxies
         self._selenium = selenium
         self._selenium_proxy = selenium_proxy
@@ -47,13 +39,14 @@ class IdeaNutritionEngine(PriceEngine):
         )
         request.accept_text_html()
         request.accept_encoding("gzip, deflate, br")
-        request.cookie(key="domainType", value="mobile")
-        await request.user_agent(user_agent=_UA)
+        await request.user_agent(mobile_random=True)
         response = await request.request(
-            method=SafeRequestMethod.GET, url=_URL.format(self.id)
+            method=SafeRequestMethod.POST,
+            url=_URL,
+            data={"pdNo": self.id},
         )
-        logging_for_response(response, __name__, "homeplus")
-        parser = IdeaNutritionParser(html=response.data)
+        logging_for_response(response, __name__, "daiso_kr")
+        parser = DaisoKrParser(data=response.data)
 
         return ItemData(
             id=self.id_str(),
@@ -65,6 +58,7 @@ class IdeaNutritionEngine(PriceEngine):
             delivery=parser.delivery,
             unit=parser.unit,
             image=parser.image,
+            url='https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo={}&recmYn=Y'.format(self.id),
             options=parser.options,
             inventory=parser.inventory_status,
         )
@@ -74,15 +68,13 @@ class IdeaNutritionEngine(PriceEngine):
 
     @staticmethod
     def parse_id(item_url: str):
-        u = re.search(r"itemNo=(?P<item_no>\d+)", unquote(item_url))
+        u = re.search(r"pdNo=(?P<id>\d+)", unquote(item_url))
         g = u.groupdict()
 
         if g is None:
-            raise InvalidItemUrlError(
-                "Invalid idea_nutrition item url {}".format(item_url)
-            )
+            raise InvalidItemUrlError("Invalid daiso kr item url {}".format(item_url))
 
-        return g["item_no"]
+        return g["id"]
 
     @staticmethod
     def engine_code() -> str:

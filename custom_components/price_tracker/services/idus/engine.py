@@ -19,12 +19,12 @@ _ITEM_LINK = "https://www.idus.com/v2/product/{}"
 
 class IdusEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = IdusEngine.parse_id(item_url)

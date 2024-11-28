@@ -72,6 +72,7 @@
   "selector": {
     "option_setup_select": {
       "options": {
+        "option_personal_select": "個人設定",
         "option_proxy_select": "プロキシ設定",
         "option_selenium_select": "Selenium設定",
         "option_modify_select": "設定変更",

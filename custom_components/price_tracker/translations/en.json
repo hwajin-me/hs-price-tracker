@@ -71,6 +71,7 @@
   "selector": {
     "option_setup_select": {
       "options": {
+        "option_personal_select": "Personal Configuration",
         "option_proxy_select": "Proxy Configuration",
         "option_selenium_select": "Selenium Configuration",
         "option_modify_select": "Modify entity",

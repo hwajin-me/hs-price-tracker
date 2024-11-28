@@ -8,11 +8,11 @@ from custom_components.price_tracker.utilities.parser import parse_float
 @dataclass
 class ItemPriceData:
     def __init__(
-        self,
-        price: float = 0.0,
-        currency: str = "KRW",
-        original_price: float = None,
-        payback_price: float = 0.0,
+            self,
+            price: float = 0.0,
+            currency: str = "KRW",
+            original_price: float = None,
+            payback_price: float = 0.0,
     ):
         self.price = parse_float(price)
         self.currency = currency
@@ -38,8 +38,8 @@ class ItemPriceData:
 
 
 class ItemPriceChangeStatus(Enum):
-    INCREMENT_PRICE = ("increment_price",)
-    DECREMENT_PRICE = ("decrement_price",)
+    INCREMENT_PRICE = "increment_price"
+    DECREMENT_PRICE = "decrement_price"
     NO_CHANGE = "no_change"
 
     @staticmethod
@@ -68,11 +68,11 @@ class ItemPriceSummaryData:
 @dataclass
 class ItemPriceChangeData:
     def __init__(
-        self,
-        status: ItemPriceChangeStatus,
-        updated_at: datetime,
-        before_price: float | None = None,
-        after_price: float | None = None,
+            self,
+            status: ItemPriceChangeStatus,
+            updated_at: datetime,
+            before_price: float | None = None,
+            after_price: float | None = None,
     ):
         self.status = status
         self.updated_at = updated_at
@@ -89,10 +89,10 @@ class ItemPriceChangeData:
 
 
 def create_item_price_change(
-    updated_at: datetime,
-    period_hour: int,
-    after_price: float | None = None,
-    before_price: float | None = None,
+        updated_at: datetime,
+        period_hour: int,
+        after_price: float | None = None,
+        before_price: float | None = None,
 ) -> ItemPriceChangeData:
     if after_price is None:
         return ItemPriceChangeData(
@@ -101,7 +101,7 @@ def create_item_price_change(
 
     """INC or DEC Only works in updated_at in period_hour"""
     if datetime.now().replace(tzinfo=None) - updated_at.replace(
-        tzinfo=None
+            tzinfo=None
     ) > timedelta(hours=period_hour):
         return ItemPriceChangeData(
             ItemPriceChangeStatus.NO_CHANGE, updated_at, before_price, after_price

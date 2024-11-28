@@ -72,7 +72,7 @@ class SafeRequestResponseData:
 
     @property
     def has(self):
-        return self.status_code <= 399 and self.data is not None and self.data != ''
+        return self.status_code <= 399 and self.data is not None and self.data != ""
 
     @property
     def json(self):
@@ -257,7 +257,7 @@ class SafeRequestEngineSelenium(SafeRequestEngine):
                         keep_alive=False,
                         timeout=timeout,
                         ignore_certificates=True,
-                    )
+                    ),
                 )
 
             await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)

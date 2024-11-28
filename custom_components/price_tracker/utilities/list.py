@@ -81,7 +81,7 @@ class Lu:
 
     @staticmethod
     def get_item_or_default(
-        target: [any], key: str, value: any, default_value: any = None
+            target: [any], key: str, value: any, default_value: any = None
     ):
         return next((x for x in target if x[key] == value), default_value)
 

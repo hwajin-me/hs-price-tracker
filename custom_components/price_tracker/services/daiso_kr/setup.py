@@ -1,10 +1,8 @@
 from custom_components.price_tracker.components.setup import PriceTrackerSetup
-from custom_components.price_tracker.services.homeplus.const import CODE, NAME
+from custom_components.price_tracker.services.daiso_kr.const import CODE, NAME
 
 
-class HomeplusSetup(PriceTrackerSetup):
-    """Homeplus setup class."""
-
+class DaisoKrSetup(PriceTrackerSetup):
     @staticmethod
     def setup_code() -> str:
         return CODE

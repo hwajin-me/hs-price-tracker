@@ -1,4 +1,5 @@
 import dataclasses
+from enum import Enum
 
 from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import DeliveryData
@@ -25,22 +26,28 @@ class ItemOptionData:
         }
 
 
+class ItemStatus(Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
+
 @dataclasses.dataclass
 class ItemData:
     def __init__(
-        self,
-        id: any,
-        price: ItemPriceData,
-        name: str,
-        brand: str = None,
-        description: str = None,
-        category: ItemCategoryData = None,
-        delivery: DeliveryData = DeliveryData(),
-        url: str = None,
-        image: str = None,
-        unit: ItemUnitData = None,
-        inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
-        options: [ItemOptionData] = None,
+            self,
+            id: any,
+            price: ItemPriceData,
+            name: str,
+            brand: str = None,
+            description: str = None,
+            category: ItemCategoryData = None,
+            delivery: DeliveryData = DeliveryData(),
+            url: str = None,
+            image: str = None,
+            unit: ItemUnitData = None,
+            inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
+            options: [ItemOptionData] = None,
+            status: ItemStatus = ItemStatus.ACTIVE,
     ) -> None:
         self.id = id
         if unit is None:
@@ -59,6 +66,7 @@ class ItemData:
         self.description = description
         self.inventory = inventory
         self.options = options
+        self.status = status
 
     @property
     def total_price(self):

@@ -94,6 +94,7 @@ class SsgParser:
                     price=parse_number(unit_parse["price"]),
                     unit_type=ItemUnitType.of(unit_parse["type"]),
                     unit=parse_number(unit_parse["unit"]),
+                    total_price=self.price.price,
                 )
             else:
                 unit = ItemUnitData(parse_float(self._item["price"]["sellprc"]))
@@ -113,8 +114,8 @@ class SsgParser:
                     delivery_type=DeliveryType.EXPRESS_SPECIFIC,
                 )
             elif (
-                Lu.find_item(self._item["rightBadgeList"], "txt", "새벽배송")
-                is not None
+                    Lu.find_item(self._item["rightBadgeList"], "txt", "새벽배송")
+                    is not None
             ):
                 return DeliveryData(
                     price=3000,
@@ -128,11 +129,11 @@ class SsgParser:
                 return DeliveryData(pay_type=DeliveryPayType.FREE)
 
             if (
-                item := Lu.find_item_by(
-                    self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
-                    "msg",
-                    lambda x: str(x).endswith("원 이상 무료)"),
-                )
+                    item := Lu.find_item_by(
+                        self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
+                        "msg",
+                        lambda x: str(x).endswith("원 이상 무료)"),
+                    )
             ) is not None:
                 threshold = parse_number(
                     str(item["msg"])
@@ -146,22 +147,22 @@ class SsgParser:
                 )
 
             if (
-                item := Lu.find_item_by(
-                    self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
-                    "msg",
-                    lambda x: str(x).startswith("배송비 "),
-                )
+                    item := Lu.find_item_by(
+                        self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
+                        "msg",
+                        lambda x: str(x).startswith("배송비 "),
+                    )
             ) is not None:
                 price = parse_number(str(item["msg"]).replace("배송비 ", ""))
                 return DeliveryData(price=price, pay_type=DeliveryPayType.PAID)
 
             if (
-                Lu.find_item(
-                    self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
-                    "msg",
-                    "배송비 무료",
-                )
-                is not None
+                    Lu.find_item(
+                        self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
+                        "msg",
+                        "배송비 무료",
+                    )
+                    is not None
             ):
                 return DeliveryData(pay_type=DeliveryPayType.FREE)
 

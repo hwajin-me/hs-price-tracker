@@ -51,7 +51,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         create_service_device_parser_and_parse(entry.data["type"], x)
                     )
                     if create_service_device_parser_and_parse(entry.data["type"], x)
-                    is not None
+                       is not None
                     else None,
                 },
             ),

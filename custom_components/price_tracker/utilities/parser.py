@@ -38,6 +38,8 @@ def parse_float(value: any) -> float:
             .replace("円", "")
             .replace("¥", "")
             .replace("￦", "")
+            .replace("₩", "")
+            .replace("$", "")
             .replace("\t", "")
             .replace("원", "")
         )

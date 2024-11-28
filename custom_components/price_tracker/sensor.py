@@ -27,9 +27,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: core.HomeAssistant,
-    config_entry: config_entries.ConfigEntry,
-    async_add_entities,
+        hass: core.HomeAssistant,
+        config_entry: config_entries.ConfigEntry,
+        async_add_entities,
 ):
     config = hass.data[DOMAIN][config_entry.entry_id]
     type = config[CONF_TYPE]
@@ -73,37 +73,44 @@ async def async_setup_entry(
                 proxy_opensource,
             )
 
+            engine = create_service_engine(type)(
+                item_url=target[CONF_ITEM_URL],
+                proxies=proxy,
+                device=device,
+                selenium=selenium,
+                selenium_proxy=selenium_proxy,
+            )
             sensor = PriceTrackerSensor(
-                engine=create_service_engine(type)(
-                    item_url=target[CONF_ITEM_URL],
-                    proxies=proxy,
-                    device=device,
-                    selenium=selenium,
-                    selenium_proxy=selenium_proxy,
-                ),
+                engine=engine,
                 device=device,
                 unit_type=ItemUnitType.of(target[CONF_ITEM_UNIT_TYPE])
                 if CONF_ITEM_UNIT_TYPE in target
-                and target[CONF_ITEM_UNIT_TYPE] != "auto"
+                   and target[CONF_ITEM_UNIT_TYPE] != "auto"
                 else ItemUnitType.PIECE,
                 unit_value=Lu.get(target, CONF_ITEM_UNIT, 1)
                 if CONF_ITEM_UNIT_TYPE in target
-                and target[CONF_ITEM_UNIT_TYPE] != "auto"
+                   and target[CONF_ITEM_UNIT_TYPE] != "auto"
                 else 1,
                 refresh_period=Lu.get(target, CONF_ITEM_REFRESH_INTERVAL, 30),
                 management_category=Lu.get(target, CONF_ITEM_MANAGEMENT_CATEGORY, None),
             )
 
+            if engine.id_str() in Lu.map(sensors, lambda x: x.engine_id_str):
+                # Remove duplicate
+                _LOGGER.warning("Duplicate sensor detected, skipping {}".format(engine.id_str()))
+                hass.data[DOMAIN][config_entry.entry_id][CONF_TARGET].remove(target)
+                continue
+
             sensors.append(sensor)
 
         except Exception as e:
-            _LOGGER.exception("Device configuration error {}".format(e), e)
+            _LOGGER.exception("Device(sensor) configuration error {}".format(e), e)
 
     async_add_entities(sensors, update_before_add=True)
 
 
 async def update_listener(
-    hass: core.HomeAssistant, entry: config_entries.ConfigEntry
+        hass: core.HomeAssistant, entry: config_entries.ConfigEntry
 ) -> None:
     """Update listener."""
     await hass.config_entries.async_reload(entry.entry_id)

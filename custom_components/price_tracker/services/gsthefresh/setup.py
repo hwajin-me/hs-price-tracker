@@ -40,8 +40,8 @@ class GsthefreshSetup(PriceTrackerSetup):
 
         # Find mart code by API
         if (
-            user_input is None
-            or Lu.get(user_input, self._conf_gs_store_code_and_name) is None
+                user_input is None
+                or Lu.get(user_input, self._conf_gs_store_code_and_name) is None
         ):
             return await self.find_mart(
                 user_input=user_input,
@@ -51,10 +51,10 @@ class GsthefreshSetup(PriceTrackerSetup):
         # Validation
         try:
             if (
-                user_input is not None
-                and self._conf_gs_naver_login_code in user_input
-                and self._conf_gs_store_code_and_name in user_input
-                and user_input[self._conf_gs_naver_login_code] != ""
+                    user_input is not None
+                    and self._conf_gs_naver_login_code in user_input
+                    and self._conf_gs_store_code_and_name in user_input
+                    and user_input[self._conf_gs_naver_login_code] != ""
             ):
                 _LOGGER.debug(
                     "GS THE FRESH Setup Validation Passed %s / %s",
@@ -85,10 +85,10 @@ class GsthefreshSetup(PriceTrackerSetup):
                 )
 
                 if (
-                    entry
-                    := self._config_flow.hass.config_entries.async_entry_for_domain_unique_id(
-                        self._config_flow.handler, self._config_flow.unique_id
-                    )
+                        entry
+                        := self._config_flow.hass.config_entries.async_entry_for_domain_unique_id(
+                            self._config_flow.handler, self._config_flow.unique_id
+                        )
                 ):
                     self._config_flow._abort_if_unique_id_configured(
                         updates={
@@ -103,7 +103,7 @@ class GsthefreshSetup(PriceTrackerSetup):
                             "device": Lu.remove_item(
                                 entry.data["device"], "item_device_id", unique_id
                             )
-                            + [devices],
+                                      + [devices],
                         }
                     )
                 else:
@@ -162,12 +162,12 @@ class GsthefreshSetup(PriceTrackerSetup):
                     key="description",
                     items={
                         "en": "Please enter the code you copied from the "
-                        + self._login_url
-                        + "page. The code is in the query string which is the part after the 'code='.",
+                              + self._login_url
+                              + "page. The code is in the query string which is the part after the 'code='.",
                         "ja": self._login_url
-                        + " からコピーしたコードを入力してください。コードは「code=」の後にあるクエリ文字列の一部です。",
+                              + " からコピーしたコードを入力してください。コードは「code=」の後にあるクエリ文字列の一部です。",
                         "ko": self._login_url
-                        + " 페이지에서 복사한 코드를 입력하십시오. 코드는 'code=' 이후의 쿼리 문자열입니다.",
+                              + " 페이지에서 복사한 코드를 입력하십시오. 코드는 'code=' 이후의 쿼리 문자열입니다.",
                     },
                 ),
             },

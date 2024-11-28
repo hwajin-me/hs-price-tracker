@@ -143,7 +143,7 @@ class KurlyParser:
         sale_price = (
             parse_float(self._data["base_price"])
             if self._data["discounted_price"] is None
-            or self._data["discounted_price"] == 0
+               or self._data["discounted_price"] == 0
             else parse_float(self._data["discounted_price"])
         )
         original_price = parse_float(self._data["retail_price"])

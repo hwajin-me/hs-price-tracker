@@ -1,0 +1,2 @@
+CODE = "aliexpress"
+NAME = "AliExpress"

@@ -9,7 +9,8 @@ class ItemCategoryData:
         if category is None:
             self._category = ""
         if isinstance(category, list):
-            self._category = "|".join(Lu.map(category, lambda x: str(x))).strip()
+            target = Lu.filter(category, lambda x: x is not None and str(x) != "")
+            self._category = "|".join(Lu.map(target, lambda x: str(x))).strip()
         elif isinstance(category, str):
             self._category = str(category.replace(">", "|").strip())
         else:

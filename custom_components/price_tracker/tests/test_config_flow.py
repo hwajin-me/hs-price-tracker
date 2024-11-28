@@ -1,5 +1,6 @@
-import pytest
 import logging
+
+import pytest
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -21,12 +21,12 @@ _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
 
 class CoupangEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = CoupangEngine.parse_id(item_url)
@@ -75,7 +75,11 @@ class CoupangEngine(PriceEngine):
             price=coupang_parser.price,
             image=coupang_parser.image,
             category=coupang_parser.category,
-            url=_ITEM_LINK.format(self.product_id, self.item_id, self.vendor_item_id),
+            url=_ITEM_LINK.format(
+                self.product_id,
+                self.item_id if self.item_id is not None else "",
+                self.vendor_item_id if self.vendor_item_id is not None else "",
+            ),
             options=coupang_parser.options,
             unit=coupang_parser.unit,
             inventory=coupang_parser.inventory,
@@ -83,6 +87,13 @@ class CoupangEngine(PriceEngine):
         )
 
     def id_str(self) -> str:
+        if self.item_id is None and self.vendor_item_id is None:
+            return "{}".format(self.product_id)
+        if self.vendor_item_id is None:
+            return "{}_{}".format(self.product_id, self.item_id)
+        if self.item_id is None:
+            return "{}_{}".format(self.product_id, self.vendor_item_id)
+
         return "{}_{}_{}".format(self.product_id, self.item_id, self.vendor_item_id)
 
     @staticmethod

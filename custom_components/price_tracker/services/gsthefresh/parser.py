@@ -22,9 +22,9 @@ class GsthefreshParser:
             parse = json.loads(text)
 
             if (
-                "data" not in parse
-                or "weDeliveryItemDetailResultList" not in parse["data"]
-                or len(parse["data"]["weDeliveryItemDetailResultList"]) < 1
+                    "data" not in parse
+                    or "weDeliveryItemDetailResultList" not in parse["data"]
+                    or len(parse["data"]["weDeliveryItemDetailResultList"]) < 1
             ):
                 raise DataParseError("GS THE FRESH Response error")
 
@@ -108,7 +108,7 @@ class GsthefreshParser:
     @property
     def price(self):
         sale_price = (
-            self._item["normalSalePrice"] - self._item["totalDiscountRateAmount"]
+                self._item["normalSalePrice"] - self._item["totalDiscountRateAmount"]
         )
 
         return ItemPriceData(

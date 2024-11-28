@@ -20,12 +20,12 @@ _ITEM_LINK = "https://emart.ssg.com/item/itemView.ssg?itemId={}&siteNo={}"
 
 class SsgEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SsgEngine.parse_id(item_url)

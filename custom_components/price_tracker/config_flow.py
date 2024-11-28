@@ -10,7 +10,6 @@ from .components.error import UnsupportedError
 from .components.setup import PriceTrackerSetup
 from .consts.confs import CONF_TYPE
 from .consts.defaults import DOMAIN
-
 from .services.setup import (
     price_tracker_setup_service,
     price_tracker_setup_service_user_input,
@@ -28,7 +27,7 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         pass
 
     async def async_migrate_entry(
-        self, hass: HomeAssistant, config_entry: ConfigEntry
+            self, hass: HomeAssistant, config_entry: ConfigEntry
     ) -> bool:
         """Migrate old entry."""
         _LOGGER.debug("Migrate entry (config-flow)")
@@ -48,8 +47,8 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         try:
             if step := price_tracker_setup_service(
-                service_type=price_tracker_setup_service_user_input(user_input),
-                config_flow=self,
+                    service_type=price_tracker_setup_service_user_input(user_input),
+                    config_flow=self,
             ):
                 return await step.setup(user_input)
         except UnsupportedError:
@@ -63,8 +62,8 @@ class PriceTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_setup(self, user_input=None):
         if step := price_tracker_setup_service(
-            service_type=price_tracker_setup_service_user_input(user_input),
-            config_flow=self,
+                service_type=price_tracker_setup_service_user_input(user_input),
+                config_flow=self,
         ):
             return await step.setup(user_input)
 
@@ -93,17 +92,17 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
 
         # Proxy configuration
         if (
-            self.setup.const_option_setup_select in user_input
-            and user_input[self.setup.const_option_setup_select]
-            == self.setup.const_option_proxy_select
+                self.setup.const_option_setup_select in user_input
+                and user_input[self.setup.const_option_setup_select]
+                == self.setup.const_option_proxy_select
         ):
             return await self.setup.option_proxy(user_input)
 
         # Selenium select
         if (
-            self.setup.const_option_setup_select in user_input
-            and user_input[self.setup.const_option_setup_select]
-            == self.setup.const_option_selenium_select
+                self.setup.const_option_setup_select in user_input
+                and user_input[self.setup.const_option_setup_select]
+                == self.setup.const_option_selenium_select
         ):
             return await self.setup.option_selenium(user_input)
 
@@ -115,9 +114,9 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
                     return device
 
         if (
-            Lu.get(user_input, self.setup.const_option_setup_select)
-            == self.setup.const_option_modify_select
-            and Lu.get(user_input, self.setup.const_option_select_entity) is None
+                Lu.get(user_input, self.setup.const_option_setup_select)
+                == self.setup.const_option_modify_select
+                and Lu.get(user_input, self.setup.const_option_select_entity) is None
         ):
             return await self.setup.option_select_entity(
                 device=Lu.get(user_input, self.setup.const_option_select_device),
@@ -127,8 +126,8 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
         # 2
         if self.setup.const_option_setup_select in user_input:
             if (
-                user_input[self.setup.const_option_setup_select]
-                == self.setup.const_option_modify_select
+                    user_input[self.setup.const_option_setup_select]
+                    == self.setup.const_option_modify_select
             ):
                 return await self.setup.option_modify(
                     device=Lu.get(user_input, self.setup.const_option_select_device),
@@ -136,8 +135,8 @@ class PriceTrackerOptionsFlowHandler(config_entries.OptionsFlow):
                     user_input=user_input,
                 )
             elif (
-                user_input[self.setup.const_option_setup_select]
-                == self.setup.const_option_add_select
+                    user_input[self.setup.const_option_setup_select]
+                    == self.setup.const_option_add_select
             ):
                 return await self.setup.option_upsert(
                     device=Lu.get(user_input, self.setup.const_option_select_device),

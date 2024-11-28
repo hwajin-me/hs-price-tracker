@@ -37,6 +37,7 @@ class PriceTrackerSetup:
     const_option_setup_select: str = "option_setup_select"
     const_option_proxy_select: str = "option_proxy_select"
     const_option_selenium_select: str = "option_selenium_select"
+    const_option_personal_select: str = "option_personal_select"
     const_option_modify_select: str = "option_modify_select"
     const_option_add_select: str = "option_add_select"
     const_option_entity_select: str = "option_entity_select"
@@ -62,10 +63,10 @@ class PriceTrackerSetup:
     conf_item_price_change_interval_hour: str = "item_price_change_interval_hour"
 
     def __init__(
-        self,
-        config_flow: config_entries.ConfigFlow = None,
-        option_flow: config_entries.OptionsFlow = None,
-        config_entry=None,
+            self,
+            config_flow: config_entries.ConfigFlow = None,
+            option_flow: config_entries.OptionsFlow = None,
+            config_entry=None,
     ):
         self._config_flow = config_flow
         self._option_flow = option_flow
@@ -117,6 +118,7 @@ class PriceTrackerSetup:
                     ): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=[
+                                self.const_option_personal_select,
                                 self.const_option_proxy_select,
                                 self.const_option_selenium_select,
                                 self.const_option_modify_select,
@@ -311,9 +313,9 @@ class PriceTrackerSetup:
         _LOGGER.debug("Setup Modify(option): %s", user_input)
 
         if (
-            user_input is not None
-            and self.const_option_entity_delete in user_input
-            and user_input[self.const_option_entity_delete] is True
+                user_input is not None
+                and self.const_option_entity_delete in user_input
+                and user_input[self.const_option_entity_delete] is True
         ):
             data = deepcopy(self._config_entry.options.get(self.conf_target, []))
             target_entity = (er.async_get(self._option_flow.hass)).async_get(
@@ -349,17 +351,17 @@ class PriceTrackerSetup:
             if user_input is not None:
                 """Add a new entry."""
                 if (
-                    self.conf_item_url in user_input
-                    and self.conf_item_management_category in user_input
-                    and self.conf_item_unit_type in user_input
-                    and self.conf_item_unit in user_input
-                    and self.conf_item_refresh_interval in user_input
-                    and self.conf_item_price_change_interval_hour in user_input
-                    and self.conf_item_url != ""
-                    and self.conf_item_unit_type != ""
-                    and self.conf_item_unit != ""
-                    and self.conf_item_refresh_interval != ""
-                    and self.conf_item_price_change_interval_hour != ""
+                        self.conf_item_url in user_input
+                        and self.conf_item_management_category in user_input
+                        and self.conf_item_unit_type in user_input
+                        and self.conf_item_unit in user_input
+                        and self.conf_item_refresh_interval in user_input
+                        and self.conf_item_price_change_interval_hour in user_input
+                        and self.conf_item_url != ""
+                        and self.conf_item_unit_type != ""
+                        and self.conf_item_unit != ""
+                        and self.conf_item_refresh_interval != ""
+                        and self.conf_item_price_change_interval_hour != ""
                 ):
                     _LOGGER.debug(
                         "Setup Upsert(option) / Creation from: %s", user_input
@@ -424,10 +426,10 @@ class PriceTrackerSetup:
 
         # If the device and entity are selected
         if (
-            user_input is not None
-            and self.const_option_select_entity in user_input
-            and Lu.get(user_input, self.const_option_select_entity) is not None
-            and errors == {}
+                user_input is not None
+                and self.const_option_select_entity in user_input
+                and Lu.get(user_input, self.const_option_select_entity) is not None
+                and errors == {}
         ):
             """Change default variables"""
             entity = (er.async_get(self._option_flow.hass)).async_get(
@@ -518,7 +520,7 @@ class PriceTrackerSetup:
         device_entities = []
 
         for d in dr.async_entries_for_config_entry(
-            dr.async_get(self._option_flow.hass), self._config_entry.entry_id
+                dr.async_get(self._option_flow.hass), self._config_entry.entry_id
         ):
             device_entities.append(d.serial_number)
 
@@ -654,9 +656,9 @@ class PriceTrackerSetup:
 
     def _schema_user_input_option_service_device(self, user_input: dict = None):
         if (
-            user_input is None
-            or self.const_option_select_device not in user_input
-            or user_input[self.const_option_select_device] is None
+                user_input is None
+                or self.const_option_select_device not in user_input
+                or user_input[self.const_option_select_device] is None
         ):
             return {}
         return {

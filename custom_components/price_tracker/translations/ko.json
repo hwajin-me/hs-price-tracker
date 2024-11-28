@@ -71,6 +71,7 @@
   "selector": {
     "option_setup_select": {
       "options": {
+        "option_personal_select": "개인 설정",
         "option_proxy_select": "프록시 설정",
         "option_selenium_select": "Selenium 설정",
         "option_modify_select": "엔티티 수정 / 삭제",
