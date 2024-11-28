@@ -29,16 +29,17 @@ class NcncEngine(PriceEngine):
         self.item_url = item_url
         id = NcncEngine.parse_id(item_url)
         self.id = id["product_id"]
-        self._proxy = proxies
+        self._proxies = proxies
         self._device = device
         self._selenium = selenium
         self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData:
         request = SafeRequest(
-            selenium=self._selenium, selenium_proxy=self._selenium_proxy
+            proxies=self._proxies,
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy
         )
-        await request.proxies(self._proxy)
         request.header(key="x-api-key", value=_X_API)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
