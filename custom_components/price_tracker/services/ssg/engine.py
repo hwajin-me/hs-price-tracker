@@ -70,6 +70,9 @@ class SsgEngine(PriceEngine):
             unit=ssg_parser.unit,
         )
 
+    def id_str(self) -> str:
+        return "{}_{}".format(self.product_id, self.site_no)
+
     def id(self) -> str:
         return "{}_{}".format(self.product_id, self.site_no)
 

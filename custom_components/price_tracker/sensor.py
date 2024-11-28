@@ -95,7 +95,8 @@ async def async_setup_entry(
                 management_category=Lu.get(target, CONF_ITEM_MANAGEMENT_CATEGORY, None),
             )
 
-            if engine.id_str() in Lu.map(sensors, lambda x: x.engine_id_str) and engine.id_str() != "" and engine.id_str() is not None:
+            if engine.id_str() in Lu.map(sensors,
+                                         lambda x: x.engine_id_str) and engine.id_str() != "" and engine.id_str() is not None:
                 # Remove duplicate
                 _LOGGER.warning("Duplicate sensor detected, skipping {}".format(engine.id_str()))
                 # hass.data[DOMAIN][config_entry.entry_id][CONF_TARGET].remove(target)

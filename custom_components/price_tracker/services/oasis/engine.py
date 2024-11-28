@@ -61,7 +61,7 @@ class OasisEngine(PriceEngine):
             options=oasis_parser.options,
         )
 
-    def id(self) -> str:
+    def id_str(self) -> str:
         return self.product_id
 
     @staticmethod
