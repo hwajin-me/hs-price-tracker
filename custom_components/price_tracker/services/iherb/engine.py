@@ -1,4 +1,3 @@
-import random
 import re
 import uuid
 from typing import Optional
@@ -12,7 +11,9 @@ from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
+    bot_agents,
 )
+from custom_components.price_tracker.utilities.utils import random_bool
 
 _URL = "https://catalog.app.iherb.com/product/{}"
 
@@ -41,20 +42,31 @@ class IherbEngine(PriceEngine):
         request.accept_text_html()
         request.accept_language(is_random=True)
         request.accept_encoding("gzip, deflate, br")
-        request.content_type("application/json")
-        request.cache_control("max-age=0")
+        request.cache_control("no-cache")
         request.keep_alive()
         request.priority_u()
+        request.pragma_no_cache()
         request.referer_no_referrer()
-        request.cookie(
-            key="ih-exp-user-id", value=random.randrange(10000000, 999999999)
-        )
         request.cookie(key="dscid", value=str(uuid.uuid4()))
-        await request.user_agent(mobile_random=True)
-        await request.request(
-            method=SafeRequestMethod.GET,
-            url="https://kr.iherb.com/pr/{}".format(self.id),
+        request.cookie(key="pxcts", value=str(uuid.uuid4()))
+        request.cookie(key="_pxvid", value=str(uuid.uuid4()))
+        request.header(key=":method:", value="GET")
+        request.cookie(
+            key="ih-preference", value="country=KR&language=ko-KR&currency=KRW"
         )
+        request.cookie(key="iher-pref1", value="sccode=KR&lan=ko-KR&scurcode=KRW")
+        request.sec_ch_ua_mobile()
+        request.sec_fetch_mode_navigate()
+        request.sec_fetch_dest_document()
+        await request.user_agent(pc_random=True)
+        await request.request(method=SafeRequestMethod.GET, url="https://kr.iherb.com/")
+
+        request.header(key=":authority:", value="catalog.app.iherb.com")
+        request.header(key=":scheme:", value="https")
+
+        if random_bool():
+            await request.user_agent(user_agent=bot_agents())
+
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )

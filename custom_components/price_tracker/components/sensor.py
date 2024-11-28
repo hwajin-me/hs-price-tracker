@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime, timedelta
 
@@ -53,6 +52,7 @@ class PriceTrackerSensor(RestoreEntity):
         unit_value: int = 1,
         refresh_period: int = 30,
         management_category: str = None,
+        debug: bool = False,
     ):
         """Initialize the sensor."""
         self._engine = engine
@@ -76,6 +76,7 @@ class PriceTrackerSensor(RestoreEntity):
         self._refresh_period = refresh_period if refresh_period is not None else 30
         self._updated_at = datetime.now()
         self._management_category = management_category
+        self._debug = debug
 
     @property
     def engine_id_str(self):
@@ -102,7 +103,6 @@ class PriceTrackerSensor(RestoreEntity):
             self._updated_at,
             self._attr_available,
         )
-        await asyncio.sleep(0.15)
 
         try:
             data = await self._engine.load()
@@ -110,7 +110,8 @@ class PriceTrackerSensor(RestoreEntity):
             if data is None:
                 if (
                     self._updated_at is None
-                    or self._updated_at + timedelta(days=1) < datetime.now()
+                    or self._updated_at + timedelta(hours=6) < datetime.now()
+                    or self._debug
                 ):
                     self._attr_available = False
                 else:

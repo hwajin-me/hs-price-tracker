@@ -18,6 +18,7 @@ from custom_components.price_tracker.utilities.safe_request import (
     SafeRequestEngineAiohttp,
     bot_agents,
 )
+from custom_components.price_tracker.utilities.utils import random_bool
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,11 +66,16 @@ class SmartstoreEngine(PriceEngine):
             selenium_proxy=self._selenium_proxy,
         )
         request.accept_text_html()
+        if random_bool():
+            request.accept_all()
         request.accept_language(
             language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
         )
         request.accept_encoding("gzip, zlib, deflate, zstd, br")
         request.content_type()
+
+        if random_bool():
+            request.accept_encoding("gzip, deflate")
 
         # If brand store type
         if self.store_type == "brand":

@@ -25,7 +25,7 @@ from custom_components.price_tracker.utilities.list import Lu
 
 
 def bot_agents():
-    return ["NaverBot", "Yeti", "Googlebot-Mobile"]
+    return ["NaverBot", "Yeti", "Googlebot-Mobile", "HTTPie/3.2.4"]
 
 
 def ssl_context():
@@ -477,6 +477,12 @@ class SafeRequest:
         self._headers["Accept"] = (
             "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
         )
+
+        return self
+
+    def accept_all(self):
+        """"""
+        self._headers["Accept"] = "*/*"
 
         return self
 

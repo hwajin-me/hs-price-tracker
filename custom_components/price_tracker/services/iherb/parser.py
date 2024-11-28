@@ -104,8 +104,8 @@ class IherbParser:
 
     @property
     def image(self):
-        if (
-            self._data.get("campaignImages") is not None
-            and len(self._data.get("campaignImages")) > 0
-        ):
-            return self._data.get("campaignImages")[0]
+        brand = self._data.get("brandCode").lower()
+        part = self._data.get("partNumber").lower().replace(" ", "").replace("-", "")
+        image_index = self._data.get("primaryImageIndex")
+
+        return f"https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/{brand}/{part}/g/{image_index}.jpg"

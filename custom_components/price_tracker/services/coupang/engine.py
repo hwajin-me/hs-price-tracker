@@ -21,12 +21,12 @@ _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
 
 class CoupangEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = CoupangEngine.parse_id(item_url)
@@ -48,6 +48,16 @@ class CoupangEngine(PriceEngine):
         request.keep_alive()
         request.accept_text_html()
         request.accept_language(is_random=True)
+        # request.header(key=":method:", value="POST")
+        # request.header(key=":scheme:", value="https")
+        # request.header(key=":authority:", value="cmapi.coupang.com")
+        # request.header(key="x-coupang-app-name", value="coupang")
+        # request.cookie(key="modular-front", value="UNKNOWN|production|||N|23.76.153.54")
+        # request.cookie(key="appversion", value="8.3.4")
+        # request.cookie(key="ISAPP", value="Y")
+        # request.cookie(key="TY_EATS_NUDGE", value="true")
+        # request.cookie(key="WOW_CARD_BOTTOM_SHEET", value="Y")
+        # request.cookie(key="x-coupang-target-market", value="KR")
 
         if self._selenium and self._selenium_proxy:
             await request.user_agent(user_agent=bot_agents())

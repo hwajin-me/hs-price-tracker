@@ -106,6 +106,9 @@ class ItemData:
             "product_options": [option.dict for option in self.options]
             if self.options is not None
             else [],
+            "status": self.status.name
+            if self.status is not None
+            else ItemStatus.ACTIVE.name,
         }
 
         # For fast-access options

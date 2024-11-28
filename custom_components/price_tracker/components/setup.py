@@ -61,6 +61,7 @@ class PriceTrackerSetup:
     conf_item_unit: str = "item_unit"
     conf_item_refresh_interval: str = "item_refresh_interval"
     conf_item_price_change_interval_hour: str = "item_price_change_interval_hour"
+    conf_item_debug: str = "item_debug"
 
     def __init__(
         self,
@@ -357,11 +358,6 @@ class PriceTrackerSetup:
                     and self.conf_item_unit in user_input
                     and self.conf_item_refresh_interval in user_input
                     and self.conf_item_price_change_interval_hour in user_input
-                    and self.conf_item_url != ""
-                    and self.conf_item_unit_type != ""
-                    and self.conf_item_unit != ""
-                    and self.conf_item_refresh_interval != ""
-                    and self.conf_item_price_change_interval_hour != ""
                 ):
                     _LOGGER.debug(
                         "Setup Upsert(option) / Creation from: %s", user_input
@@ -422,6 +418,7 @@ class PriceTrackerSetup:
             vol.Required(
                 self.conf_item_price_change_interval_hour, default=24
             ): cv.positive_int,
+            vol.Optional(self.conf_item_debug, default=False): cv.boolean,
         }
 
         # If the device and entity are selected
@@ -485,6 +482,10 @@ class PriceTrackerSetup:
                             item, self.conf_item_price_change_interval_hour, 24
                         ),
                     ): cv.positive_int,
+                    vol.Optional(
+                        self.conf_item_debug,
+                        default=Lu.get_or_default(item, self.conf_item_debug, False),
+                    ): cv.boolean,
                 }
 
         return self._option_flow.async_show_form(
