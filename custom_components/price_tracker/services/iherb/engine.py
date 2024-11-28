@@ -50,7 +50,6 @@ class IherbEngine(PriceEngine):
         request.cookie(key="dscid", value=str(uuid.uuid4()))
         request.cookie(key="pxcts", value=str(uuid.uuid4()))
         request.cookie(key="_pxvid", value=str(uuid.uuid4()))
-        request.header(key=":method:", value="GET")
         request.cookie(
             key="ih-preference", value="country=KR&language=ko-KR&currency=KRW"
         )
