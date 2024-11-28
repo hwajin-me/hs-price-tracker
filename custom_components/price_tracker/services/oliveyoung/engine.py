@@ -63,6 +63,7 @@ class OliveyoungEngine(PriceEngine):
             image=oliveyoung_parser.image,
             options=oliveyoung_parser.options,
             inventory=oliveyoung_parser.inventory_status,
+            url='https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo={}'.format(self.goods_number),
         )
 
     def id_str(self) -> str:
