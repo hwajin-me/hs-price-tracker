@@ -114,6 +114,7 @@ class KurlyParser:
             price=self.price.price,
             unit=parse_float(group["unit"]),
             unit_type=ItemUnitType.of(group["type"]),
+            total_price=self.price.price,
         )
 
     @property

@@ -16,29 +16,23 @@ from custom_components.price_tracker.utilities.safe_request import (
     SafeRequestEngineRequests,
     SafeRequestEngineCloudscraper,
     SafeRequestEngineAiohttp,
-    bot_agents,
+    bot_agents, SafeRequestEngineHttpx,
 )
 from custom_components.price_tracker.utilities.utils import random_bool
 
 _LOGGER = logging.getLogger(__name__)
 
 _URL = "https://m.{}.naver.com/{}/{}/{}"
-_REQUEST_HEADER = {
-    "accept": "text/html",
-    "accept-language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
-    "accept-encoding": "gzip, zlib, deflate, zstd, br",
-    "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
-}
 
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -60,6 +54,7 @@ class SmartstoreEngine(PriceEngine):
                 SafeRequestEngineRequests(),
                 SafeRequestEngineCloudscraper(),
                 SafeRequestEngineAiohttp(),
+                SafeRequestEngineHttpx(),
             ],
             proxies=self._proxies,
             selenium=self._selenium,

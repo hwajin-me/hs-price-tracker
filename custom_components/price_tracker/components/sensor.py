@@ -116,6 +116,7 @@ class PriceTrackerSensor(RestoreEntity):
                     self._attr_available = False
                 else:
                     self._attr_available = True
+                    self._update_engine_status(False)
                 return None
 
             self._price_change = create_item_price_change(
@@ -180,7 +181,7 @@ class PriceTrackerSensor(RestoreEntity):
                 )
                 self._attr_available = True
             else:
-                self._attr_available = False
+                self._update_engine_status(False)
 
             self._attr_name = Lu.get(state.attributes, "name")
             self._attr_state = Lu.get(state.attributes, "price")
@@ -256,4 +257,9 @@ class PriceTrackerSensor(RestoreEntity):
         self._attr_extra_state_attributes = {
             **self._attr_extra_state_attributes,
             "updated_at": self._updated_at,
+        }
+
+    def _update_engine_status(self, status: bool):
+        self._attr_extra_state_attributes = {
+            'engine_status': 'FETCHED' if status else 'ERROR',
         }

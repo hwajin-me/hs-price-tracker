@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from datetime import datetime
 
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -12,11 +13,11 @@ class PriceTrackerDevice(Entity):
     _proxies: list[str]
 
     def __init__(
-        self,
-        entry_id: str,
-        device_type: str,
-        device_id: str,
-        proxies: str | list[str] | None = None,
+            self,
+            entry_id: str,
+            device_type: str,
+            device_id: str,
+            proxies: str | list[str] | None = None,
     ):
         self._entry_id = entry_id
         self._device_id = str(device_id)
@@ -68,4 +69,34 @@ class PriceTrackerDevice(Entity):
 
     @staticmethod
     def device_name() -> str:
+        pass
+
+
+class CommerceDevice(Entity):
+    def __init__(self, entry_id: str):
+        """"""
+        self._entry_id = entry_id
+
+    @abstractmethod
+    def add_to_cart(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def delete_from_cart(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_cart(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_order(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_orders(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def order(self, **kwargs):
         pass
