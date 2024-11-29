@@ -1,8 +1,7 @@
-import datetime
 import logging
 import re
+import datetime
 from typing import Optional
-from urllib.parse import urlencode
 from uuid import uuid4
 
 from custom_components.price_tracker.components.engine import PriceEngine
@@ -71,6 +70,8 @@ class SmartstoreEngine(PriceEngine):
             language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
         )
         request.accept_encoding("gzip, zlib, deflate, zstd, br")
+        if random_bool():
+            request.accept_encoding("gzip, deflate")
         request.content_type()
         request.referer(referer="https://m.shopping.naver.com/cart?pageExitType-=recommend")
         request.sec_fetch_dest_document()
@@ -78,7 +79,6 @@ class SmartstoreEngine(PriceEngine):
         request.sec_fetch_site(site="same-site")
         request.cookie(key="smartstore-STORE_LAST_VISITED_DATETIME",
                        value=str(datetime.datetime.timestamp(datetime.datetime.now())))
-        request.cookie(key="NA_CO", value=str(urlencode(query="ck=m42vmvdk|ci=|tr=mrec|hk=|trx=undefined")))
         request.cookie(key="wcs_bt", value="s_1:")
         request.cookie(key="DA_DD", value=str(uuid4()))
         request.cookie(key="NID_SES", value="")
@@ -102,9 +102,6 @@ class SmartstoreEngine(PriceEngine):
                                                                  str(datetime.datetime.timestamp(
                                                                      datetime.datetime.now()))))
         request.cookie(key="ASID", value=md5(datetime.datetime.now().isoformat()))
-
-        if random_bool():
-            request.accept_encoding("gzip, deflate")
 
         # If brand store type
         if self.store_type == "brand":
