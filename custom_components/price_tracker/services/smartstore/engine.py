@@ -76,7 +76,8 @@ class SmartstoreEngine(PriceEngine):
         request.sec_fetch_dest_document()
         request.sec_fetch_mode_navigate()
         request.sec_fetch_site(site="same-site")
-        request.cookie(key="smartstore-STORE_LAST_VISITED_DATETIME", value=str(datetime.datetime.timestamp()))
+        request.cookie(key="smartstore-STORE_LAST_VISITED_DATETIME",
+                       value=str(datetime.datetime.timestamp(datetime.datetime.now())))
         request.cookie(key="NA_CO", value=str(urlencode(query="ck=m42vmvdk|ci=|tr=mrec|hk=|trx=undefined")))
         request.cookie(key="wcs_bt", value="s_1:")
         request.cookie(key="DA_DD", value=str(uuid4()))
@@ -95,8 +96,11 @@ class SmartstoreEngine(PriceEngine):
         request.cookie(key="NV_WETR_LAST_ACCESS_RGN_M", value="MDkyMDA2NzE=")
         request.cookie(key="NV_WETR_LOCATION_RGN_M", value="MDkyMDA2NzE=")
         request.cookie(key="ab.storage.deviceId.{}".format(str(uuid4())),
-                       value="g|{}|e:undefined|c:{}|l:{}".format(str(uuid4()), str(datetime.datetime.timestamp()),
-                                                                 str(datetime.datetime.timestamp())))
+                       value="g|{}|e:undefined|c:{}|l:{}".format(str(uuid4()), str(datetime.datetime.timestamp(
+                           datetime.datetime.now()
+                       )),
+                                                                 str(datetime.datetime.timestamp(
+                                                                     datetime.datetime.now()))))
         request.cookie(key="ASID", value=md5(datetime.datetime.now().isoformat()))
 
         if random_bool():
