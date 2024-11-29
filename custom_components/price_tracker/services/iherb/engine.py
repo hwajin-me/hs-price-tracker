@@ -1,3 +1,4 @@
+import asyncio
 import re
 import uuid
 from typing import Optional
@@ -39,33 +40,36 @@ class IherbEngine(PriceEngine):
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
         )
+        # TODO: Prevent bot captcha
         request.accept_text_html()
-        request.accept_language(is_random=True)
+        request.accept_language(language="ko-KR,en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5")
         request.accept_encoding("gzip, deflate, br")
         request.cache_control("no-cache")
         request.keep_alive()
         request.priority_u()
         request.pragma_no_cache()
         request.referer_no_referrer()
-        request.cookie(key="dscid", value=str(uuid.uuid4()))
-        request.cookie(key="pxcts", value=str(uuid.uuid4()))
-        request.cookie(key="_pxvid", value=str(uuid.uuid4()))
+        request.sec_fetch_user('?1')
+        request.sec_fetch_site('none')
+        request.sec_fetch_mode_navigate()
+        request.sec_fetch_dest_document()
+        request.header(key="Host", value="catalog.app.iherb.com")
         request.cookie(
             key="ih-preference", value="country=KR&language=ko-KR&currency=KRW"
         )
         request.cookie(key="iher-pref1", value="sccode=KR&lan=ko-KR&scurcode=KRW")
-        request.sec_ch_ua_mobile()
-        request.sec_fetch_mode_navigate()
-        request.sec_fetch_dest_document()
-        await request.user_agent(pc_random=True)
-        await request.request(method=SafeRequestMethod.GET, url="https://kr.iherb.com/")
+        request.cookie(key="iher-pref2", value="sccode=KR&lan=en-US&scurcode=KRW")
+        await request.user_agent(mobile_random=True, pc_random=True)
+        await request.reuse_session(True)
 
-        if random_bool():
-            await request.user_agent(user_agent=bot_agents())
-
-        response = await request.request(
-            method=SafeRequestMethod.GET, url=_URL.format(self.id)
+        await request.request(
+            method=SafeRequestMethod.GET, url='https://kr.iherb.com/pr/{}'.format(self.id), retain_cookie=True
         )
+        await asyncio.sleep(0.5)
+        response = await request.request(
+            method=SafeRequestMethod.GET, url=_URL.format(self.id), retain_cookie=True
+        )
+
         logging_for_response(response, __name__, "iherb")
 
         if not response.has:

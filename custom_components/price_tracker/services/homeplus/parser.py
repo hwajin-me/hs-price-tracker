@@ -1,4 +1,5 @@
 import json
+import logging
 
 from bs4 import BeautifulSoup
 
@@ -15,6 +16,9 @@ from custom_components.price_tracker.datas.price import ItemPriceData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.utilities.list import Lu
 from custom_components.price_tracker.utilities.parser import parse_bool, parse_number
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class HomeplusParser:
@@ -49,6 +53,12 @@ class HomeplusParser:
 
     @property
     def price(self):
+        if self._sale['dcPrice'] == 0:
+            return ItemPriceData(
+                original_price=self._sale["salePrice"] * self._sale["purchaseMinQty"],
+                price=self._sale["salePrice"] * self._sale["purchaseMinQty"],
+            )
+
         return ItemPriceData(
             original_price=self._sale["salePrice"] * self._sale["purchaseMinQty"],
             price=self._sale["dcPrice"] * self._sale["purchaseMinQty"],

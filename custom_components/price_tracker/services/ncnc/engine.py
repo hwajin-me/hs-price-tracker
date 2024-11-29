@@ -19,12 +19,12 @@ _X_API = "D3aDpWlEkz7dAp5o2Ew8zZbc4N9mnyK9JFCHgy30"
 
 class NcncEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         id = NcncEngine.parse_id(item_url)
@@ -45,8 +45,13 @@ class NcncEngine(PriceEngine):
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
         data = response.data
+
+        logging_for_response(data, __name__, "ncnc")
+
+        if not response.has or 'error' in response.json:
+            return None
+
         ncnc_parser = NcncParser(text=data)
-        logging_for_response(data, __name__)
 
         return ItemData(
             id=self.id_str(),

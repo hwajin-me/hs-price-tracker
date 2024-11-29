@@ -18,5 +18,6 @@ logger:
     custom_components.price_tracker_response_ssg: info
     custom_components.price_tracker_response_smartstore: info
     custom_components.price_tracker_response_coupang: info
+    custom_components.price_tracker_response_ncnc: debug
     custom_components.price_tracker_response_rankingdak: info
 
