@@ -1,6 +1,6 @@
 {
-  "domain": "price_tracker",
-  "name": "E-Commerce Price Tracker",
+  "domain": "ecommerce_integrator",
+  "name": "E-Commerce Integrator",
   "codeowners": [
     "@hwajin-me"
   ],

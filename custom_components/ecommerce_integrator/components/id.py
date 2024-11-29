@@ -1,4 +1,4 @@
-from custom_components.price_tracker.consts.defaults import DOMAIN
+from custom_components.ecommerce_integrator.consts.defaults import DOMAIN
 
 
 class IdGenerator:

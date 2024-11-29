@@ -10,18 +10,18 @@ from homeassistant.helpers import (
     entity_registry as er,
 )
 
-from custom_components.price_tracker.components.id import IdGenerator
-from custom_components.price_tracker.consts.confs import (
+from custom_components.ecommerce_integrator.components.id import IdGenerator
+from custom_components.ecommerce_integrator.consts.confs import (
     CONF_ITEM_DEVICE_ID,
     CONF_ITEM_UNIQUE_ID,
 )
-from custom_components.price_tracker.consts.defaults import DOMAIN, PLATFORMS
-from custom_components.price_tracker.services.factory import (
+from custom_components.ecommerce_integrator.consts.defaults import DOMAIN, PLATFORMS
+from custom_components.ecommerce_integrator.services.factory import (
     create_service_item_url_parser,
     create_service_item_target_parser,
     create_service_device_parser_and_parse,
 )
-from custom_components.price_tracker.utilities.list import Lu
+from custom_components.ecommerce_integrator.utilities.list import Lu
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -20,10 +20,10 @@ jobs:
       - name: "ZIP the integration directory"
         shell: "bash"
         run: |
-          cd "${{ github.workspace }}/custom_components/price_tracker"
-          zip price_tracker.zip -r ./
+          cd "${{ github.workspace }}/custom_components/ecommerce_integrator"
+          zip ecommerce_integrator.zip -r ./
 
       - name: "Upload the ZIP file to the release"
         uses: "softprops/action-gh-release@v2.1.0"
         with:
-          files: ${{ github.workspace }}/custom_components/price_tracker/price_tracker.zip
+          files: ${{ github.workspace }}/custom_components/ecommerce_integrator/ecommerce_integrator.zip

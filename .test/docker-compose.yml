@@ -4,7 +4,7 @@ services:
     image: "ghcr.io/home-assistant/home-assistant:stable"
     volumes:
       - ./configuration.yaml:/config/configuration.yaml
-      - ../custom_components/price_tracker:/config/custom_components/price_tracker
+      - ../custom_components/ecommerce_integrator:/config/ecommerce_integrator/price_tracker
     restart: unless-stopped
     privileged: true
     environment:
