@@ -1,6 +1,9 @@
+import datetime
 import logging
 import re
 from typing import Optional
+from urllib.parse import urlencode
+from uuid import uuid4
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
@@ -9,6 +12,7 @@ from custom_components.price_tracker.components.error import (
 from custom_components.price_tracker.datas.item import ItemData
 from custom_components.price_tracker.services.smartstore.const import NAME, CODE
 from custom_components.price_tracker.services.smartstore.parser import SmartstoreParser
+from custom_components.price_tracker.utilities.hash import md5
 from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
@@ -68,6 +72,32 @@ class SmartstoreEngine(PriceEngine):
         )
         request.accept_encoding("gzip, zlib, deflate, zstd, br")
         request.content_type()
+        request.referer(referer="https://m.shopping.naver.com/cart?pageExitType-=recommend")
+        request.sec_fetch_dest_document()
+        request.sec_fetch_mode_navigate()
+        request.sec_fetch_site(site="same-site")
+        request.cookie(key="smartstore-STORE_LAST_VISITED_DATETIME", value=str(datetime.datetime.timestamp()))
+        request.cookie(key="NA_CO", value=str(urlencode(query="ck=m42vmvdk|ci=|tr=mrec|hk=|trx=undefined")))
+        request.cookie(key="wcs_bt", value="s_1:")
+        request.cookie(key="DA_DD", value=str(uuid4()))
+        request.cookie(key="NID_SES", value="")
+        request.cookie(key="BUC", value="")
+        request.cookie(key="_ga", value="")
+        request.cookie(key="_fwb", value="")
+        request.cookie(key="NFS", value="2")
+        request.cookie(key="BNB_FINANCE_HOME_TOOLTIP_PAYMENT", value="true")
+        request.cookie(key="MM_NEW", value="2")
+        request.cookie(key="NID_AUT", value="")
+        request.cookie(key="GDOT", value="Y")
+        request.cookie(key="NACT", value="1")
+        request.cookie(key="nstore_session", value="")
+        request.cookie(key="nstore_pagesession", value="")
+        request.cookie(key="NV_WETR_LAST_ACCESS_RGN_M", value="MDkyMDA2NzE=")
+        request.cookie(key="NV_WETR_LOCATION_RGN_M", value="MDkyMDA2NzE=")
+        request.cookie(key="ab.storage.deviceId.{}".format(str(uuid4())),
+                       value="g|{}|e:undefined|c:{}|l:{}".format(str(uuid4()), str(datetime.datetime.timestamp()),
+                                                                 str(datetime.datetime.timestamp())))
+        request.cookie(key="ASID", value=md5(datetime.datetime.now().isoformat()))
 
         if random_bool():
             request.accept_encoding("gzip, deflate")
