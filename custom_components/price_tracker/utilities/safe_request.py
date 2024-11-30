@@ -55,7 +55,7 @@ class SafeRequestResponseData:
     def __init__(
             self,
             data: Optional[str] = None,
-            status_code: int = 400,
+            status_code: int = None,
             cookies=None,
             access_token: Optional[str] = None,
     ):
@@ -72,7 +72,7 @@ class SafeRequestResponseData:
 
     @property
     def has(self):
-        return self.status_code <= 399 and self.data is not None and self.data != ""
+        return self.status_code is not None and self.status_code <= 399 and self.data is not None and self.data != ""
 
     @property
     def json(self):
@@ -179,6 +179,7 @@ class SafeRequestEngineRequests(SafeRequestEngine):
             else None,
             timeout=timeout,
             verify=False,
+            allow_redirects=True,
         )
 
         if response.status_code > 399 and response.status_code != 404:
@@ -375,6 +376,7 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
             else None,
             timeout=timeout,
             verify=False,
+            allow_redirects=True,
         )
         if response.status_code > 399 and response.status_code != 404:
             raise SafeRequestError(
@@ -509,8 +511,6 @@ class SafeRequest:
                 "ko",
                 "ko-KR",
                 "ja",
-                "zh-CN",
-                "zh",
             ]
             self._headers["Accept-Language"] = random.choice(languages)
         elif language is not None:
@@ -594,6 +594,12 @@ class SafeRequest:
     def cache_control(self, cache_control: str):
         """"""
         self._headers["Cache-Control"] = cache_control
+
+        return self
+
+    def host(self, host: str):
+        """"""
+        self._headers["Host"] = host
 
         return self
 
@@ -711,6 +717,15 @@ class SafeRequest:
 
         return self
 
+    def remove_headers(self, excepts: list[str] = None):
+        """"""
+        if excepts is not None:
+            self._headers = {k: v for k, v in self._headers.items() if k in excepts}
+        else:
+            self._headers = {}
+
+        return self
+
     def proxy(self, proxy: str | None = None):
         """"""
         if proxy is None:
@@ -789,6 +804,7 @@ class SafeRequest:
 
             headers = {
                 **self._headers,
+                'Host': url.split('/')[2] if 'Host' not in self._headers else self._headers['Host'],
             }
             if self._cookies and len(self._cookies) > 0:
                 headers["Cookie"] = "; ".join(

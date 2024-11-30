@@ -77,6 +77,7 @@ class PriceTrackerSensor(RestoreEntity):
         self._updated_at = datetime.now()
         self._management_category = management_category
         self._debug = debug
+        self._engine_status = True
 
     @property
     def engine_id_str(self):
@@ -84,7 +85,7 @@ class PriceTrackerSensor(RestoreEntity):
 
     async def async_update(self):
         # Check last updated at
-        if self._updated_at is not None and self._attr_available is True:
+        if self._engine_status and self._updated_at is not None and self._attr_available is True:
             if (
                 self._updated_at is not None
                 and (self._updated_at + timedelta(minutes=self._refresh_period))
@@ -95,7 +96,7 @@ class PriceTrackerSensor(RestoreEntity):
                         self._attr_unique_id, self._updated_at, self._refresh_period
                     )
                 )
-                return None
+                return True
 
         _LOGGER.debug(
             "Update sensor: %s (%s) - %s",
@@ -117,7 +118,7 @@ class PriceTrackerSensor(RestoreEntity):
                 else:
                     self._attr_available = True
                     self._update_engine_status(False)
-                return None
+                return True
 
             self._price_change = create_item_price_change(
                 updated_at=datetime.now(),
@@ -263,3 +264,4 @@ class PriceTrackerSensor(RestoreEntity):
         self._attr_extra_state_attributes = {
             'engine_status': 'FETCHED' if status else 'ERROR',
         }
+        self._engine_status = status

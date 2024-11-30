@@ -7,7 +7,6 @@ aiohttp~=3.10.8
 fake-useragent==1.5.1
 requests~=2.32.3
 voluptuous~=0.15.2
-pytest-homeassistant-custom-component==0.13.184
 pytest-socket==0.7.0
 pytest~=8.3.3
 selenium>=4.17.0
