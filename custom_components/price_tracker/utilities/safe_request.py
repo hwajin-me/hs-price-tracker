@@ -474,9 +474,9 @@ class SafeRequest:
             )
         self._chains = self._chains + (
             [
-                SafeRequestEngineCloudscraper(),
                 SafeRequestEngineAiohttp(),
                 SafeRequestEngineRequests(),
+                SafeRequestEngineCloudscraper(),
                 SafeRequestEngineHttpx(),
             ]
             if chains is None
