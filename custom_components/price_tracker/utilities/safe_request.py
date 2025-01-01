@@ -115,8 +115,8 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
             session: Optional[requests.Session] = None,
     ) -> SafeRequestResponseData:
         async with AsyncSession() as session:
-            async with session.request(
-                    method=method.name.lower(),
+            response = await session.request(
+                    method=method.name.upper(),
                     url=url,
                     headers=headers,
                     json=data,
@@ -124,34 +124,26 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
                     proxy=proxy,
                     timeout=timeout,
                     allow_redirects=True,
-                    auto_decompress=True,
-                    max_line_size=99999999,
-                    read_bufsize=99999999,
-                    compress=False,
-                    read_until_eof=True,
-                    expect100=True,
-                    chunked=False,
-                    ssl=False,
-            ) as response:
-                data = await response.text()
-                cookies = response.cookies
-                access_token = (
-                    response.headers.get("Authorization").replace("Bearer ", "")
-                    if response.headers.get("Authorization") is not None
-                    else None
-                )
+                    verify=False
+            )
 
-                if response.status > 399:
-                    raise SafeRequestError(
-                        f"Failed to request {url} with status code {response.status}"
-                    )
-
-                return SafeRequestResponseData(
-                    data=data,
-                    status_code=response.status,
-                    cookies=cookies,
-                    access_token=access_token,
+            data = response.text
+            cookies = response.cookies
+            access_token = (
+                response.headers.get("Authorization").replace("Bearer ", "")
+                if response.headers.get("Authorization") is not None
+                else None
+            )
+            if response.status_code > 399:
+                raise SafeRequestError(
+                    f"Failed to request {url} with status code {response.status_code}"
                 )
+            return SafeRequestResponseData(
+                data=data,
+                status_code=response.status_code,
+                cookies=cookies,
+                access_token=access_token,
+            )
 
 
 class SafeRequestEngineRequests(SafeRequestEngine):
