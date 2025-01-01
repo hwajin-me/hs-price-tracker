@@ -11,3 +11,9 @@ services:
       - TZ=Asia/Seoul
     ports:
       - "8123:8123"
+    networks:
+      - podman-default
+
+networks:
+  podman-default:
+    external: true

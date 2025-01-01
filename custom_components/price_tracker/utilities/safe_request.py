@@ -11,7 +11,6 @@ import aiohttp
 import cloudscraper
 import fake_useragent
 import httpx
-import requests
 import undetected_chromedriver as uc
 import urllib3
 from selenium import webdriver
@@ -22,7 +21,8 @@ from voluptuous import default_factory
 from webdriver_manager.chrome import ChromeDriverManager
 
 from custom_components.price_tracker.utilities.list import Lu
-
+from curl_cffi import requests
+from curl_cffi.requests import AsyncSession
 
 def bot_agents():
     return ["NaverBot", "Yeti", "Googlebot-Mobile", "HTTPie/3.2.4"]
@@ -114,7 +114,7 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
             timeout: int,
             session: Optional[requests.Session] = None,
     ) -> SafeRequestResponseData:
-        async with aiohttp.ClientSession() as session:
+        async with AsyncSession() as session:
             async with session.request(
                     method=method.name.lower(),
                     url=url,
