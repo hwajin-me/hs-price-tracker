@@ -48,11 +48,6 @@ class SmartstoreEngine(PriceEngine):
             self.store_type, self.store, self.detail_type, self.product_id
         )
         request = SafeRequest(
-            chains=[
-                SafeRequestEngineRequests(),
-                SafeRequestEngineCloudscraper(),
-                SafeRequestEngineAiohttp(),
-            ],
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
@@ -63,14 +58,7 @@ class SmartstoreEngine(PriceEngine):
         )
         request.accept_encoding("gzip, zlib, deflate, zstd, br")
         request.content_type()
-
-        await request.user_agent(
-            user_agent="Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-        )
-
-        # If brand store type
-        if self.store_type == "brand":
-            await request.user_agent(mobile_random=True)
+        await request.user_agent(pc_random=True, mobile_random=True)
 
         response = await request.request(
             method=SafeRequestMethod.GET,

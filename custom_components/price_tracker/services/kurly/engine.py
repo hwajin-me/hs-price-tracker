@@ -16,7 +16,7 @@ from custom_components.price_tracker.utilities.safe_request import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-_AUTH_URL = "https://www.kurly.com/nx/api/session"
+_AUTH_URL = "https://api.kurly.com/v3/auth/guest"
 _URL = "https://api.kurly.com/showroom/v2/products/{}"
 _ITEM_LINK = "https://www.kurly.com/goods/{}"
 
@@ -44,10 +44,10 @@ class KurlyEngine(PriceEngine):
             selenium_proxy=self._selenium_proxy,
         )
         auth_response = await request.request(
-            method=SafeRequestMethod.GET, url=_AUTH_URL
+            method=SafeRequestMethod.POST, url=_AUTH_URL
         )
         auth_data = auth_response.json
-        request.auth(auth_data["accessToken"])
+        request.auth(auth_data['data']["access_token"])
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )

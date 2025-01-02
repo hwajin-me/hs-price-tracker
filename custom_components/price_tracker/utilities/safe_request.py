@@ -5,6 +5,7 @@ import logging
 import random
 import ssl
 from enum import Enum
+from http.cookiejar import CookieJar
 from typing import Optional, Callable, Self, Awaitable
 
 import aiohttp
@@ -21,8 +22,9 @@ from voluptuous import default_factory
 from webdriver_manager.chrome import ChromeDriverManager
 
 from custom_components.price_tracker.utilities.list import Lu
-from curl_cffi import requests
-from curl_cffi.requests import AsyncSession
+from curl_cffi import requests, CurlHttpVersion
+from curl_cffi.requests import AsyncSession, Cookies
+
 
 def bot_agents():
     return ["NaverBot", "Yeti", "Googlebot-Mobile", "HTTPie/3.2.4"]
@@ -44,6 +46,24 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class SafeRequestError(Exception):
     pass
 
+
+class CustomSessionCookie(Cookies):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def extract_cookies(self, response, request):
+        return self.jar.extract_cookies(response, request)
+
+
+class CustomSession(requests.Session):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if kwargs.get("cookies") is not None:
+            self.cookies = CustomSessionCookie(
+                kwargs.get("cookies")
+            )
+        else:
+            self.cookies = CustomSessionCookie()
 
 @dataclasses.dataclass
 class SafeRequestResponseData:
@@ -124,7 +144,9 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
                     proxy=proxy,
                     timeout=timeout,
                     allow_redirects=True,
-                    verify=False
+                    verify=False,
+                    http_version=CurlHttpVersion.V1_1,
+                    impersonate="chrome124",
             )
 
             data = response.text
@@ -172,6 +194,9 @@ class SafeRequestEngineRequests(SafeRequestEngine):
             timeout=timeout,
             verify=False,
             allow_redirects=True,
+            default_headers=True,
+            impersonate="chrome124",
+            http_version=CurlHttpVersion.V1_1
         )
 
         if response.status_code > 399 and response.status_code != 404:
@@ -385,43 +410,6 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
         )
 
 
-class SafeRequestEngineHttpx(SafeRequestEngine):
-    async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
-            session: Optional[requests.Session] = None,
-    ) -> SafeRequestResponseData:
-        async with httpx.AsyncClient(verify=False, proxy=proxy) as client:
-            response = await client.request(
-                method=method.name.lower(),
-                url=url,
-                headers=headers,
-                json=data,
-                timeout=timeout,
-                follow_redirects=True,
-            )
-            if response.status_code > 399 and response.status_code != 404:
-                raise SafeRequestError(
-                    f"Failed to request {url} with status code {response.status_code}"
-                )
-
-            return SafeRequestResponseData(
-                data=response.text,
-                status_code=response.status_code,
-                cookies=response.cookies,
-                access_token=response.headers.get("Authorization").replace(
-                    "Bearer ", ""
-                )
-                if response.headers.get("Authorization") is not None
-                else None,
-            )
-
-
 class SafeRequest:
     def __init__(
             self,
@@ -456,7 +444,7 @@ class SafeRequest:
         self._selenium = selenium
         self._selenium_proxy = selenium_proxy
         self._chains: list[SafeRequestEngine] = []
-        self._session = None
+        self._session = CustomSession()
 
         if self._selenium is not None and str(selenium).strip() != "":
             self._chains.append(
@@ -469,7 +457,6 @@ class SafeRequest:
                 SafeRequestEngineAiohttp(),
                 SafeRequestEngineRequests(),
                 SafeRequestEngineCloudscraper(),
-                SafeRequestEngineHttpx(),
             ]
             if chains is None
             else chains
