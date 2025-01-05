@@ -85,7 +85,11 @@ class PriceTrackerSensor(RestoreEntity):
 
     async def async_update(self):
         # Check last updated at
-        if self._engine_status and self._updated_at is not None and self._attr_available is True:
+        if (
+            self._engine_status
+            and self._updated_at is not None
+            and self._attr_available is True
+        ):
             if (
                 self._updated_at is not None
                 and (self._updated_at + timedelta(minutes=self._refresh_period))
@@ -262,6 +266,6 @@ class PriceTrackerSensor(RestoreEntity):
 
     def _update_engine_status(self, status: bool):
         self._attr_extra_state_attributes = {
-            'engine_status': 'FETCHED' if status else 'ERROR',
+            "engine_status": "FETCHED" if status else "ERROR",
         }
         self._engine_status = status

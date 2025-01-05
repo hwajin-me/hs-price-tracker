@@ -6,7 +6,7 @@ from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
 )
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.kurly.const import NAME, CODE
 from custom_components.price_tracker.services.kurly.parser import KurlyParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
@@ -47,14 +47,13 @@ class KurlyEngine(PriceEngine):
             method=SafeRequestMethod.POST, url=_AUTH_URL
         )
         auth_data = auth_response.json
-        request.auth(auth_data['data']["access_token"])
+        request.auth(auth_data["data"]["access_token"])
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
 
         if response.status_code == 404:
-            _LOGGER.warning("Kurly item not found (might be deleted): %s", self.id)
-            return None
+            return ItemData(id=self.id, name="", status=ItemStatus.DELETED)
 
         data = response.data
         kurly_parser = KurlyParser(text=data)

@@ -3,7 +3,7 @@ from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.rankingdak.const import (
     CODE,
     NAME,
@@ -46,6 +46,8 @@ class RankingdakEngine(PriceEngine):
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.product_id)
         )
+        if response.status_code == 404:
+            return ItemData(id=self.product_id, name="", status=ItemStatus.DELETED)
         logging_for_response(response, __name__, "rankingdak")
         parser = RankingdakParser(html=response.data)
 

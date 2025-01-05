@@ -5,7 +5,7 @@ from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
 )
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.ssg.const import CODE, NAME
 from custom_components.price_tracker.services.ssg.parser import SsgParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
@@ -53,6 +53,10 @@ class SsgEngine(PriceEngine):
         )
 
         text = response.data
+
+        if response.status_code == 404:
+            return ItemData(id=self.product_id, name="", status=ItemStatus.DELETED)
+
         logging_for_response(text, __name__, "ssg")
         ssg_parser = SsgParser(text)
 

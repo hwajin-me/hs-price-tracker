@@ -13,11 +13,11 @@ class PriceTrackerDevice(Entity):
     _proxies: list[str]
 
     def __init__(
-            self,
-            entry_id: str,
-            device_type: str,
-            device_id: str,
-            proxies: str | list[str] | None = None,
+        self,
+        entry_id: str,
+        device_type: str,
+        device_id: str,
+        proxies: str | list[str] | None = None,
     ):
         self._entry_id = entry_id
         self._device_id = str(device_id)

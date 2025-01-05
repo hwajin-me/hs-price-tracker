@@ -29,6 +29,7 @@ class ItemOptionData:
 class ItemStatus(Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
+    DELETED = "DELETED"
 
 
 @dataclasses.dataclass
@@ -36,8 +37,8 @@ class ItemData:
     def __init__(
         self,
         id: any,
-        price: ItemPriceData,
-        name: str,
+        name: str = "UNKNOWN",
+        price: ItemPriceData = ItemPriceData(),
         brand: str = None,
         description: str = None,
         category: ItemCategoryData = None,

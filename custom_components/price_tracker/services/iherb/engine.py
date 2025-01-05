@@ -3,6 +3,8 @@ import re
 import uuid
 from typing import Optional
 
+from curl_cffi import CurlHttpVersion
+
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
 from custom_components.price_tracker.datas.item import ItemData
@@ -13,6 +15,10 @@ from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
+    SafeRequestEngineAiohttp,
+    SafeRequestEngineRequests,
+    CustomSession,
+    SafeRequestEngineCloudscraper,
 )
 
 _URL = "https://catalog.app.iherb.com/product/{}"
@@ -20,12 +26,12 @@ _URL = "https://catalog.app.iherb.com/product/{}"
 
 class IherbEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = IherbEngine.parse_id(item_url)
@@ -38,11 +44,23 @@ class IherbEngine(PriceEngine):
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
+            session=CustomSession(
+                impersonate="safari17_2_ios", http_version=CurlHttpVersion.V1_1
+            ),
         )
         # TODO: Prevent bot captcha
         device_id = str(uuid.uuid4())
+        request.chains(
+            [
+                SafeRequestEngineAiohttp(impersonate="safari17_2_ios"),
+                SafeRequestEngineRequests(impersonate="safari17_2_ios"),
+                SafeRequestEngineCloudscraper(),
+            ]
+        )
         request.accept_all()
-        request.accept_language(language="ko-KR,en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5")
+        request.accept_language(
+            language="ko-KR,en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
+        )
         request.accept_encoding("gzip, deflate, br")
         request.cache_control("no-cache")
         request.keep_alive()
@@ -50,18 +68,22 @@ class IherbEngine(PriceEngine):
         request.pragma_no_cache()
         request.content_type(content_type="application/json")
         request.referer_no_referrer()
-        request.sec_fetch_user('?1')
-        request.sec_fetch_site('none')
+        request.sec_fetch_user("?1")
+        request.sec_fetch_site("none")
         request.sec_fetch_mode_navigate()
         request.sec_fetch_dest_document()
         request.header(key="Host", value="catalog.app.iherb.com")
-        request.header(key="pref",
-                       value='{ "storeid": "0", "lac": "ko-KR", "crc": "KRW", "ctc": "KR", "crs": "3", "som": "kilograms", "pc": "92571" }')
+        request.header(
+            key="pref",
+            value='{ "storeid": "0", "lac": "ko-KR", "crc": "KRW", "ctc": "KR", "crs": "3", "som": "kilograms", "pc": "92571" }',
+        )
         request.header(key="x-px-device-model", value="iPhone 14 Pro")
         request.header(key="x-px-mobile-sdk-version", value="3.0.5")
         request.header(key="regiontype", value="GLOBAL")
         request.header(key="appv", value="10.11.1114")
-        request.header(key="x-application-id", value="iphoneglobal:10.11.1114:2024111309")
+        request.header(
+            key="x-application-id", value="iphoneglobal:10.11.1114:2024111309"
+        )
         request.header(key="x-px-authorization", value="1")
         request.header(key="x-px-os", value="iOS")
         request.header(key="platform", value="iPhone")
@@ -71,19 +93,35 @@ class IherbEngine(PriceEngine):
         request.header(key="x-request-id", value=str(uuid.uuid4()).upper())
         request.header(key="x-px-uuid", value=str(uuid.uuid4()))
         request.header(key="x-device-id", value=md5(device_id))
-        request.header(key="x-px-hello", value = "BAMBB1dXAVYeUlYCBh4CAlZVHlIDVVEeVVUFV1VSCgYCAQsK")
+        request.header(
+            key="x-px-hello", value="BAMBB1dXAVYeUlYCBh4CAlZVHlIDVVEeVVUFV1VSCgYCAQsK"
+        )
         request.header(key="x-px-device-fp", value=device_id.upper())
-        request.header(key="ih-exp-user-id", value="iHerb_iOS_{}".format(str(uuid.uuid4())))
+        request.header(
+            key="ih-exp-user-id", value="iHerb_iOS_{}".format(str(uuid.uuid4()))
+        )
 
-        request.header(key="traceparent", value="00-f6798fa19a434ddffc5e003792fc6d25-024278cd8b758c6c-00")
-        request.header(key="tracestate", value="2746152@nr=0-2-2746152-943180400-024278cd8b758c6c--0--1732859260687")
-        request.header(key="ih-experiment",
-                       value="eyJjYXRzYiI6eyJFbmREYXRlIjoiMDEvMDEvMjUiLCJDaG9zZW5WYXJpYW50IjoyLCJTb3VyY2UiOjB9LCJocFRpbGUiOnsiRW5kRGF0ZSI6IjAxLzAxLzI1IiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjowfSwibmV3cCI6eyJFbmREYXRlIjoiMjAyNC0xMi0yNVQwMDowMDowMFoiLCJDaG9zZW5WYXJpYW50IjoxLCJTb3VyY2UiOjF9LCJhdWciOnsiRW5kRGF0ZSI6IjIwMjUtMDEtMDFUMDA6MDA6MDBaIiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjoxfSwiY3NyIjp7IkVuZERhdGUiOiIyMDI1LTAxLTMxVDAwOjAwOjAwWiIsIkNob3NlblZhcmlhbnQiOjIsIlNvdXJjZSI6MX0sImVtcGMiOnsiRW5kRGF0ZSI6IjIwMjUtMDEtMzFUMDA6MDA6MDBaIiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjoxfSwiZGFmIjp7IkVuZERhdGUiOiIyMDI0LTEyLTMwVDAwOjAwOjAwWiIsIkNob3NlblZhcmlhbnQiOjMsIlNvdXJjZSI6MX0sInRhbWFyYSI6eyJFbmREYXRlIjoiMjAyNS0wMS0wMVQwMDowMDowMC4wMDBaIiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjowfSwicGxwX21vZGVybml6YXRpb25fZW5hYmxlZCI6eyJWYXIiOiIwIiwiRW5kRGF0ZSI6IiIsIlNvdXJjZSI6Mn19")
-        request.header(key="ih-pref", value="storeid=0;lc=ko-KR;cc=KRW;ctc=KR;wp=kilograms")
+        request.header(
+            key="traceparent",
+            value="00-f6798fa19a434ddffc5e003792fc6d25-024278cd8b758c6c-00",
+        )
+        request.header(
+            key="tracestate",
+            value="2746152@nr=0-2-2746152-943180400-024278cd8b758c6c--0--1732859260687",
+        )
+        request.header(
+            key="ih-experiment",
+            value="eyJjYXRzYiI6eyJFbmREYXRlIjoiMDEvMDEvMjUiLCJDaG9zZW5WYXJpYW50IjoyLCJTb3VyY2UiOjB9LCJocFRpbGUiOnsiRW5kRGF0ZSI6IjAxLzAxLzI1IiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjowfSwibmV3cCI6eyJFbmREYXRlIjoiMjAyNC0xMi0yNVQwMDowMDowMFoiLCJDaG9zZW5WYXJpYW50IjoxLCJTb3VyY2UiOjF9LCJhdWciOnsiRW5kRGF0ZSI6IjIwMjUtMDEtMDFUMDA6MDA6MDBaIiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjoxfSwiY3NyIjp7IkVuZERhdGUiOiIyMDI1LTAxLTMxVDAwOjAwOjAwWiIsIkNob3NlblZhcmlhbnQiOjIsIlNvdXJjZSI6MX0sImVtcGMiOnsiRW5kRGF0ZSI6IjIwMjUtMDEtMzFUMDA6MDA6MDBaIiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjoxfSwiZGFmIjp7IkVuZERhdGUiOiIyMDI0LTEyLTMwVDAwOjAwOjAwWiIsIkNob3NlblZhcmlhbnQiOjMsIlNvdXJjZSI6MX0sInRhbWFyYSI6eyJFbmREYXRlIjoiMjAyNS0wMS0wMVQwMDowMDowMC4wMDBaIiwiQ2hvc2VuVmFyaWFudCI6MCwiU291cmNlIjowfSwicGxwX21vZGVybml6YXRpb25fZW5hYmxlZCI6eyJWYXIiOiIwIiwiRW5kRGF0ZSI6IiIsIlNvdXJjZSI6Mn19",
+        )
+        request.header(
+            key="ih-pref", value="storeid=0;lc=ko-KR;cc=KRW;ctc=KR;wp=kilograms"
+        )
         request.cookie(
             key="ih-preference", value="country=KR&language=ko-KR&currency=KRW"
         )
-        await request.user_agent(user_agent="iHerbMobile/10.11.1114.2024111309 (iOS 18.0; iPhone15,2; GLOBAL)")
+        await request.user_agent(
+            user_agent="iHerbMobile/10.11.1114.2024111309 (iOS 18.0; iPhone15,2; GLOBAL)"
+        )
 
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id), retain_cookie=True

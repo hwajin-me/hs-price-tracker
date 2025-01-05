@@ -53,7 +53,7 @@ class HomeplusParser:
 
     @property
     def price(self):
-        if self._sale['dcPrice'] == 0:
+        if self._sale["dcPrice"] == 0:
             return ItemPriceData(
                 original_price=self._sale["salePrice"] * self._sale["purchaseMinQty"],
                 price=self._sale["salePrice"] * self._sale["purchaseMinQty"],
