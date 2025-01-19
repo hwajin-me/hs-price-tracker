@@ -2,8 +2,6 @@ import logging
 import re
 from typing import Optional
 
-from curl_cffi import CurlHttpVersion
-
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
@@ -15,7 +13,6 @@ from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
-    CustomSession,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,10 +49,6 @@ class SmartstoreEngine(PriceEngine):
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
             impersonate="chrome",
-            session=CustomSession(
-                impersonate="chrome",
-                http_version=CurlHttpVersion.V1_0
-            ),
         )
         request.accept_text_html()
         request.accept_language(
@@ -64,7 +57,6 @@ class SmartstoreEngine(PriceEngine):
         request.accept_encoding("gzip, zlib, deflate, zstd, br")
         request.content_type()
         await request.user_agent(pc_random=True)
-
         response = await request.request(
             method=SafeRequestMethod.GET,
             url=url,

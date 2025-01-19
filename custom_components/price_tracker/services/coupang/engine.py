@@ -12,7 +12,7 @@ from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
-    bot_agents,
+    bot_agents, CustomSession,
 )
 
 _URL = "https://m.coupang.com/vm/products/{}?itemId={}&vendorItemId={}"
@@ -43,23 +43,13 @@ class CoupangEngine(PriceEngine):
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
+            impersonate="chrome99_android"
         )
 
         request.keep_alive()
         request.accept_text_html()
         request.accept_language(is_random=True)
-        # request.header(key="x-coupang-app-name", value="coupang")
-        # request.cookie(key="modular-front", value="UNKNOWN|production|||N|23.76.153.54")
-        # request.cookie(key="appversion", value="8.3.4")
-        # request.cookie(key="ISAPP", value="Y")
-        # request.cookie(key="TY_EATS_NUDGE", value="true")
-        # request.cookie(key="WOW_CARD_BOTTOM_SHEET", value="Y")
-        # request.cookie(key="x-coupang-target-market", value="KR")
-
-        if self._selenium and self._selenium_proxy:
-            await request.user_agent(user_agent=bot_agents())
-        else:
-            await request.user_agent(mobile_random=True)
+        await request.user_agent(mobile_random=True)
 
         response = await request.request(
             method=SafeRequestMethod.GET,
