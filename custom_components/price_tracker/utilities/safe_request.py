@@ -5,25 +5,16 @@ import logging
 import random
 import ssl
 from enum import Enum
-from http.cookiejar import CookieJar
 from typing import Optional, Callable, Self, Awaitable
 
-import aiohttp
 import cloudscraper
 import fake_useragent
-import httpx
-import undetected_chromedriver as uc
 import urllib3
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.remote.client_config import ClientConfig
-from selenium.webdriver.remote.command import Command
-from voluptuous import default_factory
-from webdriver_manager.chrome import ChromeDriverManager
-
-from custom_components.price_tracker.utilities.list import Lu
 from curl_cffi import requests, CurlHttpVersion
 from curl_cffi.requests import AsyncSession, Cookies
+from voluptuous import default_factory
+
+from custom_components.price_tracker.utilities.list import Lu
 
 
 def bot_agents():
@@ -58,6 +49,9 @@ class CustomSessionCookie(Cookies):
 class CustomSession(requests.Session):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.debug = True
+        self.trust_env = True
+        self.verify = False
         if kwargs.get("cookies") is not None:
             self.cookies = CustomSessionCookie(kwargs.get("cookies"))
         else:
@@ -72,11 +66,11 @@ class SafeRequestResponseData:
     cookies: dict = default_factory({})
 
     def __init__(
-        self,
-        data: Optional[str] = None,
-        status_code: int = None,
-        cookies=None,
-        access_token: Optional[str] = None,
+            self,
+            data: Optional[str] = None,
+            status_code: int = None,
+            cookies=None,
+            access_token: Optional[str] = None,
     ):
         if cookies is None:
             cookies = {}
@@ -92,10 +86,10 @@ class SafeRequestResponseData:
     @property
     def has(self):
         return (
-            self.status_code is not None
-            and self.status_code <= 399
-            and self.data is not None
-            and self.data != ""
+                self.status_code is not None
+                and self.status_code <= 399
+                and self.data is not None
+                and self.data != ""
         )
 
     @property
@@ -115,31 +109,39 @@ class SafeRequestMethod(Enum):
 
 class SafeRequestEngine:
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
-        session: Optional[requests.Session] = None,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         pass
 
 
 class SafeRequestEngineAiohttp(SafeRequestEngine):
-    def __init__(self, impersonate: str = "chrome124"):
+    def __init__(
+            self,
+            impersonate: str = "chrome",
+            session: Optional[requests.Session] = None,
+    ):
         self._impersonate = impersonate
+        if session is not None:
+            self._session = session
+        else:
+            self._session = CustomSession(
+                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
+            )
 
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
-        session: Optional[requests.Session] = None,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         async with AsyncSession() as session:
             response = await session.request(
@@ -176,18 +178,27 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
 
 
 class SafeRequestEngineRequests(SafeRequestEngine):
-    def __init__(self, impersonate: str = "chrome124"):
+    def __init__(
+            self,
+            impersonate: str = "chrome",
+            session: Optional[requests.Session] = None
+    ):
         self._impersonate = impersonate
+        if session is not None:
+            self._session = session
+        else:
+            self._session = CustomSession(
+                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
+            )
 
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
-        session: Optional[requests.Session] = None,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: dict,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         response = await asyncio.to_thread(
             requests.request,
@@ -224,170 +235,32 @@ class SafeRequestEngineRequests(SafeRequestEngine):
         )
 
 
-class SafeRequestEngineSelenium(SafeRequestEngine):
-    def __init__(self, remote: str = None, proxies: list[str] = None):
-        self._remote = (
-            remote if remote is not None and str(remote).strip() != "" else None
-        )
-        self._proxies = proxies if proxies is not None else []
-
-    async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
-        session: Optional[requests.Session] = None,
-    ) -> SafeRequestResponseData:
-        driver = None
-        try:
-            options = await asyncio.to_thread(webdriver.ChromeOptions)
-
-            options.add_argument("--lang=en")
-            options.add_argument("--disable-gpu")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--headless")
-            options.add_argument("--disable-extensions")
-            options.add_argument("--disable-session-crashed-bubble")
-            options.add_argument("--disable-dev-shm-usage")
-            options.add_argument("--disable-blink-features=AutomationControlled")
-            options.add_argument("--disable-notifications")
-            options.add_argument("--disable-popup-blocking")
-            options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            options.add_experimental_option("detach", True)
-            options.add_experimental_option("useAutomationExtension", False)
-            if headers.get("User-Agent") is not None:
-                options.add_argument(f"--user-agent={headers.get('User-Agent')}")
-            options.page_load_strategy = "eager"
-
-            if proxy is not None:
-                _LOGGER.debug("Using proxy for selenium %s", proxy)
-                options.add_argument(f"--proxy-server={proxy}")
-
-            if self._proxies and len(self._proxies) > 0:
-                _LOGGER.debug("Using random proxy for selenium in %s", self._proxies)
-                options.add_argument(f"--proxy-server={random.choice(self._proxies)}")
-
-            if self._remote is None:
-                manager = await asyncio.to_thread(ChromeDriverManager)
-                manager_install = await asyncio.to_thread(manager.install)
-                service = await asyncio.to_thread(
-                    Service, executable_path=manager_install
-                )
-                driver = await asyncio.to_thread(
-                    webdriver.Chrome, service=service, options=options
-                )
-            else:
-                driver = await asyncio.to_thread(
-                    webdriver.Remote,
-                    command_executor=self._remote,
-                    options=options,
-                    client_config=ClientConfig(
-                        remote_server_addr=self._remote,
-                        keep_alive=False,
-                        timeout=timeout,
-                        ignore_certificates=True,
-                    ),
-                )
-
-            await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)
-            await asyncio.to_thread(driver.set_page_load_timeout, time_to_wait=timeout)
-            await asyncio.to_thread(
-                driver.execute_script,
-                script="Object.defineProperty(navigator, 'webdriver', {get: () => undefined})",
-            )
-            await asyncio.to_thread(driver.get, url=url)
-
-            all_cookies = await asyncio.to_thread(driver.get_cookies)
-            cookies_dict = {}
-            for cookie in all_cookies:
-                cookies_dict[cookie["name"]] = cookie["value"]
-            page_source = (
-                await asyncio.to_thread(
-                    driver.execute, driver_command=Command.GET_PAGE_SOURCE
-                )
-            )["value"]
-
-            data = SafeRequestResponseData(
-                data=page_source,
-                status_code=200,
-                cookies=cookies_dict,
-                access_token=None,
-            )
-
-        finally:
-            if driver is not None:
-                await asyncio.to_thread(driver.quit)
-
-        return data
-
-
-class SafeRequestEngineUndetectedSelenium(SafeRequestEngine):
-    async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: dict,
-        proxy: str,
-        timeout: int,
-        session: Optional[requests.Session] = None,
-    ) -> SafeRequestResponseData:
-        driver = None
-        try:
-            options = uc.ChromeOptions()
-            options.add_argument("--disable-gpu")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--window-size=1420,1080")
-            options.add_argument("--headless=new")
-            if proxy is not None:
-                options.add_argument(f"--proxy-server={proxy}")
-
-            driver = await asyncio.to_thread(uc.Chrome, options=options, headless=True)
-
-            await asyncio.to_thread(driver.implicitly_wait, time_to_wait=timeout)
-            await asyncio.to_thread(driver.set_page_load_timeout, time_to_wait=timeout)
-
-            # TODO: Add Post Request
-            driver.get(url)
-
-            all_cookies = await asyncio.to_thread(driver.get_cookies)
-            cookies_dict = {}
-            for cookie in all_cookies:
-                cookies_dict[cookie["name"]] = cookie["value"]
-
-            data = SafeRequestResponseData(
-                data=await asyncio.to_thread(driver.page_source),
-                status_code=200,
-                cookies=cookies_dict,
-                access_token=None,
-            )
-        finally:
-            if driver is not None:
-                await asyncio.to_thread(driver.quit)
-
-        return data
-
-
 class SafeRequestEngineCloudscraper(SafeRequestEngine):
+    def __init__(
+            self,
+            impersonate: str = "chrome",
+            session: Optional[requests.Session] = None
+    ):
+        self._impersonate = impersonate
+        if session is not None:
+            self._session = session
+        else:
+            self._session = CustomSession(
+                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
+            )
+
     async def request(
-        self,
-        headers: dict,
-        method: SafeRequestMethod,
-        url: str,
-        data: any,
-        proxy: str,
-        timeout: int,
-        session: Optional[requests.Session] = None,
+            self,
+            headers: dict,
+            method: SafeRequestMethod,
+            url: str,
+            data: any,
+            proxy: str,
+            timeout: int,
     ) -> SafeRequestResponseData:
         scraper = await asyncio.to_thread(
             cloudscraper.create_scraper,
-            browser="chrome",
-            delay=1,
-            ssl_context=ssl_context(),
-            sess=session,
+            sess=self._session,
         )
         response = await asyncio.to_thread(
             scraper.request,
@@ -402,7 +275,6 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
             if proxy is not None
             else None,
             timeout=timeout,
-            verify=False,
             allow_redirects=True,
         )
         if response.status_code > 399 and response.status_code != 404:
@@ -422,16 +294,15 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
 
 class SafeRequest:
     def __init__(
-        self,
-        chains: list[SafeRequestEngine] = None,
-        proxies: list[str] = None,
-        cookies: dict = None,
-        headers: dict = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list[str]] = None,
-        session=CustomSession(
-            impersonate="chrome124", http_version=CurlHttpVersion.V1_1
-        ),
+            self,
+            chains: list[SafeRequestEngine] = None,
+            proxies: list[str] = None,
+            cookies: dict = None,
+            headers: dict = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list[str]] = None,
+            impersonate: str = "chrome",
+            session: Optional[requests.Session] = None,
     ):
         if headers is not None:
             self._headers = headers
@@ -457,19 +328,28 @@ class SafeRequest:
         self._selenium = selenium
         self._selenium_proxy = selenium_proxy
         self._chains: list[SafeRequestEngine] = []
-        self._session = session
-
-        if self._selenium is not None and str(selenium).strip() != "":
-            self._chains.append(
-                SafeRequestEngineSelenium(
-                    remote=self._selenium, proxies=self._selenium_proxy
-                )
+        self._impersonate = impersonate
+        if session is not None:
+            self._session = session
+        else:
+            self._session = CustomSession(
+                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
             )
+
         self._chains = self._chains + (
             [
-                SafeRequestEngineAiohttp(),
-                SafeRequestEngineRequests(),
-                SafeRequestEngineCloudscraper(),
+                SafeRequestEngineCloudscraper(
+                    impersonate=impersonate,
+                    session=session
+                ),
+                SafeRequestEngineAiohttp(
+                    impersonate=impersonate,
+                    session=session
+                ),
+                SafeRequestEngineRequests(
+                    impersonate=impersonate,
+                    session=session
+                ),
             ]
             if chains is None
             else chains
@@ -502,7 +382,6 @@ class SafeRequest:
                 "en",
                 "ko",
                 "ko-KR",
-                "ja",
             ]
             self._headers["Accept-Language"] = random.choice(languages)
         elif language is not None:
@@ -517,10 +396,10 @@ class SafeRequest:
         return self
 
     async def user_agent(
-        self,
-        user_agent: Optional[str] | list = None,
-        mobile_random: bool = False,
-        pc_random: bool = False,
+            self,
+            user_agent: Optional[str] | list = None,
+            mobile_random: bool = False,
+            pc_random: bool = False,
     ):
         """"""
         if user_agent is not None:
@@ -745,7 +624,7 @@ class SafeRequest:
         return self
 
     def cookie(
-        self, key: str = None, value: str = None, data: str = None, item: dict = None
+            self, key: str = None, value: str = None, data: str = None, item: dict = None
     ):
         """"""
         if key is not None and value is not None and data is None and item is None:
@@ -764,15 +643,15 @@ class SafeRequest:
         return self
 
     async def request(
-        self,
-        url: str,
-        method: SafeRequestMethod = SafeRequestMethod.GET,
-        data: any = None,
-        timeout: int = 60,
-        raise_errors: bool = False,
-        max_tries: int = 10,
-        post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
-        retain_cookie=False,
+            self,
+            url: str,
+            method: SafeRequestMethod = SafeRequestMethod.GET,
+            data: any = None,
+            timeout: int = 60,
+            raise_errors: bool = False,
+            max_tries: int = 10,
+            post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
+            retain_cookie=False,
     ) -> SafeRequestResponseData:
         errors = []
         tries = 0
@@ -813,7 +692,6 @@ class SafeRequest:
                     data=data,
                     proxy=proxy,
                     timeout=timeout,
-                    session=self._session,
                 )
 
                 if return_data.status_code <= 399 or retain_cookie:

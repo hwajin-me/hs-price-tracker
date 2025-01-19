@@ -15,25 +15,22 @@ from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
-    SafeRequestEngineRequests,
-    SafeRequestEngineCloudscraper,
-    SafeRequestEngineAiohttp,
     CustomSession,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-_URL = "https://m.{}.naver.com/{}/{}/{}"
+_URL = "https://{}.naver.com/{}/{}/{}"
 
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -54,8 +51,10 @@ class SmartstoreEngine(PriceEngine):
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
+            impersonate="chrome",
             session=CustomSession(
-                impersonate="chrome99_android", http_version=CurlHttpVersion.V1_1
+                impersonate="chrome",
+                http_version=CurlHttpVersion.V1_0
             ),
         )
         request.accept_text_html()
@@ -64,14 +63,7 @@ class SmartstoreEngine(PriceEngine):
         )
         request.accept_encoding("gzip, zlib, deflate, zstd, br")
         request.content_type()
-        request.chains(
-            [
-                SafeRequestEngineAiohttp(impersonate="chrome99_android"),
-                SafeRequestEngineRequests(impersonate="chrome99_android"),
-                SafeRequestEngineCloudscraper(),
-            ]
-        )
-        await request.user_agent(pc_random=True, mobile_random=True)
+        await request.user_agent(pc_random=True)
 
         response = await request.request(
             method=SafeRequestMethod.GET,

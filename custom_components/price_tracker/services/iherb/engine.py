@@ -1,4 +1,3 @@
-import asyncio
 import re
 import uuid
 from typing import Optional
@@ -15,10 +14,7 @@ from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
-    SafeRequestEngineAiohttp,
-    SafeRequestEngineRequests,
     CustomSession,
-    SafeRequestEngineCloudscraper,
 )
 
 _URL = "https://catalog.app.iherb.com/product/{}"
@@ -26,12 +22,12 @@ _URL = "https://catalog.app.iherb.com/product/{}"
 
 class IherbEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = IherbEngine.parse_id(item_url)
@@ -44,19 +40,12 @@ class IherbEngine(PriceEngine):
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
+            impersonate="safari",
             session=CustomSession(
-                impersonate="safari17_2_ios", http_version=CurlHttpVersion.V1_1
+                impersonate="safari", http_version=CurlHttpVersion.V1_0
             ),
         )
-        # TODO: Prevent bot captcha
         device_id = str(uuid.uuid4())
-        request.chains(
-            [
-                SafeRequestEngineAiohttp(impersonate="safari17_2_ios"),
-                SafeRequestEngineRequests(impersonate="safari17_2_ios"),
-                SafeRequestEngineCloudscraper(),
-            ]
-        )
         request.accept_all()
         request.accept_language(
             language="ko-KR,en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
