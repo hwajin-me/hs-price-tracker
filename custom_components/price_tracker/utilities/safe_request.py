@@ -23,8 +23,6 @@ def bot_agents():
 
 def ssl_context():
     ctx = ssl.SSLContext()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
 
     return ctx
 
@@ -51,7 +49,6 @@ class CustomSession(requests.Session):
         super().__init__(*args, **kwargs)
         self.debug = True
         self.trust_env = True
-        self.verify = False
         if kwargs.get("cookies") is not None:
             self.cookies = CustomSessionCookie(kwargs.get("cookies"))
         else:
@@ -131,7 +128,7 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
             self._session = session
         else:
             self._session = CustomSession(
-                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
+                impersonate=impersonate, http_version=CurlHttpVersion.V2TLS
             )
 
     async def request(
@@ -153,8 +150,7 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
                 proxy=proxy,
                 timeout=timeout,
                 allow_redirects=True,
-                verify=False,
-                http_version=CurlHttpVersion.V1_1,
+                http_version=CurlHttpVersion.V2TLS,
                 impersonate=self._impersonate,
             )
 
@@ -188,7 +184,7 @@ class SafeRequestEngineRequests(SafeRequestEngine):
             self._session = session
         else:
             self._session = CustomSession(
-                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
+                impersonate=impersonate, http_version=CurlHttpVersion.V2TLS
             )
 
     async def request(
@@ -213,11 +209,10 @@ class SafeRequestEngineRequests(SafeRequestEngine):
             if proxy is not None
             else None,
             timeout=timeout,
-            verify=False,
             allow_redirects=True,
             default_headers=True,
             impersonate=self._impersonate,
-            http_version=CurlHttpVersion.V1_1,
+            http_version=CurlHttpVersion.V2TLS,
         )
 
         if response.status_code > 399 and response.status_code != 404:
@@ -246,7 +241,7 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
             self._session = session
         else:
             self._session = CustomSession(
-                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
+                impersonate=impersonate, http_version=CurlHttpVersion.V2TLS
             )
 
     async def request(
@@ -333,7 +328,7 @@ class SafeRequest:
             self._session = session
         else:
             self._session = CustomSession(
-                impersonate=impersonate, http_version=CurlHttpVersion.V1_1
+                impersonate=impersonate, http_version=CurlHttpVersion.V2TLS
             )
 
         self._chains = self._chains + (

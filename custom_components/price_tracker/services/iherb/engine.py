@@ -40,10 +40,7 @@ class IherbEngine(PriceEngine):
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
-            impersonate="safari",
-            session=CustomSession(
-                impersonate="safari", http_version=CurlHttpVersion.V1_0
-            ),
+            impersonate="safari17_2_ios",
         )
         device_id = str(uuid.uuid4())
         request.accept_all()

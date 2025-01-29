@@ -1,8 +1,6 @@
 import json
 import re
 
-from bs4 import BeautifulSoup
-
 from custom_components.price_tracker.components.error import DataParseError
 from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import (
@@ -23,24 +21,23 @@ class CoupangParser:
 
     def __init__(self, text: str):
         try:
-            soup = BeautifulSoup(text, "html.parser")
-            if soup is not None:
-                data = soup.find("script", {"id": "__NEXT_DATA__"}).get_text()
-                j = json.loads(data)
-                self._data = j
-                page_atf = Lu.find_item(
-                    j["props"]["pageProps"]["pageList"], "page", "PAGE_ATF"
+            data = json.loads(text)
+            if "rCode" not in data or data["rCode"] != "RET0000":
+                raise DataParseError(
+                    "Coupang Parse Error (rCode) - {}".format(data["rCode"])
                 )
-                if page_atf is None:
-                    raise DataParseError(
-                        "Coupang Parse Error (No ATF) - {}".format(
-                            j["props"]["pageProps"]["pageList"]
-                        )
-                    )
 
-                self._page_atf = page_atf["widgetList"]
+            self._page_atf = Lu.find_item(data["rData"]["pageList"], "page", "PAGE_ATF")
+            if Lu.has(data, "rData.properties.pageSession.logging.bypass.exposureSchema.mandatory"):
+                self._data = data["rData"]["properties"]["pageSession"]["logging"]["bypass"]["exposureSchema"]["mandatory"]
+            elif Lu.has(data, "rData.properties.pageSession.logging.exposureSchema.mandatory"):
+                self._data = data["rData"]["properties"]["pageSession"]["logging"]["exposureSchema"]["mandatory"]
+            elif Lu.has(data, "rData.properties.itemDetail.logging.bypass.exposureSchema.mandatory"):
+                self._data = data["rData"]["properties"]["itemDetail"]["logging"]["bypass"]["exposureSchema"]["mandatory"]
+            elif Lu.has(data, "rData.properties.itemDetail.logging.exposureSchema.mandatory"):
+                self._data = data["rData"]["properties"]["itemDetail"]["logging"]["exposureSchema"]["mandatory"]
             else:
-                raise DataParseError("Coupang Parser Error (Empty HTML PARSER)")
+                raise DataParseError("Coupang Parse Error - Some element not found")
         except DataParseError as e:
             raise e
         except Exception as e:
@@ -49,7 +46,7 @@ class CoupangParser:
     @property
     def name(self):
         return Lu.find_item(
-            self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_PRODUCT_INFO"
+            self._page_atf, "viewType", "PRODUCT_DETAIL_PRODUCT_INFO"
         )["data"]["title"]
 
     @property
@@ -58,7 +55,7 @@ class CoupangParser:
 
     @property
     def brand(self):
-        return Lu.get(self._data, "props.pageProps.seoLdJson.brand.name")
+        return Lu.get(self._data, "brandName")
 
     @property
     def category(self):
@@ -165,10 +162,10 @@ class CoupangParser:
             self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_DELIVERY_INFO"
         )
         if (
-            delivery_info_base is not None
-            and "data" in delivery_info_base
-            and "pddList" in delivery_info_base["data"]
-            and len(delivery_info_base["data"]["pddList"]) > 0
+                delivery_info_base is not None
+                and "data" in delivery_info_base
+                and "pddList" in delivery_info_base["data"]
+                and len(delivery_info_base["data"]["pddList"]) > 0
         ):
             delivery_item = delivery_info_base["data"]["pddList"][0]
             type = delivery_item[
@@ -223,20 +220,16 @@ class CoupangParser:
             if Lu.find_item(
                 self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
             )
-            is not None
+               is not None
             else None
         )
 
-        sold_out = self._data["props"]["pageProps"]["properties"]["itemDetail"][
-            "soldOut"
-        ]
+        almost_oos = self._data["isAlmostOOS"]
 
-        if (inventory is None or "limitMessage" not in inventory) and not sold_out:
+        if inventory is None or "limitMessage" not in inventory:
             stock = InventoryStatus.IN_STOCK
-        elif not sold_out and "limitMessage" in inventory:
+        elif almost_oos:
             stock = InventoryStatus.ALMOST_SOLD_OUT
-        elif not sold_out:
-            stock = InventoryStatus.IN_STOCK
         else:
             stock = InventoryStatus.OUT_OF_STOCK
 
