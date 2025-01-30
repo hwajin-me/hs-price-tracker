@@ -42,12 +42,14 @@ class RankingdakEngine(PriceEngine):
             selenium_proxy=self._selenium_proxy,
         )
         request.accept_text_html()
-        await request.user_agent(mobile_random=True)
+        request.user_agent(mobile_random=True)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.product_id)
         )
-        if response.status_code == 404:
-            return ItemData(id=self.product_id, name="", status=ItemStatus.DELETED)
+
+        if response.is_not_found:
+            return ItemData(id=self.id_str(), name="Deleted {}".format(self.id_str()), status=ItemStatus.DELETED)
+
         logging_for_response(response, __name__, "rankingdak")
         parser = RankingdakParser(html=response.data)
 

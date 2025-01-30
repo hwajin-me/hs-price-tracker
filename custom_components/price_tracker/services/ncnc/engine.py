@@ -44,8 +44,9 @@ class NcncEngine(PriceEngine):
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
-        if response.status_code == 404:
-            return ItemData(id=self.id, name="", status=ItemStatus.DELETED)
+
+        if response.is_not_found:
+            return ItemData(id=self.id_str(), name="Deleted {}".format(self.id_str()), status=ItemStatus.DELETED)
 
         data = response.data
 

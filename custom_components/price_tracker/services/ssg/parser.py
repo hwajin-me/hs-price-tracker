@@ -106,7 +106,7 @@ class SsgParser:
     @property
     def delivery(self):
         if Lu.has(self._item, "rightBadgeList") is True:
-            if Lu.find_item(self._item["rightBadgeList"], "txt", "쓱-배송") is not None:
+            if Lu.find(self._item["rightBadgeList"], "txt", "쓱-배송") is not None:
                 return DeliveryData(
                     price=3000,
                     threshold_price=40000,
@@ -114,7 +114,7 @@ class SsgParser:
                     delivery_type=DeliveryType.EXPRESS_SPECIFIC,
                 )
             elif (
-                Lu.find_item(self._item["rightBadgeList"], "txt", "새벽배송")
+                Lu.find(self._item["rightBadgeList"], "txt", "새벽배송")
                 is not None
             ):
                 return DeliveryData(
@@ -129,7 +129,7 @@ class SsgParser:
                 return DeliveryData(pay_type=DeliveryPayType.FREE)
 
             if (
-                item := Lu.find_item_by(
+                item := Lu.find_by(
                     self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
                     "msg",
                     lambda x: str(x).endswith("원 이상 무료)"),
@@ -147,7 +147,7 @@ class SsgParser:
                 )
 
             if (
-                item := Lu.find_item_by(
+                item := Lu.find_by(
                     self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
                     "msg",
                     lambda x: str(x).startswith("배송비 "),
@@ -157,7 +157,7 @@ class SsgParser:
                 return DeliveryData(price=price, pay_type=DeliveryPayType.PAID)
 
             if (
-                Lu.find_item(
+                Lu.find(
                     self._data["itemInfo"]["deliTypeInfo"]["msgMapList"],
                     "msg",
                     "배송비 무료",

@@ -33,7 +33,7 @@ class KurlyParser:
 
     @property
     def brand(self):
-        brand_data = Lu.find_item(self._data["seller_profile"], "title", "판매자")
+        brand_data = Lu.find(self._data["seller_profile"], "title", "판매자")
         if brand_data is None:
             return None
 

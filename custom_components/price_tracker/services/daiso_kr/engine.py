@@ -39,7 +39,7 @@ class DaisoKrEngine(PriceEngine):
         )
         request.accept_text_html()
         request.accept_encoding("gzip, deflate, br")
-        await request.user_agent(mobile_random=True)
+        request.user_agent(mobile_random=True)
         response = await request.request(
             method=SafeRequestMethod.POST,
             url=_URL,

@@ -1,8 +1,8 @@
 import json
+import logging
 import re
 
 from custom_components.price_tracker.components.error import DataParseError
-from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import (
     DeliveryPayType,
     DeliveryType,
@@ -12,32 +12,82 @@ from custom_components.price_tracker.datas.inventory import InventoryStatus
 from custom_components.price_tracker.datas.price import ItemPriceData
 from custom_components.price_tracker.datas.unit import ItemUnitData, ItemUnitType
 from custom_components.price_tracker.utilities.list import Lu
-from custom_components.price_tracker.utilities.parser import parse_float
+from custom_components.price_tracker.utilities.parser import parse_number
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class CoupangParser:
     _data: dict
+    _base: dict
     _page_atf: dict
+    _media: dict
 
     def __init__(self, text: str):
         try:
             data = json.loads(text)
+
             if "rCode" not in data or data["rCode"] != "RET0000":
                 raise DataParseError(
                     "Coupang Parse Error (rCode) - {}".format(data["rCode"])
                 )
+            self._page_atf = Lu.get(Lu.find(Lu.get(data, "rData.pageList"), "page", "PAGE_ATF"), "widgetList", [])
+            self._base = Lu.get(Lu.find(Lu.get(data, "rData.pageList"), "page", "PAGE_HANDLEBAR"), "widgetList", [])
+            self._media = Lu.get(Lu.find(self._page_atf, "entity.viewType", "PRODUCT_DETAIL_ITEM_THUMBNAILS", {}),
+                                 "entity.medias.0.detail", [])
+            self._data = {}
 
-            self._page_atf = Lu.find_item(data["rData"]["pageList"], "page", "PAGE_ATF")
-            if Lu.has(data, "rData.properties.pageSession.logging.bypass.exposureSchema.mandatory"):
-                self._data = data["rData"]["properties"]["pageSession"]["logging"]["bypass"]["exposureSchema"]["mandatory"]
-            elif Lu.has(data, "rData.properties.pageSession.logging.exposureSchema.mandatory"):
-                self._data = data["rData"]["properties"]["pageSession"]["logging"]["exposureSchema"]["mandatory"]
-            elif Lu.has(data, "rData.properties.itemDetail.logging.bypass.exposureSchema.mandatory"):
-                self._data = data["rData"]["properties"]["itemDetail"]["logging"]["bypass"]["exposureSchema"]["mandatory"]
-            elif Lu.has(data, "rData.properties.itemDetail.logging.exposureSchema.mandatory"):
-                self._data = data["rData"]["properties"]["itemDetail"]["logging"]["exposureSchema"]["mandatory"]
-            else:
-                raise DataParseError("Coupang Parse Error - Some element not found")
+            delivery = "".join(Lu.map(
+                Lu.get(Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_HANDLEBAR_QUANTITY"),
+                       "entity.deliveryDate", []), lambda x: x["text"]))
+            delivery_price = "".join(
+                Lu.map(Lu.get(Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_BASE_INFO", {}),
+                              "entity.deliveryInfo.shippingFee", []),
+                       lambda x: x["text"] if x is not None else ""))
+
+            if delivery is not None and delivery is not "":
+                self._data = {
+                    **self._data,
+                    "deliveryDate": delivery
+                }
+
+            if delivery_price is not None and delivery_price is not "":
+                self._data = {
+                    **self._data,
+                    "deliveryFee": delivery_price
+                }
+
+            if self._media is not None:
+                self._data = {
+                    **self._data,
+                    "image": self._media
+                }
+            self._data = {
+                **self._data,
+                **{
+                    "finalPrice": Lu.get(
+                        Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_BASE_INFO", {}),
+                        "priceInfo.finalPrice.0",
+                        Lu.get(self._data, "finalPrice")
+                    )
+                },
+                **{
+                    "originalPrice": Lu.get(
+                        Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_BASE_INFO", {}),
+                        "priceInfo.originalPrice.0",
+                        Lu.get(self._data, "originalPrice")
+                    )
+                }
+            }
+            self._data = {
+                **self._data,
+                **Lu.get(data, "rData.properties.pageSession.logging.exposureSchema.mandatory", {}),
+                **Lu.get(data, "rData.properties.pageSession.logging.bypass.exposureSchema.mandatory", {}),
+                **Lu.get(data, "rData.properties.itemDetail.logging.exposureSchema.mandatory", {}),
+                **Lu.get(data, "rData.properties.itemDetail.logging.bypass.exposureSchema.mandatory", {}),
+                **Lu.get(data, "rData.properties.itemDetail.handleBarLogging.bypass.exposureSchema.mandatory", {}),
+            }
+
         except DataParseError as e:
             raise e
         except Exception as e:
@@ -45,9 +95,9 @@ class CoupangParser:
 
     @property
     def name(self):
-        return Lu.find_item(
-            self._page_atf, "viewType", "PRODUCT_DETAIL_PRODUCT_INFO"
-        )["data"]["title"]
+        return Lu.get(Lu.find(
+            self._page_atf, "entity.viewType", "PRODUCT_DETAIL_PRODUCT_INFO"
+        ), "entity.title.0.text", "Unknown (Coupang)")
 
     @property
     def description(self):
@@ -59,17 +109,7 @@ class CoupangParser:
 
     @property
     def category(self):
-        return ItemCategoryData(
-            list(
-                str(t["name"])
-                for t in Lu.find_item(
-                    self._page_atf,
-                    "viewType",
-                    "MWEB_PRODUCT_DETAIL_SDP_BREADCURMB_DETAIL",
-                )["data"]["breadcrumb"]
-                if t["linkcode"] != "0"
-            )
-        )
+        return None
 
     @property
     def options(self):
@@ -77,135 +117,87 @@ class CoupangParser:
 
     @property
     def price(self):
-        price = Lu.find_item(
-            self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO"
-        )
-
-        if price is None:
-            raise DataParseError(
-                "Coupang Parse Error - MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO not found"
-            )
-
-        price_data = price["data"]
-        original_price = (
-            price_data["originalPrice"]["price"]
-            if Lu.has(price_data, "originalPrice.price")
-            else None
-        )
-        currency = "KRW"
-        price = price_data["finalPrice"]["price"]
-        payback_price = 0
-
         return ItemPriceData(
-            original_price=original_price,
-            price=price,
-            currency=currency,
-            payback_price=payback_price,
+            original_price=Lu.get(self._data, "originalPrice"),
+            price=Lu.get(self._data, "finalPrice"),
+            currency="KRW",
+            payback_price=0,
         )
 
     @property
     def unit(self):
-        price_info = Lu.find_item(
-            self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO"
-        )["data"]
+        price_info = Lu.get(self._data, "unitPrice")
+        if price_info is None:
+            return ItemUnitData(price=self.price.price)
 
-        if "unitPriceDescription" in price_info["finalPrice"]:
-            u = re.match(
-                r"^\((?P<per>[\d,]+)(?P<unit_type>g|개|ml|kg|l)당 (?P<price>[\d,]+)원\)$",
-                price_info["finalPrice"]["unitPriceDescription"],
-            )
-            if u is None:
-                return ItemUnitData(price=self.price.price)
-
-            g = u.groupdict()
-            unit_price = ItemUnitData(
-                unit_type=ItemUnitType.of(g["unit_type"]),
-                unit=float(g["per"].replace(",", "")),
-                price=float(g["price"].replace(",", "")),
-                total_price=self.price.price,
-            )
-        else:
-            unit_price = ItemUnitData(price=self.price.price)
+        u = re.match(
+            r"^\((?P<per>[\d,]+)(?P<unit_type>g|개|ml|kg|l)당 (?P<price>[\d,]+)원\)$",
+            price_info,
+        )
+        if u is None:
+            return ItemUnitData(price=self.price.price)
+        g = u.groupdict()
+        unit_price = ItemUnitData(
+            unit_type=ItemUnitType.of(g["unit_type"]),
+            unit=float(g["per"].replace(",", "")),
+            price=float(g["price"].replace(",", "")),
+            total_price=self.price.price,
+        )
 
         return unit_price
 
     @property
     def image(self):
-        return Lu.find_item(
-            self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ITEM_THUMBNAILS"
-        )["data"]["medias"][0]["detail"]
+        return Lu.get(self._data, "image", None)
 
     @property
     def delivery(self):
-        price_info = Lu.find_item(
-            self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_PRICE_INFO"
-        )["data"]
-        delivery_price = (
-            price_info["deliveryMessages"] if "deliveryMessage" in price_info else None
-        )
+        rocket_type = Lu.get(self._data, "rocketType", "STANDARD")
+        delivery_message = Lu.get(str(Lu.get(self._data, "deliveryMessage", "")).split("\n"), 0)
+        delivery_fee = parse_number(str(Lu.get(self._data, "deliveryFee", "free"))
+                                    .replace("배송비", "")
+                                    .replace("원", "")
+                                    .replace(",", "")
+                                    .replace(" ", ""))
         threshold_price = None
-        delivery_pay_type = DeliveryPayType.PAID
-        delivery_type = DeliveryType.STANDARD
-        if delivery_price is not None:
-            delivery_price = parse_float(
-                delivery_price.replace("배송비", "")
-                .replace("원", "")
-                .replace(",", "")
-                .replace(" ", "")
-            )
+
+        if rocket_type == "ROCKET":
+            delivery_type = DeliveryType.EXPRESS
+        elif rocket_type == "ROCKET_FRESH":
+            delivery_type = DeliveryType.EXPRESS
+            threshold_price = 15000
+        elif rocket_type == "ROCKET_MERCHANT":
+            delivery_type = DeliveryType.EXPRESS
         else:
-            delivery_price = 0.0
+            delivery_type = DeliveryType.STANDARD
+
+        if delivery_fee == 0:
             delivery_pay_type = DeliveryPayType.FREE
+        else:
+            delivery_pay_type = DeliveryPayType.PAID
 
-        # Find delivery info
-        delivery_info_base = Lu.find_item(
-            self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_DELIVERY_INFO"
-        )
-        if (
-                delivery_info_base is not None
-                and "data" in delivery_info_base
-                and "pddList" in delivery_info_base["data"]
-                and len(delivery_info_base["data"]["pddList"]) > 0
-        ):
-            delivery_item = delivery_info_base["data"]["pddList"][0]
-            type = delivery_item[
-                "deliveryType"
-            ]  # ROCKET_MERCHANT , ROCKET, ROCKET_FRESH
-            arrival = str(delivery_item.get("arrivalMessage"))
-
-            if arrival is None:
-                arrival = ""
-
-            # deliveryMessages
-            delivery_pay_type = DeliveryPayType.FREE
-
-            if arrival.find("오늘") > -1:
-                if arrival.find("새벽") > -1:
+        if rocket_type in ["ROCKET", "ROCKET_FRESH", "ROCKET_MERCHANT"]:
+            if delivery_message.find("오늘") > -1:
+                if delivery_message.find("새벽") > -1:
                     delivery_type = DeliveryType.EXPRESS_TODAY_DAWN
-                elif arrival.find("오후") > -1:
+                elif delivery_message.find("오후") > -1:
                     delivery_type = DeliveryType.EXPRESS_TONIGHT
                 else:
                     delivery_type = DeliveryType.EXPRESS_TODAY
-            elif arrival.find("내일") > -1:
-                if arrival.find("새벽") > -1:
+            elif delivery_message.find("내일") > -1:
+                if delivery_message.find("새벽") > -1:
                     delivery_type = DeliveryType.EXPRESS_NEXT_DAWN
-                elif arrival.find("오후") > -1:
+                elif delivery_message.find("오후") > -1:
                     delivery_type = DeliveryType.EXPRESS_NEXT_DAY
                 else:
                     delivery_type = DeliveryType.EXPRESS_NEXT_DAY
             else:
-                if type in ["ROCKET", "ROCKET_FRESH", "ROCKET_MERCHANT"]:
-                    delivery_type = DeliveryType.EXPRESS
-                else:
-                    delivery_type = DeliveryType.STANDARD
-
-            if type == "ROCKET_FRESH":
-                threshold_price = 15000
-            else:
-                threshold_price = None
+                delivery_type = DeliveryType.EXPRESS
+        else:
+            delivery_type = DeliveryType.STANDARD
 
         return DeliveryData(
-            price=delivery_price,
+            price=delivery_fee,
             pay_type=delivery_pay_type,
             delivery_type=delivery_type,
             threshold_price=threshold_price,
@@ -213,24 +205,14 @@ class CoupangParser:
 
     @property
     def inventory(self):
-        inventory = (
-            Lu.find_item(
-                self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
-            )["data"]
-            if Lu.find_item(
-                self._page_atf, "viewType", "MWEB_PRODUCT_DETAIL_ATF_QUANTITY"
-            )
-               is not None
-            else None
-        )
+        almost_oos = Lu.get(self._data, "isAlmostOSS", False)
+        is_out_of_stock = Lu.get(self._data, "isOutOfStock", False)
 
-        almost_oos = self._data["isAlmostOOS"]
-
-        if inventory is None or "limitMessage" not in inventory:
-            stock = InventoryStatus.IN_STOCK
+        if is_out_of_stock:
+            stock = InventoryStatus.OUT_OF_STOCK
         elif almost_oos:
             stock = InventoryStatus.ALMOST_SOLD_OUT
         else:
-            stock = InventoryStatus.OUT_OF_STOCK
+            stock = InventoryStatus.IN_STOCK
 
         return stock

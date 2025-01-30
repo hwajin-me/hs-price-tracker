@@ -432,7 +432,7 @@ class PriceTrackerSetup:
             entity = (er.async_get(self._option_flow.hass)).async_get(
                 user_input[self.const_option_select_entity]
             )
-            item = Lu.find_item(
+            item = Lu.find(
                 self._config_entry.options.get(self.conf_target, []),
                 self.conf_item_unique_id,
                 entity.unique_id,

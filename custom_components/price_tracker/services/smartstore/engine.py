@@ -2,11 +2,13 @@ import logging
 import re
 from typing import Optional
 
+from curl_cffi import CurlHttpVersion
+
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
 )
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.smartstore.const import NAME, CODE
 from custom_components.price_tracker.services.smartstore.parser import SmartstoreParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
@@ -14,6 +16,7 @@ from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
 )
+from custom_components.price_tracker.utilities.utils import random_choice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,28 +44,47 @@ class SmartstoreEngine(PriceEngine):
         self._selenium_proxy = selenium_proxy
 
     async def load(self) -> ItemData | None:
-        url = _URL.format(
-            self.store_type, self.store, self.detail_type, self.product_id
-        )
-        request = SafeRequest(
-            proxies=self._proxies,
-            selenium=self._selenium,
-            selenium_proxy=self._selenium_proxy,
-            impersonate="chrome",
-        )
-        request.accept_text_html()
-        request.accept_language(
-            language="en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5"
-        )
-        request.accept_encoding("gzip, zlib, deflate, zstd, br")
-        request.content_type()
-        await request.user_agent(pc_random=True)
+        store_type = self.store_type
+        if self.store_type == "smartstore":
+            request = SafeRequest(
+                proxies=self._proxies,
+                impersonate="safari17_2_ios",
+                version=CurlHttpVersion.V1_0,
+            )
+            request.accept_almost_all()
+            request.accept_language(is_random=True)
+            request.user_agent(user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/605.1 NAVER(inapp; search; 2000; 12.8.52; 14PRO)")
+            request.pragma_no_cache()
+            request.cookie(key="NNB", value="PPYXCWKWXC" + random_choice(["A", "B", "C", "D", "X"]) + random_choice(["A", "B", "C", "D", "E"]) + random_choice(["A", "B", "C", "D", "E", "F"]))
+            request.keep_alive()
+            request.sec_ch_ua_mobile()
+            request.sec_fetch_dest_document()
+            request.sec_fetch_mode_navigate()
+            store_type="m.smartstore"
+        else:
+            request = SafeRequest(
+                proxies=self._proxies,
+                impersonate="chrome",
+                version=CurlHttpVersion.V2_PRIOR_KNOWLEDGE,
+                user_agents=["pc"]
+            )
+
         response = await request.request(
             method=SafeRequestMethod.GET,
-            url=url,
+            url=_URL.format(
+                store_type, self.store, self.detail_type, self.product_id
+            ),
         )
 
         logging_for_response(response=response, name=__name__, domain="smartstore")
+
+        if response.is_not_found:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+                http_status=response.status_code
+            )
 
         if not response.has:
             return None
@@ -82,6 +104,7 @@ class SmartstoreEngine(PriceEngine):
             inventory=naver_parser.inventory_status,
             delivery=naver_parser.delivery,
             options=naver_parser.options,
+            status=ItemStatus.ACTIVE,
         )
 
     def id_str(self) -> str:

@@ -40,7 +40,7 @@ class IdusEngine(PriceEngine):
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
         )
-        await request.user_agent(mobile_random=True, pc_random=True)
+        request.user_agent(mobile_random=True, pc_random=True)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.product_id)
         )

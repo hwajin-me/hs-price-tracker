@@ -35,20 +35,21 @@ class ItemStatus(Enum):
 @dataclasses.dataclass
 class ItemData:
     def __init__(
-        self,
-        id: any,
-        name: str = "UNKNOWN",
-        price: ItemPriceData = ItemPriceData(),
-        brand: str = None,
-        description: str = None,
-        category: ItemCategoryData = None,
-        delivery: DeliveryData = DeliveryData(),
-        url: str = None,
-        image: str = None,
-        unit: ItemUnitData = None,
-        inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
-        options: [ItemOptionData] = None,
-        status: ItemStatus = ItemStatus.ACTIVE,
+            self,
+            id: any,
+            name: str = "UNKNOWN",
+            price: ItemPriceData = ItemPriceData(),
+            brand: str = None,
+            description: str = None,
+            category: ItemCategoryData = None,
+            delivery: DeliveryData = DeliveryData(),
+            url: str = None,
+            image: str = None,
+            unit: ItemUnitData = None,
+            inventory: InventoryStatus = InventoryStatus.OUT_OF_STOCK,
+            options: [ItemOptionData] = None,
+            status: ItemStatus = ItemStatus.ACTIVE,
+            http_status: int = 200,
     ) -> None:
         self.id = id
         if unit is None:
@@ -68,6 +69,7 @@ class ItemData:
         self.inventory = inventory
         self.options = options
         self.status = status
+        self.http_status = http_status
 
     @property
     def total_price(self):
@@ -110,6 +112,7 @@ class ItemData:
             "status": self.status.name
             if self.status is not None
             else ItemStatus.ACTIVE.name,
+            "http_status": self.http_status,
         }
 
         # For fast-access options

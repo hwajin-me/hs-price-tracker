@@ -9,7 +9,6 @@ from custom_components.price_tracker.services.daiso_kr.setup import DaisoKrSetup
 from custom_components.price_tracker.services.gsthefresh.setup import GsthefreshSetup
 from custom_components.price_tracker.services.homeplus.setup import HomeplusSetup
 from custom_components.price_tracker.services.idus.setup import IdusSetup
-from custom_components.price_tracker.services.iherb.setup import IherbSetup
 from custom_components.price_tracker.services.kurly.setup import KurlySetup
 from custom_components.price_tracker.services.lotte_kr.setup import LotteOnKoreaSetup
 from custom_components.price_tracker.services.ncnc.setup import NcncSetup
@@ -32,7 +31,6 @@ _SERVICE_SETUP = {
     SsgSetup.setup_code(): lambda cfg: SsgSetup(config_flow=cfg),
     RankingdakSetup.setup_code(): lambda cfg: RankingdakSetup(config_flow=cfg),
     LotteOnKoreaSetup.setup_code(): lambda cfg: LotteOnKoreaSetup(config_flow=cfg),
-    IherbSetup.setup_code(): lambda cfg: IherbSetup(config_flow=cfg),
     HomeplusSetup.setup_code(): lambda cfg: HomeplusSetup(config_flow=cfg),
     DaisoKrSetup.setup_code(): lambda cfg: DaisoKrSetup(config_flow=cfg),
 }
@@ -60,7 +58,6 @@ _SERVICE_OPTION_SETUP = {
     LotteOnKoreaSetup.setup_code(): lambda cfg, e: LotteOnKoreaSetup(
         option_flow=cfg, config_entry=e
     ),
-    IherbSetup.setup_code(): lambda cfg, e: IherbSetup(option_flow=cfg, config_entry=e),
     HomeplusSetup.setup_code(): lambda cfg, e: HomeplusSetup(
         option_flow=cfg, config_entry=e
     ),
@@ -80,7 +77,6 @@ _KIND = {
     SsgSetup.setup_code(): SsgSetup.setup_name(),
     RankingdakSetup.setup_code(): RankingdakSetup.setup_name(),
     LotteOnKoreaSetup.setup_code(): LotteOnKoreaSetup.setup_name(),
-    IherbSetup.setup_code(): IherbSetup.setup_name(),
     HomeplusSetup.setup_code(): HomeplusSetup.setup_name(),
     DaisoKrSetup.setup_code(): DaisoKrSetup.setup_name(),
 }

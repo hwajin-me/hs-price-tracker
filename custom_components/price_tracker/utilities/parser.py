@@ -61,6 +61,7 @@ def parse_number(value: any) -> int:
             .replace("￦", "")
             .replace("\t", "")
             .replace("원", "")
+            .replace("free", "0")
         )
     except (ValueError, TypeError):
         return 0

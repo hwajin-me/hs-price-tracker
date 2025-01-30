@@ -2,24 +2,38 @@ from copy import deepcopy
 
 
 class Lu:
-    @staticmethod
-    def find_item(target: [any], key: str, value: any):
-        return Lu.get_item(target, key, value)
 
     @staticmethod
-    def find_item_by(target: [any], key: str, func):
+    def first(target: [any], defValue: any = None):
+        return target[0] if len(target) > 0 else defValue
+
+    @staticmethod
+    def find(target: [any], key: str, value: any, defaultValue: any = None):
+        return next((x for x in target if Lu.get(x, key) == value), defaultValue)
+
+    @staticmethod
+    def find_by(target: [any], key: str, func):
         return next((x for x in target if func(x[key]) is True), None)
 
     @staticmethod
-    def get(target: [any], key: str, default_value: any = None):
+    def get(target: [any], key: str | int, default_value: any = None):
+        if isinstance(key, int):
+            return target[key]
+
         if key in target:
             return target[key]
+
+        if key.isnumeric():
+            return target[int(key)]
 
         if key.count(".") > 0:
             keys = key.split(".")
 
             for k in keys:
-                if k in target:
+                if str(k).isnumeric() and isinstance(target, list) and len(target) > int(k):
+                    target = target[int(k)]
+                    continue
+                elif k in target:
                     target = target[k]
                     continue
                 else:
@@ -76,12 +90,8 @@ class Lu:
         return list(filter(fn, target))
 
     @staticmethod
-    def get_item(target: [any], key: str, value: any):
-        return next((x for x in target if x[key] == value), None)
-
-    @staticmethod
     def get_item_or_default(
-        target: [any], key: str, value: any, default_value: any = None
+            target: [any], key: str, value: any, default_value: any = None
     ):
         return next((x for x in target if x[key] == value), default_value)
 

@@ -42,7 +42,7 @@ class LotteOnEngine(PriceEngine):
         )
         request.accept_text_html()
         request.accept_encoding("gzip, deflate, br")
-        await request.user_agent(mobile_random=True)
+        request.user_agent(mobile_random=True)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )

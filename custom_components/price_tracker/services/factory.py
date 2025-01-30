@@ -4,7 +4,6 @@ from custom_components.price_tracker.services.gsthefresh.device import GsTheFres
 from custom_components.price_tracker.services.gsthefresh.engine import GsTheFreshEngine
 from custom_components.price_tracker.services.homeplus.engine import HomeplusEngine
 from custom_components.price_tracker.services.idus.engine import IdusEngine
-from custom_components.price_tracker.services.iherb.engine import IherbEngine
 from custom_components.price_tracker.services.kurly.engine import KurlyEngine
 from custom_components.price_tracker.services.lotte_kr.engine import LotteOnEngine
 from custom_components.price_tracker.services.ncnc.engine import NcncEngine
@@ -26,7 +25,6 @@ _SERVICE_ITEM_URL_PARSER = {
     SsgEngine.engine_code(): lambda cfg: SsgEngine.parse_id(cfg),
     RankingdakEngine.engine_code(): lambda cfg: RankingdakEngine.parse_id(cfg),
     LotteOnEngine.engine_code(): lambda cfg: LotteOnEngine.parse_id(cfg),
-    IherbEngine.engine_code(): lambda cfg: IherbEngine.parse_id(cfg),
     HomeplusEngine.engine_code(): lambda cfg: HomeplusEngine.parse_id(cfg),
     DaisoKrEngine.engine_code(): lambda cfg: DaisoKrEngine.parse_id(cfg),
 }
@@ -43,7 +41,6 @@ _SERVICE_ITEM_TARGET_PARSER = {
     SsgEngine.engine_code(): lambda cfg: SsgEngine.target_id(cfg),
     RankingdakEngine.engine_code(): lambda cfg: RankingdakEngine.target_id(cfg),
     LotteOnEngine.engine_code(): lambda cfg: LotteOnEngine.target_id(cfg),
-    IherbEngine.engine_code(): lambda cfg: IherbEngine.target_id(cfg),
     HomeplusEngine.engine_code(): lambda cfg: HomeplusEngine.target_id(cfg),
     DaisoKrEngine.engine_code(): lambda cfg: DaisoKrEngine.target_id(cfg),
 }
@@ -60,7 +57,6 @@ _SERVICE_ITEM_ENGINE = {
     SsgEngine.engine_code(): lambda **cfg: SsgEngine(**cfg),
     RankingdakEngine.engine_code(): lambda **cfg: RankingdakEngine(**cfg),
     LotteOnEngine.engine_code(): lambda **cfg: LotteOnEngine(**cfg),
-    IherbEngine.engine_code(): lambda **cfg: IherbEngine(**cfg),
     HomeplusEngine.engine_code(): lambda **cfg: HomeplusEngine(**cfg),
     DaisoKrEngine.engine_code(): lambda **cfg: DaisoKrEngine(**cfg),
 }

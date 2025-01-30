@@ -48,7 +48,7 @@ class IdeaNutritionEngine(PriceEngine):
         request.accept_text_html()
         request.accept_encoding("gzip, deflate, br")
         request.cookie(key="domainType", value="mobile")
-        await request.user_agent(user_agent=_UA)
+        request.user_agent(user_agent=_UA)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )

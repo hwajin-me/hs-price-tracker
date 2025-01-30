@@ -44,7 +44,7 @@ class OliveyoungEngine(PriceEngine):
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
         )
-        await request.user_agent(user_agent=OLIVEYOUNG_USER_AGENT)
+        request.user_agent(user_agent=OLIVEYOUNG_USER_AGENT)
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.goods_number)
         )

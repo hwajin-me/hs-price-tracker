@@ -5,7 +5,7 @@ from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
 )
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.coupang.const import NAME, CODE, X_COUPANG_APP, USER_AGENT
 from custom_components.price_tracker.services.coupang.parser import CoupangParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
@@ -49,7 +49,7 @@ class CoupangEngine(PriceEngine):
         request.accept_text_html()
         request.accept_language(is_random=True)
         request.header(key="coupang-app", value=X_COUPANG_APP)
-        await request.user_agent(user_agent=USER_AGENT)
+        request.user_agent(user_agent=USER_AGENT)
 
         response = await request.request(
             method=SafeRequestMethod.POST,
@@ -59,7 +59,10 @@ class CoupangEngine(PriceEngine):
 
         data = response.data
 
-        if data is None or response.status_code != 200:
+        if response.is_not_found:
+            return ItemData(id=self.product_id, name="Deleted {}".format(self.id_str()), status=ItemStatus.DELETED)
+
+        if not response.has:
             return None
 
         logging_for_response(data, __name__, "coupang")

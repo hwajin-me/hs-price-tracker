@@ -1,2 +1,0 @@
-CODE = "aliexpress"
-NAME = "AliExpress"
