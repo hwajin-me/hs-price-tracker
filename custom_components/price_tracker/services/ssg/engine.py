@@ -4,6 +4,7 @@ from typing import Optional
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
+    NotFoundError,
 )
 from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.ssg.const import CODE, NAME
@@ -38,9 +39,11 @@ class SsgEngine(PriceEngine):
 
     async def load(self) -> ItemData:
         request = SafeRequest(
-            selenium=self._selenium, selenium_proxy=self._selenium_proxy
+            selenium=self._selenium,
+            selenium_proxy=self._selenium_proxy,
+            proxies=self._proxy,
         )
-        request.proxies(self._proxy)
+
         response = await request.request(
             method=SafeRequestMethod.POST,
             data={
@@ -63,21 +66,30 @@ class SsgEngine(PriceEngine):
 
         logging_for_response(text, __name__, "ssg")
 
-        ssg_parser = SsgParser(text)
+        try:
+            ssg_parser = SsgParser(text)
 
-        return ItemData(
-            id=self.product_id,
-            brand=ssg_parser.brand,
-            name=ssg_parser.name,
-            price=ssg_parser.price,
-            description=ssg_parser.description,
-            url=ssg_parser.url,
-            image=ssg_parser.image,
-            category=ssg_parser.category,
-            inventory=ssg_parser.inventory_status,
-            delivery=ssg_parser.delivery,
-            unit=ssg_parser.unit,
-        )
+            return ItemData(
+                id=self.product_id,
+                brand=ssg_parser.brand,
+                name=ssg_parser.name,
+                price=ssg_parser.price,
+                description=ssg_parser.description,
+                url=ssg_parser.url,
+                image=ssg_parser.image,
+                category=ssg_parser.category,
+                inventory=ssg_parser.inventory_status,
+                delivery=ssg_parser.delivery,
+                unit=ssg_parser.unit,
+            )
+        except NotFoundError:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.product_id),
+                status=ItemStatus.DELETED,
+            )
+        except Exception as e:
+            raise e
 
     def id_str(self) -> str:
         return "{}_{}".format(self.product_id, self.site_no)

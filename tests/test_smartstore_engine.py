@@ -45,3 +45,47 @@ async def test_naver_smartstore_parse_4():
     result = await engine.load()
     assert result is not None
     assert result.name is not None
+
+
+@pytest.mark.asyncio
+@pytest.hookimpl(trylast=True)
+async def test_naver_smartstore_parse_5():
+    engine = SmartstoreEngine(
+        item_url="https://smartstore.naver.com/nsm33313140/products/10134655507",
+    )
+    result = await engine.load()
+    assert result is not None
+    assert result.name is not None
+
+
+@pytest.mark.asyncio
+@pytest.hookimpl(trylast=True)
+async def test_naver_smartstore_parse_6():
+    engine = SmartstoreEngine(
+        item_url="https://smartstore.naver.com/vitaair/products/7229371652",
+    )
+    result = await engine.load()
+    assert result is not None
+    assert result.name is not None
+
+
+@pytest.mark.asyncio
+@pytest.hookimpl(trylast=True)
+async def test_naver_smartstore_parse_7():
+    engine = SmartstoreEngine(
+        item_url="https://smartstore.naver.com/spcorp/products/640141319",
+    )
+    result = await engine.load()
+    assert result is not None
+    assert result.name is not None
+
+
+@pytest.mark.asyncio
+@pytest.hookimpl(trylast=True)
+async def test_naver_smartstore_parse_8():
+    engine = SmartstoreEngine(
+        item_url="https://smartstore.naver.com/heungbumall/products/278968704",
+    )
+    result = await engine.load()
+    assert result is not None
+    assert result.name is not None

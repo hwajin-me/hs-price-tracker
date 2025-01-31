@@ -2,7 +2,10 @@ import re
 from typing import Optional
 
 from custom_components.price_tracker.components.engine import PriceEngine
-from custom_components.price_tracker.components.error import InvalidItemUrlError
+from custom_components.price_tracker.components.error import (
+    InvalidItemUrlError,
+    NotFoundError,
+)
 from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.rankingdak.const import (
     CODE,
@@ -56,22 +59,33 @@ class RankingdakEngine(PriceEngine):
 
         logging_for_response(response, __name__, "rankingdak")
 
-        parser = RankingdakParser(html=response.data)
+        try:
+            parser = RankingdakParser(html=response.data)
 
-        return ItemData(
-            id=self.id_str(),
-            brand=parser.brand,
-            name=parser.name,
-            price=parser.price,
-            description=parser.description,
-            category=parser.category,
-            delivery=parser.delivery,
-            unit=parser.unit,
-            image=parser.image,
-            url="https://www.rankingdak.com/product/view?productCd={}".format(self.id),
-            options=parser.options,
-            inventory=parser.inventory_status,
-        )
+            return ItemData(
+                id=self.id_str(),
+                brand=parser.brand,
+                name=parser.name,
+                price=parser.price,
+                description=parser.description,
+                category=parser.category,
+                delivery=parser.delivery,
+                unit=parser.unit,
+                image=parser.image,
+                url="https://www.rankingdak.com/product/view?productCd={}".format(
+                    self.id
+                ),
+                options=parser.options,
+                inventory=parser.inventory_status,
+            )
+        except NotFoundError as e:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
+        except Exception as e:
+            raise e
 
     def id_str(self) -> str:
         return self.product_id

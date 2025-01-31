@@ -8,6 +8,7 @@ from curl_cffi import CurlHttpVersion
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
+    NotFoundError,
 )
 from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.smartstore.const import NAME, CODE
@@ -178,21 +179,31 @@ class SmartstoreEngine(PriceEngine):
 
         text = response.text
 
-        naver_parser = SmartstoreParser(data=text)
+        try:
+            naver_parser = SmartstoreParser(data=text)
 
-        return ItemData(
-            id=self.id_str(),
-            price=naver_parser.price,
-            name=naver_parser.name,
-            description=naver_parser.description,
-            category=naver_parser.category,
-            image=naver_parser.image,
-            url=naver_parser.url,
-            inventory=naver_parser.inventory_status,
-            delivery=naver_parser.delivery,
-            options=naver_parser.options,
-            status=ItemStatus.ACTIVE,
-        )
+            return ItemData(
+                id=self.id_str(),
+                price=naver_parser.price,
+                name=naver_parser.name,
+                description=naver_parser.description,
+                category=naver_parser.category,
+                image=naver_parser.image,
+                url=naver_parser.url,
+                inventory=naver_parser.inventory_status,
+                delivery=naver_parser.delivery,
+                options=naver_parser.options,
+                status=ItemStatus.ACTIVE,
+            )
+        except NotFoundError as e:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+                http_status=response.status_code,
+            )
+        except Exception as e:
+            raise e
 
     def id_str(self) -> str:
         return "{}_{}".format(self.store, self.product_id)

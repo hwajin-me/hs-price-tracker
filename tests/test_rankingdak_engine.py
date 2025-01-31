@@ -1,8 +1,6 @@
 import pytest
-from curl_cffi import requests
 
 from custom_components.price_tracker.services.rankingdak.engine import RankingdakEngine
-from custom_components.price_tracker.services.smartstore.engine import SmartstoreEngine
 
 
 @pytest.hookimpl(trylast=True)

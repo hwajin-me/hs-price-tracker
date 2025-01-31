@@ -146,7 +146,7 @@ class SafeRequestEngineCurlCffi(SafeRequestEngine):
             else None
         )
 
-        if response.status_code > 399:
+        if response.status_code > 399 and response.status_code != 404:
             raise SafeRequestError(
                 f"Failed to request (aiohttp) {url} with status code {response.status_code}"
             )

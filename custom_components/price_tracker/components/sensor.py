@@ -166,9 +166,15 @@ class PriceTrackerSensor(RestoreEntity):
             self._attr_available = True
             self._attr_unit_of_measurement = self._item_data.price.currency
         except Exception as e:
-            self._attr_available = False
-            self._attr_state = STATE_UNKNOWN
-            _LOGGER.exception("Error while updating the sensor: %s", e)
+            if (
+                self._updated_at is None
+                or self._updated_at + timedelta(hours=6) < datetime.now()
+                or self._debug
+            ):
+                self._attr_available = False
+            else:
+                self._attr_available = True
+                self._update_engine_status(False)
         finally:
             self._update_updated_at()
 
@@ -271,7 +277,11 @@ class PriceTrackerSensor(RestoreEntity):
         }
 
     def _update_engine_status(self, status: bool):
+        if self._attr_extra_state_attributes is None:
+            self._attr_extra_state_attributes = {}
+
         self._attr_extra_state_attributes = {
+            **self._attr_extra_state_attributes,
             "engine_status": "FETCHED" if status else "ERROR",
         }
         self._engine_status = status
