@@ -89,3 +89,14 @@ async def test_naver_smartstore_parse_8():
     result = await engine.load()
     assert result is not None
     assert result.name is not None
+
+
+@pytest.mark.asyncio
+@pytest.hookimpl(trylast=True)
+async def test_naver_smartstore_parse_9():
+    engine = SmartstoreEngine(
+        item_url="https://smartstore.naver.com/nsm33313140/products/10134655507",
+    )
+    result = await engine.load()
+    assert result is not None
+    assert result.name is not None
