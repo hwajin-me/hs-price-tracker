@@ -1,0 +1,550 @@
+{
+  "version": 1,
+  "minor_version": 4,
+  "key": "core.config_entries",
+  "data": {
+    "entries": [
+      {
+        "created_at": "2024-11-28T06:19:35.417315+00:00",
+        "data": {},
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "sun",
+        "entry_id": "01JDRPSJKS9AZ2HRQD5Y0592FB",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T06:19:35.417345+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "import",
+        "title": "Sun",
+        "unique_id": null,
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:19:36.958994+00:00",
+        "data": {},
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "go2rtc",
+        "entry_id": "01JDRPSM3Y5Y3FB9130MXAK04W",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T06:19:36.959028+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "system",
+        "title": "go2rtc",
+        "unique_id": null,
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:19:42.692770+00:00",
+        "data": {},
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "shopping_list",
+        "entry_id": "01JDRPSSQ43JRB3VVMQRJNN3ZM",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T06:19:42.692795+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "onboarding",
+        "title": "Shopping list",
+        "unique_id": "shopping_list",
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:19:43.543179+00:00",
+        "data": {},
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "radio_browser",
+        "entry_id": "01JDRPSTHQH6KCE5D3B0VG1M2W",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T06:19:43.543208+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "onboarding",
+        "title": "Radio Browser",
+        "unique_id": null,
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:19:43.654838+00:00",
+        "data": {
+          "language": "en",
+          "tld": "com"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "google_translate",
+        "entry_id": "01JDRPSTN6PF52R4PANJ061J92",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T06:19:43.654866+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "onboarding",
+        "title": "Google Translate text-to-speech",
+        "unique_id": null,
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:33:58.797170+00:00",
+        "data": {
+          "type": "rankingdak"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JDRQKXRDJC17N1C0FW2738EX",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T08:51:39.246717+00:00",
+        "options": {
+          "target": [
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 0,
+              "item_unique_id": "price_tracker.price_rankingdak_type_F000009818",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.rankingdak.com/product/view?productCd=F000009818"
+            },
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 0,
+              "item_unique_id": "price_tracker.price_rankingdak_type_10716",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.rankingdak.com/product/view?productCd=10716"
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "랭킹닭컴 (Korea)",
+        "unique_id": "price-tracker-rankingdak",
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:48:23.063457+00:00",
+        "data": {
+          "type": "homeplus"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JDRRE9RQGWYEMND056P3VYKB",
+        "minor_version": 1,
+        "modified_at": "2024-11-29T02:50:13.298246+00:00",
+        "options": {
+          "target": [
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_homeplus_type_068804218",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://mfront.homeplus.co.kr/item?itemNo=068804218&storeType=HYPER"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 0,
+              "item_unique_id": "price_tracker.price_homeplus_type_063622118",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://mfront.homeplus.co.kr/item?itemNo=063622118&storeType=HYPER"
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "Homeplus (Korea)",
+        "unique_id": "price-tracker-homeplus",
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:48:26.825500+00:00",
+        "data": {
+          "type": "lotte_kr"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JDRREDE9PAHW2THWYBHM1X8F",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T07:07:29.972912+00:00",
+        "options": {
+          "target": [
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_lotte_kr_type_LM2863650000008",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.lotteon.com/p/product/LM2863650000008"
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "Lotte ON (Korea)",
+        "unique_id": "price-tracker-lotte_kr",
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T06:49:25.212567+00:00",
+        "data": {
+          "type": "daiso_kr"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JDRRG6EW8DTYRM3NJ9RA8MWG",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T06:58:26.981182+00:00",
+        "options": {
+          "target": [
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_daiso_kr_type_1029095",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://prdm.daisomall.co.kr/pd/pdl/SCR_PDL_0001?pdNo=1029095&recmYn=N"
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "다이소 (Korea)",
+        "unique_id": "price-tracker-daiso_kr",
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T07:10:58.191427+00:00",
+        "data": {
+          "type": "coupang"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JDRSQN4FKNRRKT7MNP0FH2FA",
+        "minor_version": 1,
+        "modified_at": "2025-01-31T02:18:04.000397+00:00",
+        "options": {
+          "target": [
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_8175974127_23364442726_90394804454",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/8175974127?itemId=23364442726&vendorItemId=90394804454"
+            },
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_7809832720_88446496778",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/7809832720?vendorItemId=88446496778"
+            },
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_7905299362_89454938925",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/7905299362?itemId=None&vendorItemId=89454938925"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_7384676406",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/7384676406?isAddedCart="
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_228649720",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/228649720?isAddedCart="
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_8401746013",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/8401746013?isAddedCart="
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_6609878691",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/6609878691?isAddedCart="
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_1987663774",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/1987663774?isAddedCart="
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_6497623018",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/6497623018?isAddedCart="
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_8091030445_14384001289_81628303170",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/8091030445?itemId=14384001289&vendorItemId=81628303170&pickType=COU_PICK&q=%EB%9D%BC%EC%98%A4%EA%B0%84%EB%A7%88&itemsCount=36&searchId=7291734e997b4edc92c9f63946c9329a&rank=1"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_7038366346_17397480362_84566938505",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/7038366346?itemId=17397480362&vendorItemId=84566938505&pickType=COU_PICK&q=%EC%99%80%EC%82%AC%EB%B9%84&itemsCount=36&searchId=32bb73dcb97e4948b8b4461662af3bbc&rank=1&isAddedCart="
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_coupang_type_4778232493_6106533654_73402883858",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.coupang.com/vp/products/4778232493?itemId=6106533654&vendorItemId=73402883858&pickType=COU_PICK&q=%EC%96%91%EB%B0%B0%EC%B6%94&itemsCount=36&searchId=a96cf8da717041a98d45da266fc4c45a&rank=1&isAddedCart="
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "Coupang (Korea)",
+        "unique_id": "price-tracker-coupang",
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-28T07:33:22.091442+00:00",
+        "data": {
+          "type": "ssg"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JDRV0NHBACH6Q03KPH7XDP68",
+        "minor_version": 1,
+        "modified_at": "2024-11-28T07:34:02.407183+00:00",
+        "options": {
+          "target": [
+            {
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_ssg_type_0000010466312_6001",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://emart.ssg.com/item/itemView.ssg?itemId=0000010466312&siteNo=6001"
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "SSG (이마트, Korea)",
+        "unique_id": "price-tracker-ssg",
+        "version": 1
+      },
+      {
+        "created_at": "2024-11-29T02:23:27.821134+00:00",
+        "data": {
+          "type": "ncnc"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JDTVNY2CXWJBZSXQWYX0TED2",
+        "minor_version": 1,
+        "modified_at": "2024-11-29T02:23:32.295788+00:00",
+        "options": {
+          "target": [
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_ncnc_type_24665",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "24665"
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "니콘내콘 (Korea)",
+        "unique_id": "price-tracker-ncnc",
+        "version": 1
+      },
+      {
+        "created_at": "2025-01-31T02:08:47.621631+00:00",
+        "data": {
+          "type": "smartstore"
+        },
+        "disabled_by": null,
+        "discovery_keys": {},
+        "domain": "price_tracker",
+        "entry_id": "01JJX1WBG5N07XMS7BF8MZST1D",
+        "minor_version": 1,
+        "modified_at": "2025-01-31T02:10:08.589801+00:00",
+        "options": {
+          "target": [
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_smartstore_products_spcorp_11144528884",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://smartstore.naver.com/spcorp/products/11144528884"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_brand_products_syfoodshop_6040758245",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://brand.naver.com/syfoodshop/products/6040758245"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_smartstore_products_seoreafood_165326023",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://smartstore.naver.com/seoreafood/products/165326023?NaPm=ct%3Dm6k4lzrn%7Cci%3Dcheckout%7Ctr%3Dppc%7Ctrx%3Dnull%7Chk%3D6a0c39295d67430d6e43cfc35a4193088dd4593b"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_smartstore_products_onekworld_10325682653",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://smartstore.naver.com/onekworld/products/10325682653?NaPm=ct%3Dm6k4m0tw%7Cci%3Dcheckout%7Ctr%3Dppc%7Ctrx%3Dnull%7Chk%3D0a8de1e7bf4a2b15db2bee969c69ef888ab83f64"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_smartstore_products_green_s_9015079786",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://smartstore.naver.com/green_s/products/9015079786?NaPm=ct%3Dm6k4m21k%7Cci%3Dcheckout%7Ctr%3Dppc%7Ctrx%3Dnull%7Chk%3D72ce4f92a542a1870f1228cdc3990dd7824bab46"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_smartstore_products_osung52_5008984760",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://smartstore.naver.com/osung52/products/5008984760?NaPm=ct%3Dm6k4m397%7Cci%3Dcheckout%7Ctr%3Dppc%7Ctrx%3Dnull%7Chk%3D9fd5b2a26627d0013356e7065b816482b5079b5e"
+            }
+          ]
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "네이버 스마트스토어 (Korea)",
+        "unique_id": "price-tracker-smartstore",
+        "version": 1
+      }
+    ]
+  }
+}

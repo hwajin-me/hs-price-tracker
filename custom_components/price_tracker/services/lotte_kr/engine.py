@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.lotte_kr.const import CODE, NAME
 from custom_components.price_tracker.services.lotte_kr.parser import LotteOnParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
@@ -46,6 +46,16 @@ class LotteOnEngine(PriceEngine):
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
+
+        if response.is_not_found:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
+
+        logging_for_response(response, __name__, "lotte_on")
+
         pre_parse = LotteOnParser(data=response.data)
 
         discount_response = await request.request(
@@ -53,7 +63,9 @@ class LotteOnEngine(PriceEngine):
             url=_DISCOUNT_URL,
             data=pre_parse.discount_params,
         )
+
         logging_for_response(response, __name__, "lotte_on")
+
         parser = LotteOnParser(data=response.data, discount=discount_response.data)
 
         return ItemData(

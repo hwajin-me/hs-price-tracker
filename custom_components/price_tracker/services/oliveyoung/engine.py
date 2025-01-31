@@ -45,11 +45,18 @@ class OliveyoungEngine(PriceEngine):
             selenium_proxy=self._selenium_proxy,
         )
         request.user_agent(user_agent=OLIVEYOUNG_USER_AGENT)
+
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.goods_number)
         )
-        if response.status_code == 404:
-            return ItemData(id=self.id, name="", status=ItemStatus.DELETED)
+
+        if response.is_not_found:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
+
         logging_for_response(response, __name__, "oliveyoung")
         oliveyoung_parser = OliveyoungParser(text=response.data)
 

@@ -89,6 +89,10 @@ def create_service_item_target_parser(service_code):
     return _SERVICE_ITEM_TARGET_PARSER[service_code]
 
 
+def has_service_item_target_parser(service_code):
+    return service_code in _SERVICE_ITEM_TARGET_PARSER
+
+
 def create_service_device_parser_and_parse(service_code: str, param: dict = None):
     if service_code in _SERVICE_DEVICE_PARSER:
         return _SERVICE_DEVICE_PARSER[service_code](param)

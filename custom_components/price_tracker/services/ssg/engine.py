@@ -55,9 +55,14 @@ class SsgEngine(PriceEngine):
         text = response.data
 
         if response.is_not_found:
-            return ItemData(id=self.id_str(), name="Deleted {}".format(self.product_id), status=ItemStatus.DELETED)
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.product_id),
+                status=ItemStatus.DELETED,
+            )
 
         logging_for_response(text, __name__, "ssg")
+
         ssg_parser = SsgParser(text)
 
         return ItemData(

@@ -20,6 +20,7 @@ from custom_components.price_tracker.services.factory import (
     create_service_item_url_parser,
     create_service_item_target_parser,
     create_service_device_parser_and_parse,
+    has_service_item_target_parser,
 )
 from custom_components.price_tracker.utilities.list import Lu
 
@@ -38,6 +39,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up entry and data {} > {}".format(entry, entry.data))
     _LOGGER.debug("Setting up entry and options {} > {}".format(entry, entry.options))
 
+    # For upgrade options (1.4.0)
+    if not has_service_item_target_parser(entry.data["type"]):
+        return False
+
     # For upgrade options (1.0.0)
     if entry.data is not None and "device" in entry.data:
         """Update device_id"""
@@ -51,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         create_service_device_parser_and_parse(entry.data["type"], x)
                     )
                     if create_service_device_parser_and_parse(entry.data["type"], x)
-                       is not None
+                    is not None
                     else None,
                 },
             ),
@@ -72,6 +77,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 },
             ),
         }
+
         """Update item_url (item_unique_id)"""
         options = {
             **options,

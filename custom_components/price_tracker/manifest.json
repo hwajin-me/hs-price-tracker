@@ -1,6 +1,6 @@
 {
   "domain": "price_tracker",
-  "name": "E-Commerce Price Tracker",
+  "name": "E-Commerce Integrator",
   "codeowners": [
     "@hwajin-me"
   ],
@@ -27,5 +27,5 @@
     "opentelemetry-sdk>=1.28.2",
     "curl-cffi>=0.7.4"
   ],
-  "version": "1.3.1"
+  "version": "1.4.0"
 }

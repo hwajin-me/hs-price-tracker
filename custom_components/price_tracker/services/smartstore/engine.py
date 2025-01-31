@@ -25,12 +25,12 @@ _URL = "https://{}.naver.com/{}/{}/{}"
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -48,32 +48,31 @@ class SmartstoreEngine(PriceEngine):
         if self.store_type == "smartstore":
             request = SafeRequest(
                 proxies=self._proxies,
-                impersonate="safari17_2_ios",
-                version=CurlHttpVersion.V1_0,
+                impersonate="chrome",
+                version=CurlHttpVersion.V1_1,
+                user_agents=["pc"],
             )
-            request.accept_almost_all()
-            request.accept_language(is_random=True)
-            request.user_agent(user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/605.1 NAVER(inapp; search; 2000; 12.8.52; 14PRO)")
-            request.pragma_no_cache()
-            request.cookie(key="NNB", value="PPYXCWKWXC" + random_choice(["A", "B", "C", "D", "X"]) + random_choice(["A", "B", "C", "D", "E"]) + random_choice(["A", "B", "C", "D", "E", "F"]))
-            request.keep_alive()
-            request.sec_ch_ua_mobile()
-            request.sec_fetch_dest_document()
-            request.sec_fetch_mode_navigate()
-            store_type="m.smartstore"
+            request.clear_header()
+            store_type = "smartstore"
         else:
             request = SafeRequest(
                 proxies=self._proxies,
                 impersonate="chrome",
                 version=CurlHttpVersion.V2_PRIOR_KNOWLEDGE,
-                user_agents=["pc"]
+                user_agents=["pc"],
             )
+
+        request.cookie(
+            key="NNB",
+            value="PPYXCWKWXC"
+            + random_choice(["A", "B", "C", "D", "X"])
+            + random_choice(["A", "B", "C", "D", "E"])
+            + random_choice(["A", "B", "C", "D", "E", "F"]),
+        )
 
         response = await request.request(
             method=SafeRequestMethod.GET,
-            url=_URL.format(
-                store_type, self.store, self.detail_type, self.product_id
-            ),
+            url=_URL.format(store_type, self.store, self.detail_type, self.product_id),
         )
 
         logging_for_response(response=response, name=__name__, domain="smartstore")
@@ -83,7 +82,7 @@ class SmartstoreEngine(PriceEngine):
                 id=self.id_str(),
                 name="Deleted {}".format(self.id_str()),
                 status=ItemStatus.DELETED,
-                http_status=response.status_code
+                http_status=response.status_code,
             )
 
         if not response.has:

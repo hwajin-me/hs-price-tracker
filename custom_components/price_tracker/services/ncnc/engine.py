@@ -46,7 +46,11 @@ class NcncEngine(PriceEngine):
         )
 
         if response.is_not_found:
-            return ItemData(id=self.id_str(), name="Deleted {}".format(self.id_str()), status=ItemStatus.DELETED)
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
 
         data = response.data
 

@@ -10,7 +10,7 @@ from custom_components.price_tracker.components.device import PriceTrackerDevice
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.consts.defaults import DATA_UPDATED
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.datas.price import (
     ItemPriceChangeData,
     create_item_price_change,
@@ -108,6 +108,12 @@ class PriceTrackerSensor(RestoreEntity):
             self._updated_at,
             self._attr_available,
         )
+
+        # Ignore deleted item
+        if self._item_data is not None and self._item_data.status == ItemStatus.DELETED:
+            self._attr_available = True
+            self._update_updated_at()
+            return True
 
         try:
             data = await self._engine.load()

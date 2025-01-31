@@ -52,12 +52,18 @@ class KurlyEngine(PriceEngine):
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
 
-        if response.status_code == 404:
-            return ItemData(id=self.id, name="", status=ItemStatus.DELETED)
+        if response.is_not_found:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
 
         data = response.data
-        kurly_parser = KurlyParser(text=data)
+
         logging_for_response(data, __name__, "kurly")
+
+        kurly_parser = KurlyParser(text=data)
 
         return ItemData(
             id=self.id_str(),

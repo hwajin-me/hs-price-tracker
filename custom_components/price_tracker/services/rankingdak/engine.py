@@ -48,7 +48,11 @@ class RankingdakEngine(PriceEngine):
         )
 
         if response.is_not_found:
-            return ItemData(id=self.id_str(), name="Deleted {}".format(self.id_str()), status=ItemStatus.DELETED)
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
 
         logging_for_response(response, __name__, "rankingdak")
         parser = RankingdakParser(html=response.data)

@@ -294,7 +294,7 @@ class PriceTrackerSetup:
         )
 
         _LOGGER.debug(
-            "Selenoum configuration with %s (original: %s)", config, user_input
+            "Selenium configuration with %s (original: %s)", config, user_input
         )
 
         flag = self._option_flow.hass.config_entries.async_update_entry(

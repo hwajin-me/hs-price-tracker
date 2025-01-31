@@ -3,33 +3,18 @@ import dataclasses
 import json
 import logging
 import random
-import ssl
 from enum import Enum
 from typing import Optional, Callable, Self, Awaitable
 
 import cloudscraper
 import fake_useragent
-import urllib3
-from curl_cffi import requests, CurlHttpVersion
+from curl_cffi import requests, CurlHttpVersion, CurlSslVersion
 from curl_cffi.requests import AsyncSession, Cookies
 from voluptuous import default_factory
 
 from custom_components.price_tracker.utilities.list import Lu
 
-
-def bot_agents():
-    return ["NaverBot", "Yeti", "Googlebot-Mobile", "HTTPie/3.2.4"]
-
-
-def ssl_context():
-    ctx = ssl.SSLContext()
-
-    return ctx
-
-
 _LOGGER = logging.getLogger(__name__)
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class SafeRequestError(Exception):
@@ -48,7 +33,38 @@ class CustomSession(requests.Session):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.debug = True
+        self.use_thread_local_curl = True
         self.trust_env = True
+        self.stream = False
+        self.akamai = "4:16777216|16711681|0|m,p,a,s"
+        self.ja3 = ",".join(
+            [
+                "771",
+                "4865-4866-4867-49195-49196-52393-49199-49200-52392-49171-49172-156-157-47-53",
+                "0-23-65281-10-11-35-16-5-13-51-45-43-21",
+                "29-23-24",
+                "0",
+            ]
+        )
+        self.extra_fp = {
+            "tls_signature_algorithms": [
+                "ecdsa_secp256r1_sha256",
+                "rsa_pss_rsae_sha256",
+                "rsa_pkcs1_sha256",
+                "ecdsa_secp384r1_sha384",
+                "rsa_pss_rsae_sha384",
+                "rsa_pkcs1_sha384",
+                "rsa_pss_rsae_sha512",
+                "rsa_pkcs1_sha512",
+                "rsa_pkcs1_sha1",
+            ],
+            "tls_min_version": CurlSslVersion.TLSv1_2,
+            "tls_grease": False,
+            "tls_permute_extensions": False,
+            "tls_cert_compression": "brotli",
+            "http2_stream_weight": 256,
+            "http2_stream_exclusive": 1,
+        }
         if kwargs.get("cookies") is not None:
             self.cookies = CustomSessionCookie(kwargs.get("cookies"))
         else:
@@ -63,11 +79,11 @@ class SafeRequestResponseData:
     cookies: dict = default_factory({})
 
     def __init__(
-            self,
-            data: Optional[str] = None,
-            status_code: int = None,
-            cookies=None,
-            access_token: Optional[str] = None,
+        self,
+        data: Optional[str] = None,
+        status_code: int = None,
+        cookies=None,
+        access_token: Optional[str] = None,
     ):
         if cookies is None:
             cookies = {}
@@ -87,10 +103,10 @@ class SafeRequestResponseData:
     @property
     def has(self):
         return (
-                self.status_code is not None
-                and self.status_code <= 399
-                and self.data is not None
-                and self.data != ""
+            self.status_code is not None
+            and self.status_code <= 399
+            and self.data is not None
+            and self.data != ""
         )
 
     @property
@@ -110,23 +126,23 @@ class SafeRequestMethod(Enum):
 
 class SafeRequestEngine:
     async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
+        self,
+        method: SafeRequestMethod,
+        url: str,
+        data: dict,
+        proxy: str,
+        timeout: int,
+        headers: Optional[dict] = None,
     ) -> SafeRequestResponseData:
         pass
 
 
 class SafeRequestEngineAiohttp(SafeRequestEngine):
     def __init__(
-            self,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
+        self,
+        impersonate: str = "chrome",
+        session: Optional[requests.Session] = None,
+        version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
     ):
         self._impersonate = impersonate
         self._version = version
@@ -138,13 +154,13 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
             )
 
     async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
+        self,
+        method: SafeRequestMethod,
+        url: str,
+        data: dict,
+        proxy: str,
+        timeout: int,
+        headers: Optional[dict] = None,
     ) -> SafeRequestResponseData:
         async with AsyncSession() as session:
             response = await session.request(
@@ -181,28 +197,26 @@ class SafeRequestEngineAiohttp(SafeRequestEngine):
 
 class SafeRequestEngineRequests(SafeRequestEngine):
     def __init__(
-            self,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
+        self,
+        impersonate: str = "chrome",
+        session: Optional[requests.Session] = None,
+        version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
     ):
         self._impersonate = impersonate
         self._version = version
         if session is not None:
             self._session = session
         else:
-            self._session = CustomSession(
-                impersonate=impersonate, http_version=version
-            )
+            self._session = CustomSession(impersonate=impersonate, http_version=version)
 
     async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
+        self,
+        method: SafeRequestMethod,
+        url: str,
+        data: dict,
+        proxy: str,
+        timeout: int,
+        headers: Optional[dict] = None,
     ) -> SafeRequestResponseData:
         response = await asyncio.to_thread(
             requests.request,
@@ -218,9 +232,8 @@ class SafeRequestEngineRequests(SafeRequestEngine):
             else None,
             timeout=timeout,
             allow_redirects=True,
-            default_headers=True,
             impersonate=self._impersonate,
-            http_version=self._version
+            http_version=self._version,
         )
 
         if response.status_code > 399 and response.status_code != 404:
@@ -240,28 +253,26 @@ class SafeRequestEngineRequests(SafeRequestEngine):
 
 class SafeRequestEngineCloudscraper(SafeRequestEngine):
     def __init__(
-            self,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS
+        self,
+        impersonate: str = "chrome",
+        session: Optional[requests.Session] = None,
+        version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
     ):
         self._impersonate = impersonate
         self._version = version
         if session is not None:
             self._session = session
         else:
-            self._session = CustomSession(
-                impersonate=impersonate, http_version=version
-            )
+            self._session = CustomSession(impersonate=impersonate, http_version=version)
 
     async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: any,
-            proxy: str,
-            timeout: int,
+        self,
+        method: SafeRequestMethod,
+        url: str,
+        data: any,
+        proxy: str,
+        timeout: int,
+        headers: Optional[dict] = None,
     ) -> SafeRequestResponseData:
         scraper = await asyncio.to_thread(
             cloudscraper.create_scraper,
@@ -269,7 +280,7 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
             disableCloudflareV1=True,
             allow_brotli=True,
             browser="chrome",
-            delay=1
+            delay=1,
         )
         response = await asyncio.to_thread(
             scraper.request,
@@ -303,37 +314,34 @@ class SafeRequestEngineCloudscraper(SafeRequestEngine):
 
 class SafeRequest:
     def __init__(
-            self,
-            chains: list[SafeRequestEngine] = None,
-            proxies: list[str] = None,
-            cookies: dict = None,
-            headers: dict = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list[str]] = None,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
-            user_agents: list[str] = None,
+        self,
+        chains: list[SafeRequestEngine] = None,
+        proxies: list[str] = None,
+        cookies: dict = None,
+        headers: dict = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list[str]] = None,
+        impersonate: str = "chrome",
+        session: Optional[requests.Session] = None,
+        version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
+        user_agents: list[str] = None,
     ):
         if headers is not None:
             self._headers = headers
         else:
             self._headers = {}
+
         self._headers = {
             "Accept": "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
             "Accept-Encoding": "gzip, deflate, br, zstd",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
-            "Cache-Control": "max-age=0",
-            "Content-Type": "application/json",
-            "Connection": "close",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Priority": "u=0, i",
             "Pragma": "no-cache",
             **self._headers,
         }
-        self._ua_platforms = user_agents if user_agents is not None else ["pc", "mobile"]
+        self._ua_platforms = (
+            user_agents if user_agents is not None else ["pc", "mobile"]
+        )
         self._timeout = 60
         self._proxies: list[str] = proxies if proxies is not None else []
         self._cookies: dict = cookies if cookies is not None else {}
@@ -345,32 +353,30 @@ class SafeRequest:
         if session is not None:
             self._session = session
         else:
-            self._session = CustomSession(
-                impersonate=impersonate,
-                http_version=version
-            )
+            self._session = CustomSession(impersonate=impersonate, http_version=version)
 
         self._chains = self._chains + (
             [
                 SafeRequestEngineCloudscraper(
                     impersonate=self._impersonate,
                     session=self._session,
-                    version=version
+                    version=version,
                 ),
                 SafeRequestEngineAiohttp(
                     impersonate=self._impersonate,
                     session=self._session,
-                    version=version
+                    version=version,
                 ),
                 SafeRequestEngineRequests(
                     impersonate=self._impersonate,
                     session=self._session,
-                    version=version
+                    version=version,
                 ),
             ]
             if chains is None
             else chains
         )
+        self._chains = self._chains + self._chains
 
     def accept_text_html(self):
         """"""
@@ -381,7 +387,9 @@ class SafeRequest:
         return self
 
     def accept_almost_all(self):
-        self._headers["Accept"] = "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+        self._headers["Accept"] = (
+            "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+        )
 
         return self
 
@@ -417,11 +425,15 @@ class SafeRequest:
 
         return self
 
+    def clear_header(self):
+        self._headers = {}
+        return self
+
     def user_agent(
-            self,
-            user_agent: Optional[str] | list = None,
-            mobile_random: bool = False,
-            pc_random: bool = False,
+        self,
+        user_agent: Optional[str] | list = None,
+        mobile_random: bool = False,
+        pc_random: bool = False,
     ):
         """"""
         if user_agent is not None:
@@ -641,7 +653,7 @@ class SafeRequest:
         return self
 
     def cookie(
-            self, key: str = None, value: str = None, data: str = None, item: dict = None
+        self, key: str = None, value: str = None, data: str = None, item: dict = None
     ):
         """"""
         if key is None and value is None and data is None and item is None:
@@ -660,15 +672,15 @@ class SafeRequest:
         return self
 
     async def request(
-            self,
-            url: str,
-            method: SafeRequestMethod = SafeRequestMethod.GET,
-            data: any = None,
-            timeout: int = 60,
-            raise_errors: bool = False,
-            max_tries: int = 10,
-            post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
-            retain_cookie=False,
+        self,
+        url: str,
+        method: SafeRequestMethod = SafeRequestMethod.GET,
+        data: any = None,
+        timeout: int = 30,
+        raise_errors: bool = False,
+        max_tries: int = 8,
+        post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
+        retain_cookie=True,
     ) -> SafeRequestResponseData:
         errors = []
         tries = 0
@@ -688,28 +700,25 @@ class SafeRequest:
                 else None
             )
 
-            if len(self._ua_platforms) > 0:
-                ua_engine = await asyncio.to_thread(
-                    fake_useragent.UserAgent, platforms=self._ua_platforms
-                )
+            if bool(self._headers):
+                if len(self._ua_platforms) > 0:
+                    ua_engine = await asyncio.to_thread(
+                        fake_useragent.UserAgent, platforms=self._ua_platforms
+                    )
 
-                self._headers["User-Agent"] = ua_engine.random
+                    self._headers["User-Agent"] = ua_engine.random
 
-            headers = {
-                **self._headers,
-                "Host": url.split("/")[2]
-                if "Host" not in self._headers
-                else self._headers["Host"],
-            }
+                if self._cookies and len(self._cookies) > 0:
+                    self._headers["Cookie"] = "; ".join(
+                        [f"{k}={v}" for k, v in self._cookies.items()]
+                    )
 
-            if self._cookies and len(self._cookies) > 0:
-                headers["Cookie"] = "; ".join(
-                    [f"{k}={v}" for k, v in self._cookies.items()]
-                )
+            # wait random
+            await asyncio.sleep(random.randint(1, 2))
 
             try:
                 return_data = await chain.request(
-                    headers=headers,
+                    headers=self._headers,
                     method=method,
                     url=url,
                     data=data,
@@ -737,9 +746,7 @@ class SafeRequest:
                 tries += 1
 
         if len(errors) > 0 and raise_errors:
-            _LOGGER.error(
-                f"Failed to request {url}, {errors}"
-            )
+            _LOGGER.error(f"Failed to request {url}, {errors}")
             raise errors[0]
         else:
             _LOGGER.debug("Safe request silently failed %s", errors)

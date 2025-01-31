@@ -113,10 +113,7 @@ class SsgParser:
                     pay_type=DeliveryPayType.FREE_OR_PAID,
                     delivery_type=DeliveryType.EXPRESS_SPECIFIC,
                 )
-            elif (
-                Lu.find(self._item["rightBadgeList"], "txt", "새벽배송")
-                is not None
-            ):
+            elif Lu.find(self._item["rightBadgeList"], "txt", "새벽배송") is not None:
                 return DeliveryData(
                     price=3000,
                     threshold_price=40000,

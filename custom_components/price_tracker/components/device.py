@@ -58,7 +58,7 @@ class PriceTrackerDevice(Entity):
             identifiers={(DOMAIN, self.entity_id)},
             name=self.name,
             manufacturer=self._device_type,
-            model="Price Tracker Device",
+            model="E-Commerce Integrator Device",
             sw_version=VERSION,
             serial_number=self._device_id,
         )

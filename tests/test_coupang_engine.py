@@ -61,3 +61,15 @@ async def test_coupang_engine_5():
 
     assert result is not None
     assert result.name is not None
+
+
+@pytest.hookimpl(trylast=True)
+@pytest.mark.asyncio
+async def test_coupang_engine_6():
+    engine = CoupangEngine(
+        item_url="https://www.coupang.com/vp/products/6497623018?isAddedCart="
+    )
+    result = await engine.load()
+
+    assert result is not None
+    assert result.name is not None

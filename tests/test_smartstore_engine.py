@@ -1,4 +1,5 @@
 import pytest
+from curl_cffi import requests
 
 from custom_components.price_tracker.services.smartstore.engine import SmartstoreEngine
 
@@ -18,8 +19,18 @@ async def test_naver_smartstore_parse_1():
 @pytest.mark.asyncio
 async def test_naver_smartstore_parse_2():
     engine = SmartstoreEngine(
-        item_url="https://smartstore.naver.com/spcorp/products/11144528884",
+        item_url="https://m.smartstore.naver.com/spcorp/products/11144528884",
     )
     result = await engine.load()
     assert result is not None
     assert result.name is not None
+
+
+@pytest.hookimpl(trylast=True)
+def test_naver_smartstore_parse_3():
+    r = requests.get(
+        "https://m.smartstore.naver.com/spcorp/products/11144528884",
+        impersonate="chrome",
+    )
+
+    assert r is not None

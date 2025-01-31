@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.homeplus.const import CODE, NAME
 from custom_components.price_tracker.services.homeplus.parser import HomeplusParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
@@ -51,6 +51,14 @@ class HomeplusEngine(PriceEngine):
         response = await request.request(
             method=SafeRequestMethod.GET, url=_URL.format(self.id)
         )
+
+        if response.is_not_found:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
+
         logging_for_response(response, __name__, "homeplus")
         parser = HomeplusParser(html=response.data)
 
