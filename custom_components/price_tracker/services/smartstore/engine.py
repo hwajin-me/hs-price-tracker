@@ -1,3 +1,4 @@
+import datetime
 import logging
 import re
 from typing import Optional
@@ -48,12 +49,97 @@ class SmartstoreEngine(PriceEngine):
         if self.store_type == "smartstore":
             request = SafeRequest(
                 proxies=self._proxies,
-                impersonate="chrome",
-                version=CurlHttpVersion.V1_1,
+                impersonate="safari17_0",
+                version=CurlHttpVersion.V2_PRIOR_KNOWLEDGE,
                 user_agents=["pc"],
             )
-            request.clear_header()
-            store_type = "smartstore"
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://shopping.naver.com/ns/home",
+                max_tries=3,
+            )
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://msearch.shopping.naver.com/remote_frame.html",
+                max_tries=3,
+            )
+            await request.request(
+                method=SafeRequestMethod.POST,
+                url="https://nlog.naver.com/n",
+                max_tries=3,
+                data={
+                    "corp": "naver",
+                    "usr": {},
+                    "location": "korea_real/korea",
+                    "send_ts": datetime.datetime.now().timestamp(),
+                    "svc": "shopping",
+                    "svc_tags": {},
+                    "evts": [
+                        {
+                            "page_url": "https://shopping.naver.com/ns/home",
+                            "page_ref": "",
+                            "page_id": "08827299cfd39834e5badb487db19f8b",
+                            "timing": {
+                                "type": "navigate",
+                                "unloadEventStart": 0,
+                                "unloadEventEnd": 0,
+                                "redirectStart": 0,
+                                "redirectEnd": 0,
+                                "workerStart": 0,
+                                "fetchStart": 6.700000286102295,
+                                "domainLookupStart": 8.200000286102295,
+                                "domainLookupEnd": 9.400000095367432,
+                                "connectStart": 9.400000095367432,
+                                "secureConnectionStart": 23.90000009536743,
+                                "connectEnd": 35.59999990463257,
+                                "requestStart": 35.700000286102295,
+                                "responseStart": 77.5,
+                                "responseEnd": 87.59999990463257,
+                                "domInteractive": 319.59999990463257,
+                                "domContentLoadedEventStart": 634.2000002861023,
+                                "domContentLoadedEventEnd": 634.2000002861023,
+                                "domComplete": 0,
+                                "loadEventStart": 0,
+                                "loadEventEnd": 0,
+                                "first_paint": 278.59999990463257,
+                                "first_contentful_paint": 278.59999990463257,
+                            },
+                            "type": "pageview",
+                            "page_sti": "shopping",
+                            "shp_action_uid": "",
+                            "env": {"device_type": "PC Web"},
+                            "shp_pagekey": "100410625",
+                            "shp": {"contents": {}},
+                            "evt_ts": datetime.datetime.now().timestamp(),
+                        }
+                    ],
+                    "env": {
+                        "os": "MacIntel",
+                        "br_ln": "en-US",
+                        "br_sr": "1920x1080",
+                        "device_sr": "1920x1080",
+                        "platform_type": "web",
+                        "ch_arch": "arm",
+                        "ch_mdl": "",
+                        "ch_mob": False,
+                        "ch_pltf": "macOS",
+                        "ch_ptlfv": "13.1.0",
+                        "timezone": "Asia/Seoul",
+                        "ch_fvls": [
+                            {
+                                "brand": "Google Chrome",
+                                "version": "131.0.6778.267",
+                            },
+                            {"brand": "Chromium", "version": "131.0.6778.267"},
+                            {"brand": "Not_A Brand", "version": "24.0.0.0"},
+                        ],
+                    },
+                    "tool": {
+                        "name": "ntm-web",
+                        "ver": "nlogLibVersion=v0.1.40; verName=v2.0.7; ntmVersion=v1.4.1",
+                    },
+                },
+            )
         else:
             request = SafeRequest(
                 proxies=self._proxies,
@@ -62,13 +148,15 @@ class SmartstoreEngine(PriceEngine):
                 user_agents=["pc"],
             )
 
-        request.cookie(
-            key="NNB",
-            value="PPYXCWKWXC"
-            + random_choice(["A", "B", "C", "D", "X"])
-            + random_choice(["A", "B", "C", "D", "E"])
-            + random_choice(["A", "B", "C", "D", "E", "F"]),
-        )
+            request.cookie(
+                key="NNB",
+                value="PPYXCWKWXC"
+                + random_choice(["A", "B", "C", "D", "X"])
+                + random_choice(["A", "B", "C", "D", "E"])
+                + random_choice(["A", "B", "C", "D", "E", "F"]),
+            )
+
+        request.clear_header()
 
         response = await request.request(
             method=SafeRequestMethod.GET,

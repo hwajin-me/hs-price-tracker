@@ -47,7 +47,7 @@ class RankingdakEngine(PriceEngine):
             method=SafeRequestMethod.GET, url=_URL.format(self.product_id)
         )
 
-        if response.is_not_found:
+        if response.is_not_found or not response.has:
             return ItemData(
                 id=self.id_str(),
                 name="Deleted {}".format(self.id_str()),
@@ -55,6 +55,7 @@ class RankingdakEngine(PriceEngine):
             )
 
         logging_for_response(response, __name__, "rankingdak")
+
         parser = RankingdakParser(html=response.data)
 
         return ItemData(

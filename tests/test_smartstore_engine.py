@@ -30,7 +30,18 @@ async def test_naver_smartstore_parse_2():
 def test_naver_smartstore_parse_3():
     r = requests.get(
         "https://m.smartstore.naver.com/spcorp/products/11144528884",
-        impersonate="chrome",
+        impersonate="edge101",
     )
 
-    assert r is not None
+    assert r.status_code is 200
+
+
+@pytest.mark.asyncio
+@pytest.hookimpl(trylast=True)
+async def test_naver_smartstore_parse_4():
+    engine = SmartstoreEngine(
+        item_url="https://smartstore.naver.com/farmforlife/products/8916619763",
+    )
+    result = await engine.load()
+    assert result is not None
+    assert result.name is not None

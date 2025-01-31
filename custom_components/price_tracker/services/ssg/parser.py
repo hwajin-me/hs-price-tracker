@@ -28,7 +28,7 @@ class SsgParser:
             j = json.loads(response)
 
             if Lu.has(j, "data.item") is False:
-                raise DataParseError("No item found in response")
+                raise DataParseError("SSG Parser No item found in response")
 
             self._data = j["data"]
             self._item = j["data"]["item"]

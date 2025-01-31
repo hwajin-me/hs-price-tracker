@@ -44,6 +44,7 @@ class RankingdakParser:
             self._price = self._html.find("div", class_="price-info")
             self._goods_price = self._html.find("div", class_="goods-price")
             self._table_items = self._html.find_all("div", class_="table-item")
+
             if self._product_counsel is None or self._price is None:
                 raise DataParseError("Data not found")
         except DataParseError as e:

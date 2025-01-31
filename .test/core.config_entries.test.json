@@ -102,7 +102,7 @@
         "domain": "price_tracker",
         "entry_id": "01JDRQKXRDJC17N1C0FW2738EX",
         "minor_version": 1,
-        "modified_at": "2024-11-28T08:51:39.246717+00:00",
+        "modified_at": "2025-01-31T02:58:50.162740+00:00",
         "options": {
           "target": [
             {
@@ -124,6 +124,17 @@
               "item_unit": 0,
               "item_unit_type": "auto",
               "item_url": "https://www.rankingdak.com/product/view?productCd=10716"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_rankingdak_type_f000000991",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://www.rankingdak.com/product/view?productCd=f000000991"
             }
           ]
         },
@@ -402,7 +413,7 @@
         "domain": "price_tracker",
         "entry_id": "01JDRV0NHBACH6Q03KPH7XDP68",
         "minor_version": 1,
-        "modified_at": "2024-11-28T07:34:02.407183+00:00",
+        "modified_at": "2025-01-31T02:59:35.773492+00:00",
         "options": {
           "target": [
             {
@@ -414,6 +425,17 @@
               "item_unit": 0,
               "item_unit_type": "auto",
               "item_url": "https://emart.ssg.com/item/itemView.ssg?itemId=0000010466312&siteNo=6001"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_ssg_type_2097001557433_6001",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://emart.ssg.com/item/itemView.ssg?itemId=2097001557433&siteNo=6001"
             }
           ]
         },
@@ -467,7 +489,7 @@
         "domain": "price_tracker",
         "entry_id": "01JJX1WBG5N07XMS7BF8MZST1D",
         "minor_version": 1,
-        "modified_at": "2025-01-31T02:10:08.589801+00:00",
+        "modified_at": "2025-01-31T03:00:41.232598+00:00",
         "options": {
           "target": [
             {
@@ -535,6 +557,28 @@
               "item_unit": 0,
               "item_unit_type": "auto",
               "item_url": "https://smartstore.naver.com/osung52/products/5008984760?NaPm=ct%3Dm6k4m397%7Cci%3Dcheckout%7Ctr%3Dppc%7Ctrx%3Dnull%7Chk%3D9fd5b2a26627d0013356e7065b816482b5079b5e"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_smartstore_products_duddo_6960845271",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://smartstore.naver.com/duddo/products/6960845271"
+            },
+            {
+              "item_debug": false,
+              "item_device_id": null,
+              "item_management_category": "",
+              "item_price_change_interval_hour": 24,
+              "item_refresh_interval": 30,
+              "item_unique_id": "price_tracker.price_smartstore_type_smartstore_products_farmforlife_8916619763",
+              "item_unit": 0,
+              "item_unit_type": "auto",
+              "item_url": "https://smartstore.naver.com/farmforlife/products/8916619763"
             }
           ]
         },

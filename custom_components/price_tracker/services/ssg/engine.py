@@ -54,7 +54,7 @@ class SsgEngine(PriceEngine):
 
         text = response.data
 
-        if response.is_not_found:
+        if response.is_not_found or not response.has:
             return ItemData(
                 id=self.id_str(),
                 name="Deleted {}".format(self.product_id),
