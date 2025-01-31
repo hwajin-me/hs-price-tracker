@@ -125,6 +125,7 @@ class PriceTrackerSensor(RestoreEntity):
                     or self._debug
                 ):
                     self._attr_available = False
+                    self._update_engine_status(False)
                 else:
                     self._attr_available = True
                     self._update_engine_status(False)
@@ -165,6 +166,7 @@ class PriceTrackerSensor(RestoreEntity):
             self._attr_entity_picture = self._item_data.image
             self._attr_available = True
             self._attr_unit_of_measurement = self._item_data.price.currency
+            self._update_engine_status(True)
         except Exception as e:
             if (
                 self._updated_at is None
@@ -172,6 +174,7 @@ class PriceTrackerSensor(RestoreEntity):
                 or self._debug
             ):
                 self._attr_available = False
+                self._update_engine_status(False)
             else:
                 self._attr_available = True
                 self._update_engine_status(False)
