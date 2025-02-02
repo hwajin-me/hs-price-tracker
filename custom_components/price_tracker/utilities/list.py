@@ -2,7 +2,6 @@ from copy import deepcopy
 
 
 class Lu:
-
     @staticmethod
     def first(target: [any], defValue: any = None):
         return target[0] if len(target) > 0 else defValue
@@ -30,7 +29,11 @@ class Lu:
             keys = key.split(".")
 
             for k in keys:
-                if str(k).isnumeric() and isinstance(target, list) and len(target) > int(k):
+                if (
+                    str(k).isnumeric()
+                    and isinstance(target, list)
+                    and len(target) > int(k)
+                ):
                     target = target[int(k)]
                     continue
                 elif k in target:
@@ -91,7 +94,7 @@ class Lu:
 
     @staticmethod
     def get_item_or_default(
-            target: [any], key: str, value: any, default_value: any = None
+        target: [any], key: str, value: any, default_value: any = None
     ):
         return next((x for x in target if x[key] == value), default_value)
 

@@ -1,7 +1,7 @@
 {
-  "title": "전자상거래 가격 추적기",
+  "title": "전자상거래 통합기",
   "config": {
-    "flow_title": "전자상거래 가격 추적기",
+    "flow_title": "전자상거래 통합기",
     "step": {
       "user": {
         "title": "전자상거래 플랫폼 추가",

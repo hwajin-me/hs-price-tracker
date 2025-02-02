@@ -3,33 +3,17 @@ import dataclasses
 import json
 import logging
 import random
-import ssl
 from enum import Enum
 from typing import Optional, Callable, Self, Awaitable
 
-import cloudscraper
 import fake_useragent
-import urllib3
-from curl_cffi import requests, CurlHttpVersion
-from curl_cffi.requests import AsyncSession, Cookies
+from curl_cffi import requests, CurlHttpVersion, CurlSslVersion
+from curl_cffi.requests import Cookies
 from voluptuous import default_factory
 
 from custom_components.price_tracker.utilities.list import Lu
 
-
-def bot_agents():
-    return ["NaverBot", "Yeti", "Googlebot-Mobile", "HTTPie/3.2.4"]
-
-
-def ssl_context():
-    ctx = ssl.SSLContext()
-
-    return ctx
-
-
 _LOGGER = logging.getLogger(__name__)
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class SafeRequestError(Exception):
@@ -44,15 +28,12 @@ class CustomSessionCookie(Cookies):
         return self.jar.extract_cookies(response, request)
 
 
-class CustomSession(requests.Session):
+class CustomAsyncSession(requests.AsyncSession):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.debug = True
-        self.trust_env = True
-        if kwargs.get("cookies") is not None:
-            self.cookies = CustomSessionCookie(kwargs.get("cookies"))
-        else:
-            self.cookies = CustomSessionCookie()
+        self.extra_fp = {
+            "tls_min_version": CurlSslVersion.TLSv1_2,
+        }
 
 
 @dataclasses.dataclass
@@ -63,11 +44,11 @@ class SafeRequestResponseData:
     cookies: dict = default_factory({})
 
     def __init__(
-            self,
-            data: Optional[str] = None,
-            status_code: int = None,
-            cookies=None,
-            access_token: Optional[str] = None,
+        self,
+        data: Optional[str] = None,
+        status_code: int = None,
+        cookies=None,
+        access_token: Optional[str] = None,
     ):
         if cookies is None:
             cookies = {}
@@ -87,10 +68,10 @@ class SafeRequestResponseData:
     @property
     def has(self):
         return (
-                self.status_code is not None
-                and self.status_code <= 399
-                and self.data is not None
-                and self.data != ""
+            self.status_code is not None
+            and self.status_code <= 399
+            and self.data is not None
+            and self.data != ""
         )
 
     @property
@@ -110,231 +91,104 @@ class SafeRequestMethod(Enum):
 
 class SafeRequestEngine:
     async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
+        self,
+        method: SafeRequestMethod,
+        url: str,
+        data: dict,
+        proxy: str,
+        timeout: int,
+        session: requests.AsyncSession,
+        headers: Optional[dict] = None,
+        cookies: Optional[dict] = None,
     ) -> SafeRequestResponseData:
         pass
 
 
-class SafeRequestEngineAiohttp(SafeRequestEngine):
+class SafeRequestEngineCurlCffi(SafeRequestEngine):
     def __init__(
-            self,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
+        self,
+        impersonate: str = "chrome",
+        version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
     ):
         self._impersonate = impersonate
         self._version = version
-        if session is not None:
-            self._session = session
-        else:
-            self._session = CustomSession(
-                impersonate=impersonate, http_version=self._version
-            )
 
     async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
+        self,
+        method: SafeRequestMethod,
+        url: str,
+        data: dict,
+        proxy: str,
+        timeout: int,
+        session: requests.AsyncSession,
+        headers: Optional[dict] = None,
+        cookies: Optional[dict] = None,
     ) -> SafeRequestResponseData:
-        async with AsyncSession() as session:
-            response = await session.request(
-                method=method.name.upper(),
-                url=url,
-                headers=headers,
-                json=data,
-                data=data,
-                proxy=proxy,
-                timeout=timeout,
-                allow_redirects=True,
-                http_version=CurlHttpVersion.V2TLS,
-                impersonate=self._impersonate,
-            )
-
-            data = response.text
-            cookies = response.cookies
-            access_token = (
-                response.headers.get("Authorization").replace("Bearer ", "")
-                if response.headers.get("Authorization") is not None
-                else None
-            )
-            if response.status_code > 399:
-                raise SafeRequestError(
-                    f"Failed to request {url} with status code {response.status_code}"
-                )
-            return SafeRequestResponseData(
-                data=data,
-                status_code=response.status_code,
-                cookies=cookies,
-                access_token=access_token,
-            )
-
-
-class SafeRequestEngineRequests(SafeRequestEngine):
-    def __init__(
-            self,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
-    ):
-        self._impersonate = impersonate
-        self._version = version
-        if session is not None:
-            self._session = session
-        else:
-            self._session = CustomSession(
-                impersonate=impersonate, http_version=version
-            )
-
-    async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: dict,
-            proxy: str,
-            timeout: int,
-    ) -> SafeRequestResponseData:
-        response = await asyncio.to_thread(
-            requests.request,
+        response = await session.request(
             method=method.name.upper(),
             url=url,
             headers=headers,
-            data=data,
-            proxies={
-                "http": proxy,
-                "https": proxy,
-            }
-            if proxy is not None
-            else None,
-            timeout=timeout,
-            allow_redirects=True,
-            default_headers=True,
-            impersonate=self._impersonate,
-            http_version=self._version
-        )
-
-        if response.status_code > 399 and response.status_code != 404:
-            raise SafeRequestError(
-                f"Failed to request {url} with status code {response.status_code}"
-            )
-
-        return SafeRequestResponseData(
-            data=response.text,
-            status_code=response.status_code,
-            cookies=response.cookies.get_dict(),
-            access_token=response.headers.get("Authorization").replace("Bearer ", "")
-            if response.headers.get("Authorization") is not None
-            else None,
-        )
-
-
-class SafeRequestEngineCloudscraper(SafeRequestEngine):
-    def __init__(
-            self,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS
-    ):
-        self._impersonate = impersonate
-        self._version = version
-        if session is not None:
-            self._session = session
-        else:
-            self._session = CustomSession(
-                impersonate=impersonate, http_version=version
-            )
-
-    async def request(
-            self,
-            headers: dict,
-            method: SafeRequestMethod,
-            url: str,
-            data: any,
-            proxy: str,
-            timeout: int,
-    ) -> SafeRequestResponseData:
-        scraper = await asyncio.to_thread(
-            cloudscraper.create_scraper,
-            sess=self._session,
-            disableCloudflareV1=True,
-            allow_brotli=True,
-            browser="chrome",
-            delay=1
-        )
-        response = await asyncio.to_thread(
-            scraper.request,
-            method=method.name.lower(),
-            url=url,
-            headers=headers,
             json=data,
-            proxies={
-                "http": proxy,
-                "https": proxy,
-            }
-            if proxy is not None
-            else None,
+            data=data,
+            cookies=cookies,
+            proxy=proxy,
             timeout=timeout,
             allow_redirects=True,
+            http_version=self._version,
+            impersonate=self._impersonate,
         )
+
+        data = response.text
+        cookies = response.cookies
+        access_token = (
+            response.headers.get("Authorization").replace("Bearer ", "")
+            if response.headers.get("Authorization") is not None
+            else None
+        )
+
         if response.status_code > 399 and response.status_code != 404:
             raise SafeRequestError(
-                f"Failed to request {url} with status code {response.status_code}"
+                f"Failed to request (aiohttp) {url} with status code {response.status_code}"
             )
 
         return SafeRequestResponseData(
-            data=response.text,
+            data=data,
             status_code=response.status_code,
-            cookies=response.cookies.get_dict(),
-            access_token=response.headers.get("Authorization").replace("Bearer ", "")
-            if response.headers.get("Authorization") is not None
-            else None,
+            cookies=cookies,
+            access_token=access_token,
         )
 
 
 class SafeRequest:
     def __init__(
-            self,
-            chains: list[SafeRequestEngine] = None,
-            proxies: list[str] = None,
-            cookies: dict = None,
-            headers: dict = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list[str]] = None,
-            impersonate: str = "chrome",
-            session: Optional[requests.Session] = None,
-            version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
-            user_agents: list[str] = None,
+        self,
+        chains: list[SafeRequestEngine] = None,
+        proxies: list[str] = None,
+        cookies: dict = None,
+        headers: dict = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list[str]] = None,
+        impersonate: str = "chrome",
+        version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
+        user_agents: list[str] = None,
     ):
         if headers is not None:
             self._headers = headers
         else:
             self._headers = {}
+
         self._headers = {
             "Accept": "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
             "Accept-Encoding": "gzip, deflate, br, zstd",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
-            "Cache-Control": "max-age=0",
-            "Content-Type": "application/json",
-            "Connection": "close",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Priority": "u=0, i",
             "Pragma": "no-cache",
             **self._headers,
         }
-        self._ua_platforms = user_agents if user_agents is not None else ["pc", "mobile"]
-        self._timeout = 60
+        self._ua_platforms = (
+            user_agents if user_agents is not None else ["pc", "mobile"]
+        )
+        self._timeout = 25
         self._proxies: list[str] = proxies if proxies is not None else []
         self._cookies: dict = cookies if cookies is not None else {}
         self._selenium = selenium
@@ -342,30 +196,12 @@ class SafeRequest:
         self._chains: list[SafeRequestEngine] = []
         self._impersonate = impersonate
         self._version = version
-        if session is not None:
-            self._session = session
-        else:
-            self._session = CustomSession(
-                impersonate=impersonate,
-                http_version=version
-            )
 
         self._chains = self._chains + (
             [
-                SafeRequestEngineCloudscraper(
+                SafeRequestEngineCurlCffi(
                     impersonate=self._impersonate,
-                    session=self._session,
-                    version=version
-                ),
-                SafeRequestEngineAiohttp(
-                    impersonate=self._impersonate,
-                    session=self._session,
-                    version=version
-                ),
-                SafeRequestEngineRequests(
-                    impersonate=self._impersonate,
-                    session=self._session,
-                    version=version
+                    version=version,
                 ),
             ]
             if chains is None
@@ -381,7 +217,9 @@ class SafeRequest:
         return self
 
     def accept_almost_all(self):
-        self._headers["Accept"] = "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+        self._headers["Accept"] = (
+            "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+        )
 
         return self
 
@@ -417,11 +255,15 @@ class SafeRequest:
 
         return self
 
+    def clear_header(self):
+        self._headers = {}
+        return self
+
     def user_agent(
-            self,
-            user_agent: Optional[str] | list = None,
-            mobile_random: bool = False,
-            pc_random: bool = False,
+        self,
+        user_agent: Optional[str] | list = None,
+        mobile_random: bool = False,
+        pc_random: bool = False,
     ):
         """"""
         if user_agent is not None:
@@ -623,12 +465,6 @@ class SafeRequest:
 
         return self
 
-    async def reuse_session(self, flag=True):
-        if flag:
-            self._session = await asyncio.to_thread(requests.Session)
-        else:
-            self._session = None
-
     def proxies(self, proxies: list[str] | str | None):
         """"""
         if isinstance(proxies, list):
@@ -641,7 +477,7 @@ class SafeRequest:
         return self
 
     def cookie(
-            self, key: str = None, value: str = None, data: str = None, item: dict = None
+        self, key: str = None, value: str = None, data: str = None, item: dict = None
     ):
         """"""
         if key is None and value is None and data is None and item is None:
@@ -660,86 +496,81 @@ class SafeRequest:
         return self
 
     async def request(
-            self,
-            url: str,
-            method: SafeRequestMethod = SafeRequestMethod.GET,
-            data: any = None,
-            timeout: int = 60,
-            raise_errors: bool = False,
-            max_tries: int = 10,
-            post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
-            retain_cookie=False,
+        self,
+        url: str,
+        method: SafeRequestMethod = SafeRequestMethod.GET,
+        data: any = None,
+        timeout: int = 25,
+        raise_errors: bool = False,
+        max_tries: int = 10,
+        post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
+        retain_cookie=True,
     ) -> SafeRequestResponseData:
         errors = []
-        tries = 0
         return_data = SafeRequestResponseData()
 
-        for chain in self._chains:
-            if tries >= max_tries:
-                return return_data
+        async with CustomAsyncSession(
+            impersonate=self._impersonate, http_version=self._version
+        ) as session:
+            for tries in range(max_tries):
+                if tries >= max_tries:
+                    return return_data
 
-            if tries > 0 and post_try_callables is not None:
-                for callable_ in post_try_callables:
-                    await callable_(self)
+                for chain in self._chains:
+                    if tries >= max_tries:
+                        return return_data
 
-            proxy = (
-                random.choice(self._proxies + [None])
-                if len(self._proxies) > 0
-                else None
-            )
+                    if tries > 0 and post_try_callables is not None:
+                        for callable_ in post_try_callables:
+                            await callable_(self)
 
-            if len(self._ua_platforms) > 0:
-                ua_engine = await asyncio.to_thread(
-                    fake_useragent.UserAgent, platforms=self._ua_platforms
-                )
+                    proxy = (
+                        random.choice(self._proxies + [None])
+                        if len(self._proxies) > 0
+                        else None
+                    )
 
-                self._headers["User-Agent"] = ua_engine.random
+                    if bool(self._headers):
+                        if len(self._ua_platforms) > 0:
+                            ua_engine = await asyncio.to_thread(
+                                fake_useragent.UserAgent, platforms=self._ua_platforms
+                            )
 
-            headers = {
-                **self._headers,
-                "Host": url.split("/")[2]
-                if "Host" not in self._headers
-                else self._headers["Host"],
-            }
+                            self._headers["User-Agent"] = ua_engine.random
 
-            if self._cookies and len(self._cookies) > 0:
-                headers["Cookie"] = "; ".join(
-                    [f"{k}={v}" for k, v in self._cookies.items()]
-                )
+                    try:
+                        return_data = await chain.request(
+                            headers=self._headers if bool(self._headers) else None,
+                            method=method,
+                            url=url,
+                            data=data,
+                            proxy=proxy,
+                            timeout=timeout,
+                            session=session,
+                            cookies=self._cookies,
+                        )
 
-            try:
-                return_data = await chain.request(
-                    headers=headers,
-                    method=method,
-                    url=url,
-                    data=data,
-                    proxy=proxy,
-                    timeout=timeout,
-                )
+                        if return_data.status_code <= 399 or retain_cookie:
+                            self.cookie(item=return_data.cookies)
 
-                if return_data.status_code <= 399 or retain_cookie:
-                    self.cookie(item=return_data.cookies)
+                        _LOGGER.debug(
+                            "Safe request success with %s [%s] (%s) [Proxy: %s] <%s>",
+                            chain.__class__.__name__,
+                            method.name,
+                            url,
+                            proxy,
+                            self._cookies,
+                        )
 
-                _LOGGER.debug(
-                    "Safe request success with %s [%s] (%s) [Proxy: %s] <%s>",
-                    chain.__class__.__name__,
-                    method.name,
-                    url,
-                    proxy,
-                    self._cookies,
-                )
-
-                return return_data
-            except Exception as e:
-                errors.append(e)
-                pass
-            finally:
-                tries += 1
+                        return return_data
+                    except Exception as e:
+                        errors.append(e)
+                        pass
+                    finally:
+                        tries += 1
 
         if len(errors) > 0 and raise_errors:
-            _LOGGER.error(
-                f"Failed to request {url}, {errors}"
-            )
+            _LOGGER.error(f"Failed to request {url}, {errors}")
             raise errors[0]
         else:
             _LOGGER.debug("Safe request silently failed %s", errors)

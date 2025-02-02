@@ -4,7 +4,10 @@ from datetime import datetime
 
 from bs4 import BeautifulSoup
 
-from custom_components.price_tracker.components.error import DataParseError
+from custom_components.price_tracker.components.error import (
+    DataParseError,
+    NotFoundError,
+)
 from custom_components.price_tracker.datas.delivery import (
     DeliveryData,
     DeliveryPayType,
@@ -25,6 +28,17 @@ class RankingdakParser:
         try:
             soup = BeautifulSoup(html, "html.parser")
             self._html = soup
+
+            if (
+                len(
+                    Lu.filter(
+                        soup.find_all(name="script"), lambda x: "품절" in x.get_text()
+                    )
+                )
+                > 0
+            ):
+                raise NotFoundError("Item is out of stock")
+
             self._best_review = self._html.find(
                 "form", {"name": "searchBestReviewForm"}
             )
@@ -44,9 +58,12 @@ class RankingdakParser:
             self._price = self._html.find("div", class_="price-info")
             self._goods_price = self._html.find("div", class_="goods-price")
             self._table_items = self._html.find_all("div", class_="table-item")
+
             if self._product_counsel is None or self._price is None:
                 raise DataParseError("Data not found")
         except DataParseError as e:
+            raise e
+        except NotFoundError as e:
             raise e
         except Exception as e:
             raise DataParseError(str(e)) from e

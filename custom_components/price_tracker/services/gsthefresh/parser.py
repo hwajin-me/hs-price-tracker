@@ -76,9 +76,7 @@ class GsthefreshParser:
         data = self._data["processingDeliveryAmountResultList"]
         min_price_raw = Lu.find(data, "commonCodeName", "우딜 최소주문금액")
         min_price = min_price_raw["amount"] if min_price_raw is not None else 0
-        free_threshold_raw = Lu.find(
-            data, "commonCodeName", "우딜 무료배송기준금액"
-        )
+        free_threshold_raw = Lu.find(data, "commonCodeName", "우딜 무료배송기준금액")
         free_threshold = (
             free_threshold_raw["amount"] if free_threshold_raw is not None else None
         )

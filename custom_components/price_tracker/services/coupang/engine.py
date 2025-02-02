@@ -6,7 +6,12 @@ from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
 )
 from custom_components.price_tracker.datas.item import ItemData, ItemStatus
-from custom_components.price_tracker.services.coupang.const import NAME, CODE, X_COUPANG_APP, USER_AGENT
+from custom_components.price_tracker.services.coupang.const import (
+    NAME,
+    CODE,
+    X_COUPANG_APP,
+    USER_AGENT,
+)
 from custom_components.price_tracker.services.coupang.parser import CoupangParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
 from custom_components.price_tracker.utilities.safe_request import (
@@ -20,12 +25,12 @@ _ITEM_LINK = "https://www.coupang.com/vp/products/{}?itemId={}&vendorItemId={}"
 
 class CoupangEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = CoupangEngine.parse_id(item_url)
@@ -42,7 +47,7 @@ class CoupangEngine(PriceEngine):
             proxies=self._proxies,
             selenium=self._selenium,
             selenium_proxy=self._selenium_proxy,
-            impersonate="chrome99_android"
+            impersonate="chrome99_android",
         )
 
         request.keep_alive()
@@ -53,14 +58,20 @@ class CoupangEngine(PriceEngine):
 
         response = await request.request(
             method=SafeRequestMethod.POST,
-            url=_URL.format(self.product_id, self.product_id, self.item_id, self.vendor_item_id),
-            data={}
+            url=_URL.format(
+                self.product_id, self.product_id, self.item_id, self.vendor_item_id
+            ),
+            data={},
         )
 
         data = response.data
 
         if response.is_not_found:
-            return ItemData(id=self.product_id, name="Deleted {}".format(self.id_str()), status=ItemStatus.DELETED)
+            return ItemData(
+                id=self.product_id,
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
 
         if not response.has:
             return None

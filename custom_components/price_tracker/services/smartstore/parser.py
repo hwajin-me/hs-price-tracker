@@ -4,7 +4,10 @@ import re
 
 from bs4 import BeautifulSoup
 
-from custom_components.price_tracker.components.error import DataParseError
+from custom_components.price_tracker.components.error import (
+    DataParseError,
+    NotFoundError,
+)
 from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import (
     DeliveryType,
@@ -18,11 +21,9 @@ from custom_components.price_tracker.utilities.list import Lu
 
 
 class SmartstoreParser:
-    _html: str
-    _data: dict
-
     def __init__(self, data: str):
         self._html = data
+        self._data = None
         try:
             soup = BeautifulSoup(self._html, "html.parser")
             scripts = soup.find_all("script")
@@ -39,11 +40,18 @@ class SmartstoreParser:
                     "NAVER Response Error - Data not found (PRELOADED_STATE)"
                 )
 
+            if Lu.get(self._data, "product.A.id") is None or Lu.get(
+                self._data, "product.A.errorView", False
+            ):
+                raise NotFoundError("NAVER Response Error - Not found.")
+
             # For NAVER Shopping
             if Lu.has(self._data, "product.A") is False:
                 self._data["product"] = {
                     "A": self._data["productDetail"]["A"]["contents"]
                 }
+        except NotFoundError as e:
+            raise e
         except Exception as e:
             raise DataParseError("NAVER Response Parse Error - Unknown") from e
 

@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import re
@@ -31,61 +32,130 @@ class CoupangParser:
                 raise DataParseError(
                     "Coupang Parse Error (rCode) - {}".format(data["rCode"])
                 )
-            self._page_atf = Lu.get(Lu.find(Lu.get(data, "rData.pageList"), "page", "PAGE_ATF"), "widgetList", [])
-            self._base = Lu.get(Lu.find(Lu.get(data, "rData.pageList"), "page", "PAGE_HANDLEBAR"), "widgetList", [])
-            self._media = Lu.get(Lu.find(self._page_atf, "entity.viewType", "PRODUCT_DETAIL_ITEM_THUMBNAILS", {}),
-                                 "entity.medias.0.detail", [])
+            self._page_atf = Lu.get(
+                Lu.find(Lu.get(data, "rData.pageList"), "page", "PAGE_ATF"),
+                "widgetList",
+                [],
+            )
+            self._base = Lu.get(
+                Lu.find(
+                    Lu.get(data, "rData.pageList"),
+                    "page",
+                    "PAGE_HANDLEBAR",
+                    Lu.find(
+                        Lu.get(data, "rData.pageList"),
+                        "page",
+                        "PAGE_FASHION_HANDLEBAR",
+                        {},
+                    ),
+                ),
+                "widgetList",
+                [],
+            )
+            self._media = Lu.get(
+                Lu.find(
+                    self._page_atf,
+                    "entity.viewType",
+                    "PRODUCT_DETAIL_ITEM_THUMBNAILS",
+                    {},
+                ),
+                "entity.medias.0.detail",
+                [],
+            )
             self._data = {}
 
-            delivery = "".join(Lu.map(
-                Lu.get(Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_HANDLEBAR_QUANTITY"),
-                       "entity.deliveryDate", []), lambda x: x["text"]))
+            delivery = "".join(
+                Lu.map(
+                    Lu.get(
+                        Lu.find(
+                            self._base,
+                            "entity.viewType",
+                            "PRODUCT_DETAIL_HANDLEBAR_QUANTITY",
+                        ),
+                        "entity.deliveryDate",
+                        [],
+                    ),
+                    lambda x: x["text"],
+                )
+            )
             delivery_price = "".join(
-                Lu.map(Lu.get(Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_BASE_INFO", {}),
-                              "entity.deliveryInfo.shippingFee", []),
-                       lambda x: x["text"] if x is not None else ""))
+                Lu.map(
+                    Lu.get(
+                        Lu.find(
+                            self._base,
+                            "entity.viewType",
+                            "PRODUCT_DETAIL_BASE_INFO",
+                            {},
+                        ),
+                        "entity.deliveryInfo.shippingFee",
+                        [],
+                    ),
+                    lambda x: x["text"] if x is not None else "",
+                )
+            )
 
-            if delivery is not None and delivery is not "":
-                self._data = {
-                    **self._data,
-                    "deliveryDate": delivery
-                }
+            if delivery is not None and delivery != "":
+                self._data = {**self._data, "deliveryMessage": delivery}
 
-            if delivery_price is not None and delivery_price is not "":
-                self._data = {
-                    **self._data,
-                    "deliveryFee": delivery_price
-                }
+            if delivery_price is not None and delivery_price != "":
+                self._data = {**self._data, "deliveryFee": delivery_price}
 
             if self._media is not None:
-                self._data = {
-                    **self._data,
-                    "image": self._media
-                }
+                self._data = {**self._data, "image": self._media}
             self._data = {
                 **self._data,
                 **{
                     "finalPrice": Lu.get(
-                        Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_BASE_INFO", {}),
+                        Lu.find(
+                            self._base,
+                            "entity.viewType",
+                            "PRODUCT_DETAIL_BASE_INFO",
+                            {},
+                        ),
                         "priceInfo.finalPrice.0",
-                        Lu.get(self._data, "finalPrice")
+                        Lu.get(self._data, "finalPrice"),
                     )
                 },
                 **{
                     "originalPrice": Lu.get(
-                        Lu.find(self._base, "entity.viewType", "PRODUCT_DETAIL_BASE_INFO", {}),
+                        Lu.find(
+                            self._base,
+                            "entity.viewType",
+                            "PRODUCT_DETAIL_BASE_INFO",
+                            {},
+                        ),
                         "priceInfo.originalPrice.0",
-                        Lu.get(self._data, "originalPrice")
+                        Lu.get(self._data, "originalPrice"),
                     )
-                }
+                },
             }
             self._data = {
                 **self._data,
-                **Lu.get(data, "rData.properties.pageSession.logging.exposureSchema.mandatory", {}),
-                **Lu.get(data, "rData.properties.pageSession.logging.bypass.exposureSchema.mandatory", {}),
-                **Lu.get(data, "rData.properties.itemDetail.logging.exposureSchema.mandatory", {}),
-                **Lu.get(data, "rData.properties.itemDetail.logging.bypass.exposureSchema.mandatory", {}),
-                **Lu.get(data, "rData.properties.itemDetail.handleBarLogging.bypass.exposureSchema.mandatory", {}),
+                **Lu.get(
+                    data,
+                    "rData.properties.pageSession.logging.exposureSchema.mandatory",
+                    {},
+                ),
+                **Lu.get(
+                    data,
+                    "rData.properties.pageSession.logging.bypass.exposureSchema.mandatory",
+                    {},
+                ),
+                **Lu.get(
+                    data,
+                    "rData.properties.itemDetail.logging.exposureSchema.mandatory",
+                    {},
+                ),
+                **Lu.get(
+                    data,
+                    "rData.properties.itemDetail.logging.bypass.exposureSchema.mandatory",
+                    {},
+                ),
+                **Lu.get(
+                    data,
+                    "rData.properties.itemDetail.handleBarLogging.bypass.exposureSchema.mandatory",
+                    {},
+                ),
             }
 
         except DataParseError as e:
@@ -95,9 +165,11 @@ class CoupangParser:
 
     @property
     def name(self):
-        return Lu.get(Lu.find(
-            self._page_atf, "entity.viewType", "PRODUCT_DETAIL_PRODUCT_INFO"
-        ), "entity.title.0.text", "Unknown (Coupang)")
+        return Lu.get(
+            Lu.find(self._page_atf, "entity.viewType", "PRODUCT_DETAIL_PRODUCT_INFO"),
+            "entity.title.0.text",
+            "Unknown (Coupang)",
+        )
 
     @property
     def description(self):
@@ -153,21 +225,28 @@ class CoupangParser:
     @property
     def delivery(self):
         rocket_type = Lu.get(self._data, "rocketType", "STANDARD")
-        delivery_message = Lu.get(str(Lu.get(self._data, "deliveryMessage", "")).split("\n"), 0)
-        delivery_fee = parse_number(str(Lu.get(self._data, "deliveryFee", "free"))
-                                    .replace("배송비", "")
-                                    .replace("원", "")
-                                    .replace(",", "")
-                                    .replace(" ", ""))
+        delivery_message = Lu.get(
+            str(Lu.get(self._data, "deliveryMessage", "")).split("\n"), 0
+        )
+        delivery_fee = parse_number(
+            str(Lu.get(self._data, "deliveryFee", "free"))
+            .replace("배송비", "")
+            .replace("원", "")
+            .replace(",", "")
+            .replace(" ", "")
+        )
         threshold_price = None
+        arrival_date = None
 
         if rocket_type == "ROCKET":
             delivery_type = DeliveryType.EXPRESS
         elif rocket_type == "ROCKET_FRESH":
             delivery_type = DeliveryType.EXPRESS
             threshold_price = 15000
-        elif rocket_type == "ROCKET_MERCHANT":
+        elif rocket_type == "ROCKET_MERCHANT" or rocket_type == "ROCKET_MERCHANT_V3":
             delivery_type = DeliveryType.EXPRESS
+        elif rocket_type == "COUPANG_GLOBAL":
+            delivery_type = DeliveryType.SLOW
         else:
             delivery_type = DeliveryType.STANDARD
 
@@ -176,7 +255,12 @@ class CoupangParser:
         else:
             delivery_pay_type = DeliveryPayType.PAID
 
-        if rocket_type in ["ROCKET", "ROCKET_FRESH", "ROCKET_MERCHANT"]:
+        if rocket_type in [
+            "ROCKET",
+            "ROCKET_FRESH",
+            "ROCKET_MERCHANT",
+            "ROCKET_MERCHANT_V3",
+        ]:
             if delivery_message.find("오늘") > -1:
                 if delivery_message.find("새벽") > -1:
                     delivery_type = DeliveryType.EXPRESS_TODAY_DAWN
@@ -194,13 +278,22 @@ class CoupangParser:
             else:
                 delivery_type = DeliveryType.EXPRESS
         else:
-            delivery_type = DeliveryType.STANDARD
+            message_parse = re.match(
+                r"(?P<weekday>[월화수목금토일])요일 (?P<date>\d{1,2}/\d{1,2})",
+                delivery_message,
+            )
+            if message_parse is not None:
+                g = message_parse.groupdict()
+                arrival_date = datetime.datetime.strptime(
+                    f"{datetime.datetime.now().year}/{g['date']}", "%Y/%m/%d"
+                )
 
         return DeliveryData(
             price=delivery_fee,
             pay_type=delivery_pay_type,
             delivery_type=delivery_type,
             threshold_price=threshold_price,
+            arrive_date=arrival_date,
         )
 
     @property

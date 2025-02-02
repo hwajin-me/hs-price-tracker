@@ -7,7 +7,7 @@ from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
 )
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.gsthefresh.const import CODE, NAME
 from custom_components.price_tracker.services.gsthefresh.device import GsTheFreshDevice
 from custom_components.price_tracker.services.gsthefresh.parser import GsthefreshParser
@@ -62,6 +62,14 @@ class GsTheFreshEngine(PriceEngine):
         )
 
         result = http_result.data
+
+        if http_result.is_not_found:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
+
         logging_for_response(result, __name__, "gsthefresh")
         gs_parser = GsthefreshParser(text=result)
 

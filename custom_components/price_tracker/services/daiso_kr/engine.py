@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import InvalidItemUrlError
-from custom_components.price_tracker.datas.item import ItemData
+from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.daiso_kr.const import CODE, NAME
 from custom_components.price_tracker.services.daiso_kr.parser import DaisoKrParser
 from custom_components.price_tracker.utilities.logs import logging_for_response
@@ -45,6 +45,14 @@ class DaisoKrEngine(PriceEngine):
             url=_URL,
             data={"pdNo": self.id},
         )
+
+        if response.is_not_found:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+            )
+
         logging_for_response(response, __name__, "daiso_kr")
         parser = DaisoKrParser(data=response.data)
 

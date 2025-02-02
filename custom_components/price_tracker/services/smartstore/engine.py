@@ -1,3 +1,4 @@
+import datetime
 import logging
 import re
 from typing import Optional
@@ -7,6 +8,7 @@ from curl_cffi import CurlHttpVersion
 from custom_components.price_tracker.components.engine import PriceEngine
 from custom_components.price_tracker.components.error import (
     InvalidItemUrlError,
+    NotFoundError,
 )
 from custom_components.price_tracker.datas.item import ItemData, ItemStatus
 from custom_components.price_tracker.services.smartstore.const import NAME, CODE
@@ -25,12 +27,12 @@ _URL = "https://{}.naver.com/{}/{}/{}"
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-            self,
-            item_url: str,
-            device: None = None,
-            proxies: Optional[list] = None,
-            selenium: Optional[str] = None,
-            selenium_proxy: Optional[list] = None,
+        self,
+        item_url: str,
+        device: None = None,
+        proxies: Optional[list] = None,
+        selenium: Optional[str] = None,
+        selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -48,32 +50,118 @@ class SmartstoreEngine(PriceEngine):
         if self.store_type == "smartstore":
             request = SafeRequest(
                 proxies=self._proxies,
-                impersonate="safari17_2_ios",
-                version=CurlHttpVersion.V1_0,
+                impersonate="safari17_0",
+                version=CurlHttpVersion.V2_PRIOR_KNOWLEDGE,
+                user_agents=["pc"],
             )
-            request.accept_almost_all()
-            request.accept_language(is_random=True)
-            request.user_agent(user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/605.1 NAVER(inapp; search; 2000; 12.8.52; 14PRO)")
-            request.pragma_no_cache()
-            request.cookie(key="NNB", value="PPYXCWKWXC" + random_choice(["A", "B", "C", "D", "X"]) + random_choice(["A", "B", "C", "D", "E"]) + random_choice(["A", "B", "C", "D", "E", "F"]))
-            request.keep_alive()
-            request.sec_ch_ua_mobile()
-            request.sec_fetch_dest_document()
-            request.sec_fetch_mode_navigate()
-            store_type="m.smartstore"
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://shopping.naver.com/ns/home",
+                max_tries=3,
+            )
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://msearch.shopping.naver.com/remote_frame.html",
+                max_tries=3,
+            )
+            await request.request(
+                method=SafeRequestMethod.POST,
+                url="https://nlog.naver.com/n",
+                max_tries=3,
+                data={
+                    "corp": "naver",
+                    "usr": {},
+                    "location": "korea_real/korea",
+                    "send_ts": datetime.datetime.now().timestamp(),
+                    "svc": "shopping",
+                    "svc_tags": {},
+                    "evts": [
+                        {
+                            "page_url": "https://shopping.naver.com/ns/home",
+                            "page_ref": "",
+                            "page_id": "08827299cfd39834e5badb487db19f8b",
+                            "timing": {
+                                "type": "navigate",
+                                "unloadEventStart": 0,
+                                "unloadEventEnd": 0,
+                                "redirectStart": 0,
+                                "redirectEnd": 0,
+                                "workerStart": 0,
+                                "fetchStart": 6.700000286102295,
+                                "domainLookupStart": 8.200000286102295,
+                                "domainLookupEnd": 9.400000095367432,
+                                "connectStart": 9.400000095367432,
+                                "secureConnectionStart": 23.90000009536743,
+                                "connectEnd": 35.59999990463257,
+                                "requestStart": 35.700000286102295,
+                                "responseStart": 77.5,
+                                "responseEnd": 87.59999990463257,
+                                "domInteractive": 319.59999990463257,
+                                "domContentLoadedEventStart": 634.2000002861023,
+                                "domContentLoadedEventEnd": 634.2000002861023,
+                                "domComplete": 0,
+                                "loadEventStart": 0,
+                                "loadEventEnd": 0,
+                                "first_paint": 278.59999990463257,
+                                "first_contentful_paint": 278.59999990463257,
+                            },
+                            "type": "pageview",
+                            "page_sti": "shopping",
+                            "shp_action_uid": "",
+                            "env": {"device_type": "PC Web"},
+                            "shp_pagekey": "100410625",
+                            "shp": {"contents": {}},
+                            "evt_ts": datetime.datetime.now().timestamp(),
+                        }
+                    ],
+                    "env": {
+                        "os": "MacIntel",
+                        "br_ln": "en-US",
+                        "br_sr": "1920x1080",
+                        "device_sr": "1920x1080",
+                        "platform_type": "web",
+                        "ch_arch": "arm",
+                        "ch_mdl": "",
+                        "ch_mob": False,
+                        "ch_pltf": "macOS",
+                        "ch_ptlfv": "13.1.0",
+                        "timezone": "Asia/Seoul",
+                        "ch_fvls": [
+                            {
+                                "brand": "Google Chrome",
+                                "version": "131.0.6778.267",
+                            },
+                            {"brand": "Chromium", "version": "131.0.6778.267"},
+                            {"brand": "Not_A Brand", "version": "24.0.0.0"},
+                        ],
+                    },
+                    "tool": {
+                        "name": "ntm-web",
+                        "ver": "nlogLibVersion=v0.1.40; verName=v2.0.7; ntmVersion=v1.4.1",
+                    },
+                },
+            )
         else:
             request = SafeRequest(
                 proxies=self._proxies,
                 impersonate="chrome",
                 version=CurlHttpVersion.V2_PRIOR_KNOWLEDGE,
-                user_agents=["pc"]
+                user_agents=["pc"],
             )
+
+            request.cookie(
+                key="NNB",
+                value="PPYXCWKWXC"
+                + random_choice(["A", "B", "C", "D", "X"])
+                + random_choice(["A", "B", "C", "D", "E"])
+                + random_choice(["A", "B", "C", "D", "E", "F"]),
+            )
+
+        request.clear_header()
 
         response = await request.request(
             method=SafeRequestMethod.GET,
-            url=_URL.format(
-                store_type, self.store, self.detail_type, self.product_id
-            ),
+            url=_URL.format(store_type, self.store, self.detail_type, self.product_id),
         )
 
         logging_for_response(response=response, name=__name__, domain="smartstore")
@@ -83,7 +171,7 @@ class SmartstoreEngine(PriceEngine):
                 id=self.id_str(),
                 name="Deleted {}".format(self.id_str()),
                 status=ItemStatus.DELETED,
-                http_status=response.status_code
+                http_status=response.status_code,
             )
 
         if not response.has:
@@ -91,21 +179,31 @@ class SmartstoreEngine(PriceEngine):
 
         text = response.text
 
-        naver_parser = SmartstoreParser(data=text)
+        try:
+            naver_parser = SmartstoreParser(data=text)
 
-        return ItemData(
-            id=self.id_str(),
-            price=naver_parser.price,
-            name=naver_parser.name,
-            description=naver_parser.description,
-            category=naver_parser.category,
-            image=naver_parser.image,
-            url=naver_parser.url,
-            inventory=naver_parser.inventory_status,
-            delivery=naver_parser.delivery,
-            options=naver_parser.options,
-            status=ItemStatus.ACTIVE,
-        )
+            return ItemData(
+                id=self.id_str(),
+                price=naver_parser.price,
+                name=naver_parser.name,
+                description=naver_parser.description,
+                category=naver_parser.category,
+                image=naver_parser.image,
+                url=naver_parser.url,
+                inventory=naver_parser.inventory_status,
+                delivery=naver_parser.delivery,
+                options=naver_parser.options,
+                status=ItemStatus.ACTIVE,
+            )
+        except NotFoundError as e:
+            return ItemData(
+                id=self.id_str(),
+                name="Deleted {}".format(self.id_str()),
+                status=ItemStatus.DELETED,
+                http_status=response.status_code,
+            )
+        except Exception as e:
+            raise e
 
     def id_str(self) -> str:
         return "{}_{}".format(self.store, self.product_id)

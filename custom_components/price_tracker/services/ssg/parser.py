@@ -1,7 +1,10 @@
 import json
 import re
 
-from custom_components.price_tracker.components.error import DataParseError
+from custom_components.price_tracker.components.error import (
+    DataParseError,
+    NotFoundError,
+)
 from custom_components.price_tracker.datas.category import ItemCategoryData
 from custom_components.price_tracker.datas.delivery import (
     DeliveryData,
@@ -27,11 +30,16 @@ class SsgParser:
         try:
             j = json.loads(response)
 
+            if Lu.get(j, "data.action.type") == "0001":
+                raise NotFoundError("SSG Parser Item not found")
+
             if Lu.has(j, "data.item") is False:
-                raise DataParseError("No item found in response")
+                raise DataParseError("SSG Parser No item found in response")
 
             self._data = j["data"]
             self._item = j["data"]["item"]
+        except NotFoundError as e:
+            raise e
         except Exception as e:
             raise DataParseError("Failed to parse response") from e
 
@@ -113,10 +121,7 @@ class SsgParser:
                     pay_type=DeliveryPayType.FREE_OR_PAID,
                     delivery_type=DeliveryType.EXPRESS_SPECIFIC,
                 )
-            elif (
-                Lu.find(self._item["rightBadgeList"], "txt", "새벽배송")
-                is not None
-            ):
+            elif Lu.find(self._item["rightBadgeList"], "txt", "새벽배송") is not None:
                 return DeliveryData(
                     price=3000,
                     threshold_price=40000,
