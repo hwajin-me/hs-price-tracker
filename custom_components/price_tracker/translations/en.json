@@ -48,7 +48,8 @@
           "option_selenium_select": "Selenium Configuration",
           "option_add_select": "Add entity",
           "item_url": "Product URL (e.g. https://www.amazon.com/dp/B07VGRJDFY)",
-          "item_management_category": "Category (e.g. Electronics, Clothing, etc.)",
+          "item_management_category": "*DEPRECATED* Category (e.g. Electronics, Clothing, etc.)",
+          "item_management_categories": "Categories (split by ,) - e.g. Electronics, Clothing, etc.",
           "item_unit_type": "Product unit (kg, g, etc.) - Use when not automatically provided in product information",
           "item_refresh_interval": "Refresh interval (in minutes)",
           "item_price_change_interval_hour": "Price change interval (in hours)"

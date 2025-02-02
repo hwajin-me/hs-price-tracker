@@ -103,9 +103,11 @@ class ItemData:
             "url": self.url,
             "image": self.image,
             "inventory_status": self.inventory.name,
+            "inventory_status_rank": self.inventory.rank,
             "unit_value": self.unit.unit,
             "unit_type": self.unit.unit_type.name,
             "unit_price": self.unit.price,
+            "sort_price": "{}:{}".format(str(self.price.price).ljust(12, "0"), self.inventory.rank),
             "product_options": [option.dict for option in self.options]
             if self.options is not None
             else [],

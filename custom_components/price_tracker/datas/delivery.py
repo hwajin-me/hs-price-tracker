@@ -29,13 +29,13 @@ class DeliveryType(Enum):
 @dataclasses.dataclass
 class DeliveryData:
     def __init__(
-        self,
-        price: float = None,
-        threshold_price: float = None,
-        minimum_price: float = None,
-        pay_type: DeliveryPayType = DeliveryPayType.UNKNOWN,
-        delivery_type: DeliveryType = DeliveryType.NO_DELIVERY,
-        arrive_date: datetime.date = None,
+            self,
+            price: float = None,
+            threshold_price: float = None,
+            minimum_price: float = None,
+            pay_type: DeliveryPayType = DeliveryPayType.UNKNOWN,
+            delivery_type: DeliveryType = DeliveryType.NO_DELIVERY,
+            arrive_date: datetime.date = None,
     ):
         self.price = price
         self.threshold_price = threshold_price

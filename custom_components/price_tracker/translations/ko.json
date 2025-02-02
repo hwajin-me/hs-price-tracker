@@ -49,6 +49,7 @@
           "option_selenium_select": "Selenium 설정",
           "item_url": "상품 주소 (e.g. https://www.amazon.com/dp/B07VGRJDFY)",
           "item_management_category": "관리 카테고리(Home Assistant) - 표시 및 관리 목적으로 직접 사용하는 경우 작성합니다.",
+          "item_management_categories": "Categories (split by ,) - e.g. Electronics, Clothing, etc.",
           "item_unit_type": "상품 판매 단위 (ml, kg, 박스 등) - 상품 정보에서 자동적으로 가져오지 못하는 경우 사용합니다.",
           "item_refresh_interval": "가격 업데이트 주기 (분)",
           "item_price_change_interval_hour": "가격 변동 알림 주기 (시간)"

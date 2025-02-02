@@ -17,7 +17,7 @@ from .consts.confs import (
     CONF_PROXY_OPENSOURCE,
     CONF_SELENIUM,
     CONF_SELENIUM_PROXY,
-    CONF_DEBUG,
+    CONF_DEBUG, CONF_ITEM_MANAGEMENT_CATEGORIES,
 )
 from .consts.defaults import DOMAIN
 from .datas.unit import ItemUnitType
@@ -94,6 +94,7 @@ async def async_setup_entry(
                 else 1,
                 refresh_period=Lu.get(target, CONF_ITEM_REFRESH_INTERVAL, 30),
                 management_category=Lu.get(target, CONF_ITEM_MANAGEMENT_CATEGORY, None),
+                management_categories=Lu.get(target, CONF_ITEM_MANAGEMENT_CATEGORIES, None),
                 debug=Lu.get_or_default(config, CONF_DEBUG, False),
             )
 

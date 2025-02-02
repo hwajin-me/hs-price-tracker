@@ -49,6 +49,7 @@
           "option_selenium_select": "Selenium設定",
           "item_url": "商品URL(e.g. https://www.amazon.com/dp/B07VGRJDFY)",
           "item_management_category": "管理カテゴリ",
+          "item_management_categories": "Categories (split by ,) - e.g. Electronics, Clothing, etc.",
           "item_unit_type": "単位タイプ",
           "item_unit": "容量(e.g. unit type > ml, unit > 300)",
           "item_refresh_interval": "更新間隔(分)",
