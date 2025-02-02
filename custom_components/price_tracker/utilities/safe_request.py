@@ -134,6 +134,8 @@ class SafeRequestEngineCurlCffi(SafeRequestEngine):
             proxy=proxy,
             timeout=timeout,
             allow_redirects=True,
+            default_headers=True,
+            verify=True,
             http_version=self._version,
             impersonate=self._impersonate,
         )
@@ -148,7 +150,7 @@ class SafeRequestEngineCurlCffi(SafeRequestEngine):
 
         if response.status_code > 399 and response.status_code != 404:
             raise SafeRequestError(
-                f"Failed to request (aiohttp) {url} with status code {response.status_code}"
+                f"Failed to request (curl-cffi) {url} with status code {response.status_code}"
             )
 
         return SafeRequestResponseData(
@@ -207,6 +209,12 @@ class SafeRequest:
             if chains is None
             else chains
         )
+
+    def impersonate(self, impersonate: str):
+        """"""
+        self._impersonate = impersonate
+
+        return self
 
     def accept_text_html(self):
         """"""
@@ -502,7 +510,7 @@ class SafeRequest:
         data: any = None,
         timeout: int = 25,
         raise_errors: bool = False,
-        max_tries: int = 10,
+        max_tries: int = 8,
         post_try_callables: list[Callable[[Self], Awaitable[None]]] = None,
         retain_cookie=True,
     ) -> SafeRequestResponseData:
@@ -573,6 +581,6 @@ class SafeRequest:
             _LOGGER.error(f"Failed to request {url}, {errors}")
             raise errors[0]
         else:
-            _LOGGER.debug("Safe request silently failed %s", errors)
+            _LOGGER.error("Request failed %s", errors)
 
         return return_data

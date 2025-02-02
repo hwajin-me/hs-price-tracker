@@ -18,7 +18,8 @@ from custom_components.price_tracker.components.id import IdGenerator
 from custom_components.price_tracker.components.lang import Lang
 from custom_components.price_tracker.consts.confs import (
     CONF_TYPE,
-    CONF_TARGET, CONF_ITEM_MANAGEMENT_CATEGORIES,
+    CONF_TARGET,
+    CONF_ITEM_MANAGEMENT_CATEGORIES,
 )
 from custom_components.price_tracker.datas.unit import ItemUnitType
 from custom_components.price_tracker.services.factory import (
@@ -460,11 +461,11 @@ class PriceTrackerSetup:
                     ): cv.string,
                     vol.Optional(
                         self.conf_item_management_category,
-                        default=Lu.get(item, self.conf_item_management_category),
+                        default=Lu.get(item, self.conf_item_management_category, ""),
                     ): cv.string,
                     vol.Optional(
                         CONF_ITEM_MANAGEMENT_CATEGORIES,
-                        default=Lu.get(item, CONF_ITEM_MANAGEMENT_CATEGORIES),
+                        default=Lu.get(item, CONF_ITEM_MANAGEMENT_CATEGORIES, ""),
                     ): cv.string,
                     vol.Optional(
                         self.conf_item_unit_type,

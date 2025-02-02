@@ -86,7 +86,8 @@ class SmartstoreParser:
     @property
     def inventory_status(self):
         return InventoryStatus.of(
-            False, stock=self._data["product"]["A"]["stockQuantity"]
+            True if Lu.get(self._data, "product.A.stockQuantity", 1) == 0 else False,
+            stock=self._data["product"]["A"]["stockQuantity"],
         )
 
     @property
