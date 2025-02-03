@@ -107,7 +107,7 @@ class SafeRequestEngine:
 class SafeRequestEngineCurlCffi(SafeRequestEngine):
     def __init__(
         self,
-        impersonate: str = "chrome",
+        impersonate: str = "chrome124",
         version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
     ):
         self._impersonate = impersonate
@@ -170,7 +170,7 @@ class SafeRequest:
         headers: dict = None,
         selenium: Optional[str] = None,
         selenium_proxy: Optional[list[str]] = None,
-        impersonate: str = "chrome",
+        impersonate: str = "chrome124",
         version: Optional[CurlHttpVersion] = CurlHttpVersion.V2TLS,
         user_agents: list[str] = None,
     ):
@@ -183,7 +183,7 @@ class SafeRequest:
             "Accept": "text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9,ko;q=0.8,ja;q=0.7,zh-CN;q=0.6,zh;q=0.5",
             "Accept-Encoding": "gzip, deflate, br, zstd",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Pragma": "no-cache",
             **self._headers,
         }
@@ -578,7 +578,7 @@ class SafeRequest:
                         tries += 1
 
         if len(errors) > 0 and raise_errors:
-            _LOGGER.error(f"Failed to request {url}, {errors}")
+            _LOGGER.error(f"Failed to request {url}, {set(Lu.map(errors, lambda x: repr(x)))}")
             raise errors[0]
         else:
             _LOGGER.error("Request failed %s", errors)

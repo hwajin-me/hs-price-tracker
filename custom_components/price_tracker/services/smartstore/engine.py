@@ -1,6 +1,6 @@
-import datetime
 import logging
 import re
+from datetime import datetime
 from typing import Optional
 
 from curl_cffi import CurlHttpVersion
@@ -17,7 +17,7 @@ from custom_components.price_tracker.utilities.safe_request import (
     SafeRequest,
     SafeRequestMethod,
 )
-from custom_components.price_tracker.utilities.utils import random_choice
+from custom_components.price_tracker.utilities.utils import random_choice, random_bool
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,12 +26,12 @@ _URL = "https://{}.naver.com/{}/{}/{}"
 
 class SmartstoreEngine(PriceEngine):
     def __init__(
-        self,
-        item_url: str,
-        device: None = None,
-        proxies: Optional[list] = None,
-        selenium: Optional[str] = None,
-        selenium_proxy: Optional[list] = None,
+            self,
+            item_url: str,
+            device: None = None,
+            proxies: Optional[list] = None,
+            selenium: Optional[str] = None,
+            selenium_proxy: Optional[list] = None,
     ):
         self.item_url = item_url
         self.id = SmartstoreEngine.parse_id(item_url)
@@ -44,144 +44,123 @@ class SmartstoreEngine(PriceEngine):
         self._selenium = selenium
         self._selenium_proxy = selenium_proxy
 
-    async def request(self, cnt):
-        store_type = self.store_type
-        if self.store_type == "smartstore":
-            request = SafeRequest(
-                proxies=self._proxies,
-                impersonate="chrome",
-                version=CurlHttpVersion.V2TLS,
-                user_agents=["pc"],
+    async def load(self) -> ItemData | None:
+        request = SafeRequest(
+            proxies=self._proxies,
+            version=CurlHttpVersion.V2_PRIOR_KNOWLEDGE,
+            user_agents=["pc", "mobile"],
+        )
+
+        if random_bool():
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://shopping.naver.com/ns/home/today-event",
+                max_tries=1,
+            )
+            request.user_agent(mobile_random=True, pc_random=True)
+
+        if random_bool():
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://shopping.naver.com/ns/home",
+                max_tries=1,
             )
 
-            if cnt >= 4:
-                await request.request(
-                    method=SafeRequestMethod.GET,
-                    url="https://search.shopping.naver.com/ns/category/10007229",
-                    max_tries=3,
-                )
-                request.impersonate(impersonate="safari17_0")
-
-            if cnt >= 3:
-                await request.request(
-                    method=SafeRequestMethod.GET,
-                    url="https://shopping.naver.com/ns/home/today-event",
-                    max_tries=3,
-                )
-                request.user_agent(mobile_random=True, pc_random=True)
-
-            if cnt >= 1:
-                await request.request(
-                    method=SafeRequestMethod.GET,
-                    url="https://shopping.naver.com/ns/home",
-                    max_tries=3,
-                )
-
-            if cnt >= 2:
-                await request.request(
-                    method=SafeRequestMethod.GET,
-                    url="https://msearch.shopping.naver.com/remote_frame.html",
-                    max_tries=3,
-                )
-                await request.request(
-                    method=SafeRequestMethod.POST,
-                    url="https://nlog.naver.com/n",
-                    max_tries=3,
-                    data={
-                        "corp": "naver",
-                        "usr": {},
-                        "location": "korea_real/korea",
-                        "send_ts": datetime.datetime.now().timestamp(),
-                        "svc": "shopping",
-                        "svc_tags": {},
-                        "evts": [
+        if random_bool():
+            await request.request(
+                method=SafeRequestMethod.GET,
+                url="https://msearch.shopping.naver.com/remote_frame.html",
+                max_tries=3,
+            )
+            await request.request(
+                method=SafeRequestMethod.POST,
+                url="https://nlog.naver.com/n",
+                max_tries=3,
+                data={
+                    "corp": "naver",
+                    "usr": {},
+                    "location": "korea_real/korea",
+                    "send_ts": datetime.now().timestamp(),
+                    "svc": "shopping",
+                    "svc_tags": {},
+                    "evts": [
+                        {
+                            "page_url": "https://shopping.naver.com/ns/home",
+                            "page_ref": "",
+                            "page_id": "08827299cfd39834e5badb487db19f8b",
+                            "timing": {
+                                "type": "navigate",
+                                "unloadEventStart": 0,
+                                "unloadEventEnd": 0,
+                                "redirectStart": 0,
+                                "redirectEnd": 0,
+                                "workerStart": 0,
+                                "fetchStart": 6.700000286102295,
+                                "domainLookupStart": 8.200000286102295,
+                                "domainLookupEnd": 9.400000095367432,
+                                "connectStart": 9.400000095367432,
+                                "secureConnectionStart": 23.90000009536743,
+                                "connectEnd": 35.59999990463257,
+                                "requestStart": 35.700000286102295,
+                                "responseStart": 77.5,
+                                "responseEnd": 87.59999990463257,
+                                "domInteractive": 319.59999990463257,
+                                "domContentLoadedEventStart": 634.2000002861023,
+                                "domContentLoadedEventEnd": 634.2000002861023,
+                                "domComplete": 0,
+                                "loadEventStart": 0,
+                                "loadEventEnd": 0,
+                                "first_paint": 278.59999990463257,
+                                "first_contentful_paint": 278.59999990463257,
+                            },
+                            "type": "pageview",
+                            "page_sti": "shopping",
+                            "shp_action_uid": "",
+                            "env": {"device_type": "PC Web"},
+                            "shp_pagekey": "100410625",
+                            "shp": {"contents": {}},
+                            "evt_ts": datetime.now().timestamp(),
+                        }
+                    ],
+                    "env": {
+                        "os": "MacIntel",
+                        "br_ln": "en-US",
+                        "br_sr": "1920x1080",
+                        "device_sr": "1920x1080",
+                        "platform_type": "web",
+                        "ch_arch": "arm",
+                        "ch_mdl": "",
+                        "ch_mob": False,
+                        "ch_pltf": "macOS",
+                        "ch_ptlfv": "13.1.0",
+                        "timezone": "Asia/Seoul",
+                        "ch_fvls": [
                             {
-                                "page_url": "https://shopping.naver.com/ns/home",
-                                "page_ref": "",
-                                "page_id": "08827299cfd39834e5badb487db19f8b",
-                                "timing": {
-                                    "type": "navigate",
-                                    "unloadEventStart": 0,
-                                    "unloadEventEnd": 0,
-                                    "redirectStart": 0,
-                                    "redirectEnd": 0,
-                                    "workerStart": 0,
-                                    "fetchStart": 6.700000286102295,
-                                    "domainLookupStart": 8.200000286102295,
-                                    "domainLookupEnd": 9.400000095367432,
-                                    "connectStart": 9.400000095367432,
-                                    "secureConnectionStart": 23.90000009536743,
-                                    "connectEnd": 35.59999990463257,
-                                    "requestStart": 35.700000286102295,
-                                    "responseStart": 77.5,
-                                    "responseEnd": 87.59999990463257,
-                                    "domInteractive": 319.59999990463257,
-                                    "domContentLoadedEventStart": 634.2000002861023,
-                                    "domContentLoadedEventEnd": 634.2000002861023,
-                                    "domComplete": 0,
-                                    "loadEventStart": 0,
-                                    "loadEventEnd": 0,
-                                    "first_paint": 278.59999990463257,
-                                    "first_contentful_paint": 278.59999990463257,
-                                },
-                                "type": "pageview",
-                                "page_sti": "shopping",
-                                "shp_action_uid": "",
-                                "env": {"device_type": "PC Web"},
-                                "shp_pagekey": "100410625",
-                                "shp": {"contents": {}},
-                                "evt_ts": datetime.datetime.now().timestamp(),
-                            }
+                                "brand": "Google Chrome",
+                                "version": "131.0.6778.267",
+                            },
+                            {"brand": "Chromium", "version": "131.0.6778.267"},
+                            {"brand": "Not_A Brand", "version": "24.0.0.0"},
                         ],
-                        "env": {
-                            "os": "MacIntel",
-                            "br_ln": "en-US",
-                            "br_sr": "1920x1080",
-                            "device_sr": "1920x1080",
-                            "platform_type": "web",
-                            "ch_arch": "arm",
-                            "ch_mdl": "",
-                            "ch_mob": False,
-                            "ch_pltf": "macOS",
-                            "ch_ptlfv": "13.1.0",
-                            "timezone": "Asia/Seoul",
-                            "ch_fvls": [
-                                {
-                                    "brand": "Google Chrome",
-                                    "version": "131.0.6778.267",
-                                },
-                                {"brand": "Chromium", "version": "131.0.6778.267"},
-                                {"brand": "Not_A Brand", "version": "24.0.0.0"},
-                            ],
-                        },
-                        "tool": {
-                            "name": "ntm-web",
-                            "ver": "nlogLibVersion=v0.1.40; verName=v2.0.7; ntmVersion=v1.4.1",
-                        },
                     },
-                )
-
-        else:
-            request = SafeRequest(
-                proxies=self._proxies,
-                impersonate="chrome",
-                version=CurlHttpVersion.V2_PRIOR_KNOWLEDGE,
-                user_agents=["pc"],
+                    "tool": {
+                        "name": "ntm-web",
+                        "ver": "nlogLibVersion=v0.1.40; verName=v2.0.7; ntmVersion=v1.4.1",
+                    },
+                },
             )
 
-            request.cookie(
-                key="NNB",
-                value="PPYXCWKWXC"
-                + random_choice(["A", "B", "C", "D", "X"])
-                + random_choice(["A", "B", "C", "D", "E"])
-                + random_choice(["A", "B", "C", "D", "E", "F"]),
-            )
-
-        request.clear_header()
+        request.cookie(
+            key="NNB",
+            value="PPYXCWKWXC"
+                  + random_choice(["A", "B", "C", "D", "X"])
+                  + random_choice(["A", "B", "C", "D", "E"])
+                  + random_choice(["A", "B", "C", "D", "E", "F"]),
+        )
 
         response = await request.request(
             method=SafeRequestMethod.GET,
-            url=_URL.format(store_type, self.store, self.detail_type, self.product_id),
+            url=_URL.format(self.store_type, self.store, self.detail_type, self.product_id),
         )
 
         if response.is_not_found:
@@ -192,16 +171,6 @@ class SmartstoreEngine(PriceEngine):
                 http_status=response.status_code,
             )
 
-        if response.has:
-            return response
-
-        if cnt >= 5:
-            return response
-
-        return await self.request(cnt + 1)
-
-    async def load(self) -> ItemData | None:
-        response = await self.request(0)
         text = response.text
 
         try:
