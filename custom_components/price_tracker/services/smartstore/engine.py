@@ -1,5 +1,7 @@
 import logging
+import random
 import re
+import string
 from datetime import datetime
 from typing import Optional
 
@@ -52,12 +54,26 @@ class SmartstoreEngine(PriceEngine):
         )
 
         if random_bool():
+            request.cookie(
+                key="NNB",
+                value='PPYXCW' + ''.join(random.choices(string.ascii_uppercase, k=7))
+            )
             await request.request(
                 method=SafeRequestMethod.GET,
                 url="https://shopping.naver.com/ns/home/today-event",
                 max_tries=1,
             )
             request.user_agent(mobile_random=True, pc_random=True)
+        else:
+            request.cookie(
+                key="NNB",
+                value="PPYXCWKW"
+                      + random_choice(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "X"])
+                      + random_choice(["A", "B", "C", "D", "X"])
+                      + random_choice(["A", "B", "C", "D", "X"])
+                      + random_choice(["A", "B", "C", "D", "E"])
+                      + random_choice(["A", "B", "C", "D", "E", "F"]),
+            )
 
         if random_bool():
             await request.request(
@@ -67,6 +83,7 @@ class SmartstoreEngine(PriceEngine):
             )
 
         if random_bool():
+
             await request.request(
                 method=SafeRequestMethod.GET,
                 url="https://msearch.shopping.naver.com/remote_frame.html",
@@ -149,14 +166,6 @@ class SmartstoreEngine(PriceEngine):
                     },
                 },
             )
-
-        request.cookie(
-            key="NNB",
-            value="PPYXCWKWXC"
-                  + random_choice(["A", "B", "C", "D", "X"])
-                  + random_choice(["A", "B", "C", "D", "E"])
-                  + random_choice(["A", "B", "C", "D", "E", "F"]),
-        )
 
         response = await request.request(
             method=SafeRequestMethod.GET,
